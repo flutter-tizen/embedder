@@ -1,0 +1,54 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("fml") {
+  sources = [
+    "file.cc",
+    "file.h",
+    "log_level.h",
+    "log_settings.cc",
+    "log_settings.h",
+    "log_settings_state.cc",
+    "logging.cc",
+    "logging.h",
+    "mapping.cc",
+    "mapping.h",
+    "unique_fd.cc",
+    "unique_fd.h",
+    "unique_object.h",
+  ]
+
+  sources += [
+    "platform/posix/file_posix.cc",
+    "platform/posix/mapping_posix.cc",
+  ]
+
+  public_deps = [
+    ":build_config",
+    ":string_conversion",
+  ]
+
+  public_configs = [ "//flutter:config" ]
+}
+
+source_set("build_config") {
+  sources = [ "build_config.h" ]
+
+  public_configs = [ "//flutter:config" ]
+}
+
+source_set("string_conversion") {
+  sources = [
+    "string_conversion.cc",
+    "string_conversion.h",
+  ]
+
+  # Current versions of libcxx have deprecated some of the UTF-16 string
+  # conversion APIs.
+  defines = [ "_LIBCPP_DISABLE_DEPRECATION_WARNINGS" ]
+
+  deps = [ ":build_config" ]
+
+  public_configs = [ "//flutter:config" ]
+}
