@@ -1,0 +1,120 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+config("desktop_library_implementation") {
+  defines = [ "FLUTTER_DESKTOP_LIBRARY" ]
+}
+
+_public_headers = [
+  "public/flutter_export.h",
+  "public/flutter_messenger.h",
+  "public/flutter_plugin_registrar.h",
+  "public/flutter_texture_registrar.h",
+]
+
+# Any files that are built by clients (client_wrapper code, library headers for
+# implementations using this shared code, etc.) include the public headers
+# assuming they are in the include path. This configuration should be added to
+# any such code that is also built by GN to make the includes work.
+config("relative_flutter_library_headers") {
+  include_dirs = [ "public" ]
+}
+
+# The headers are a separate source set since the client wrapper is allowed
+# to depend on the public headers, but none of the rest of the code.
+source_set("common_cpp_library_headers") {
+  public = _public_headers
+
+  configs += [ ":desktop_library_implementation" ]
+}
+
+copy("publish_headers") {
+  sources = _public_headers
+  outputs = [ "$root_out_dir/public/{{source_file_part}}" ]
+}
+
+source_set("common_cpp_input") {
+  public = [
+    "text_editing_delta.h",
+    "text_input_model.h",
+    "text_range.h",
+  ]
+
+  sources = [
+    "text_editing_delta.cc",
+    "text_input_model.cc",
+  ]
+
+  configs += [ ":desktop_library_implementation" ]
+
+  public_configs = [ "//flutter:config" ]
+
+  deps = [ "//flutter/fml:fml" ]
+}
+
+source_set("common_cpp_accessibility") {
+  public = [
+    "accessibility_bridge.h",
+    "flutter_platform_node_delegate.h",
+  ]
+
+  sources = [
+    "accessibility_bridge.cc",
+    "flutter_platform_node_delegate.cc",
+  ]
+
+  public_configs =
+      [ "//flutter/third_party/accessibility:accessibility_config" ]
+
+  public_deps = [
+    "//flutter/fml:fml",
+    "//flutter/shell/platform/embedder:embedder_headers",
+    "//flutter/third_party/accessibility",
+  ]
+}
+
+source_set("common_cpp") {
+  public = [
+    "incoming_message_dispatcher.h",
+    "json_message_codec.h",
+    "json_method_codec.h",
+  ]
+
+  # TODO: Refactor flutter_glfw.cc to move the implementations corresponding
+  # to the _public_headers above into this target.
+  sources = [
+    "incoming_message_dispatcher.cc",
+    "json_message_codec.cc",
+    "json_method_codec.cc",
+  ]
+
+  configs += [ ":desktop_library_implementation" ]
+
+  public_configs = [ "//flutter:config" ]
+
+  deps = [
+    ":common_cpp_library_headers",
+    "//flutter/shell/platform/common/client_wrapper:client_wrapper",
+  ]
+
+  public_deps = [
+    ":common_cpp_core",
+    "//third_party/rapidjson",
+  ]
+}
+
+# The portion of common_cpp that has no dependencies on the public/
+# headers. This division should be revisited once the Linux GTK
+# embedding is further along and it's clearer how much, if any, shared
+# API surface there will be.
+source_set("common_cpp_core") {
+  public = [
+    "geometry.h",
+    "path_utils.h",
+  ]
+
+  sources = [ "path_utils.cc" ]
+
+  public_configs = [ "//flutter:config" ]
+}
