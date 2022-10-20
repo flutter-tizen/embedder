@@ -1,0 +1,312 @@
+# Copyright 2022 Samsung Electronics Co., Ltd. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/shell/platform/common/client_wrapper/publish.gni")
+
+_public_headers = [
+  "public/flutter_platform_view.h",
+  "public/flutter_tizen.h",
+]
+
+config("flutter_tizen_config") {
+  include_dirs = [
+    "${sysroot_path}/usr/include/appfw",
+    "${sysroot_path}/usr/include/base",
+    "${sysroot_path}/usr/include/dali",
+    "${sysroot_path}/usr/include/dali-adaptor",
+    "${sysroot_path}/usr/include/dali-toolkit",
+    "${sysroot_path}/usr/include/dlog",
+    "${sysroot_path}/usr/include/ecore-1",
+    "${sysroot_path}/usr/include/ecore-con-1",
+    "${sysroot_path}/usr/include/ecore-evas-1",
+    "${sysroot_path}/usr/include/ecore-file-1",
+    "${sysroot_path}/usr/include/ecore-imf-1",
+    "${sysroot_path}/usr/include/ecore-imf-evas-1",
+    "${sysroot_path}/usr/include/ecore-input-1",
+    "${sysroot_path}/usr/include/ecore-input-evas-1",
+    "${sysroot_path}/usr/include/ecore-wayland-1",
+    "${sysroot_path}/usr/include/ecore-wl2-1",
+    "${sysroot_path}/usr/include/edje-1",
+    "${sysroot_path}/usr/include/eet-1",
+    "${sysroot_path}/usr/include/efl-1",
+    "${sysroot_path}/usr/include/efl-extension",
+    "${sysroot_path}/usr/include/efl-1/interfaces",
+    "${sysroot_path}/usr/include/efreet-1",
+    "${sysroot_path}/usr/include/eina-1",
+    "${sysroot_path}/usr/include/eina-1/eina",
+    "${sysroot_path}/usr/include/elementary-1",
+    "${sysroot_path}/usr/include/emile-1",
+    "${sysroot_path}/usr/include/eo-1",
+    "${sysroot_path}/usr/include/ethumb-1",
+    "${sysroot_path}/usr/include/ethumb-client-1",
+    "${sysroot_path}/usr/include/evas-1",
+    "${sysroot_path}/usr/include/feedback",
+    "${sysroot_path}/usr/include/system",
+    "${sysroot_path}/usr/include/tzsh",
+    "${sysroot_path}/usr/include/wayland-extension",
+  ]
+
+  cflags_cc = [
+    "-Wno-newline-eof",
+    "-Wno-macro-redefined",
+  ]
+}
+
+config("relative_client_wrapper_headers") {
+  include_dirs = [ "//flutter/shell/platform/common/client_wrapper/include" ]
+}
+
+source_set("dart_api_dl") {
+  sources = [
+    "//third_party/dart/runtime/include/dart_api_dl.c",
+    "//third_party/dart/runtime/include/dart_api_dl.h",
+  ]
+}
+
+template("embedder") {
+  forward_variables_from(invoker,
+                         [
+                           "target_type",
+                           "enable_nui_support",
+                           "defines",
+                         ])
+
+  if (!defined(enable_nui_support)) {
+    enable_nui_support = false
+  }
+
+  target(target_type, target_name) {
+    public = _public_headers
+
+    sources = [
+      "accessibility_settings.cc",
+      "channels/accessibility_channel.cc",
+      "channels/app_control.cc",
+      "channels/app_control_channel.cc",
+      "channels/feedback_manager.cc",
+      "channels/key_event_channel.cc",
+      "channels/key_mapping.cc",
+      "channels/lifecycle_channel.cc",
+      "channels/navigation_channel.cc",
+      "channels/platform_channel.cc",
+      "channels/platform_view_channel.cc",
+      "channels/settings_channel.cc",
+      "channels/text_input_channel.cc",
+      "channels/window_channel.cc",
+      "external_texture_pixel_evas_gl.cc",
+      "external_texture_surface_evas_gl.cc",
+      "flutter_project_bundle.cc",
+      "flutter_tizen.cc",
+      "flutter_tizen_elementary.cc",
+      "flutter_tizen_engine.cc",
+      "flutter_tizen_texture_registrar.cc",
+      "flutter_tizen_view.cc",
+      "logger.cc",
+      "system_utils.cc",
+      "tizen_event_loop.cc",
+      "tizen_input_method_context.cc",
+      "tizen_renderer.cc",
+      "tizen_renderer_evas_gl.cc",
+      "tizen_view_elementary.cc",
+      "tizen_window_elementary.cc",
+    ]
+
+    lib_dirs = [ "//engine/${target_cpu}" ]
+
+    libs = [
+      "base-utils-i18n",
+      "capi-appfw-application",
+      "capi-appfw-app-common",
+      "capi-appfw-app-control",
+      "capi-base-common",
+      "capi-system-info",
+      "capi-system-system-settings",
+      "capi-ui-efl-util",
+      "dlog",
+      "ecore",
+      "ecore_evas",
+      "ecore_imf",
+      "ecore_imf_evas",
+      "ecore_input",
+      "efl-extension",
+      "eina",
+      "elementary",
+      "evas",
+      "feedback",
+      "flutter_engine",
+      "tbm",
+      "wayland-client",
+    ]
+
+    if (target_name != "flutter_tizen_wearable") {
+      sources += [
+        "accessibility_bridge_delegate_tizen.cc",
+        "external_texture_pixel_egl.cc",
+        "external_texture_surface_egl.cc",
+        "flutter_platform_node_delegate_tizen.cc",
+        "tizen_renderer_egl.cc",
+        "tizen_vsync_waiter.cc",
+        "tizen_window_ecore_wl2.cc",
+      ]
+
+      libs += [
+        "ecore_wl2",
+        "tdm-client",
+        "tizen-extension-client",
+        "EGL",
+        "GLESv2",
+      ]
+    }
+
+    if (target_name == "flutter_tizen_common") {
+      sources += [ "channels/tizen_shell.cc" ]
+
+      libs += [
+        "tzsh_common",
+        "tzsh_softkey",
+      ]
+    }
+
+    defines += invoker.defines
+    defines += [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
+
+    if (enable_nui_support) {
+      sources += [
+        "flutter_tizen_nui.cc",
+        "tizen_view_nui.cc",
+      ]
+
+      libs += [
+        "dali2-adaptor",
+        "dali2-core",
+      ]
+
+      defines += [ "NUI_SUPPORT" ]
+    }
+
+    configs += [
+      ":flutter_tizen_config",
+      "//flutter/shell/platform/common:desktop_library_implementation",
+    ]
+
+    public_configs = [
+      ":relative_client_wrapper_headers",
+      "//flutter:config",
+    ]
+
+    deps += [
+      ":dart_api_dl",
+      "//flutter/shell/platform/common:common_cpp",
+      "//flutter/shell/platform/common:common_cpp_input",
+      "//flutter/shell/platform/common:common_cpp_library_headers",
+      "//flutter/shell/platform/common/client_wrapper:client_wrapper",
+      "//third_party/rapidjson",
+    ]
+
+    if (target_name != "flutter_tizen_wearable") {
+      deps += [ "//flutter/shell/platform/common:common_cpp_accessibility" ]
+    }
+  }
+}
+
+embedder("flutter_tizen_mobile") {
+  target_type = "shared_library"
+
+  defines = [ "MOBILE_PROFILE" ]
+}
+
+embedder("flutter_tizen_mobile_nui") {
+  target_type = "shared_library"
+  enable_nui_support = true
+
+  defines = [ "MOBILE_PROFILE" ]
+}
+
+embedder("flutter_tizen_wearable") {
+  target_type = "shared_library"
+
+  defines = [ "WEARABLE_PROFILE" ]
+}
+
+embedder("flutter_tizen_tv") {
+  target_type = "shared_library"
+
+  defines = [ "TV_PROFILE" ]
+}
+
+embedder("flutter_tizen_tv_nui") {
+  target_type = "shared_library"
+  enable_nui_support = true
+
+  defines = [ "TV_PROFILE" ]
+}
+
+embedder("flutter_tizen_common") {
+  target_type = "shared_library"
+
+  defines = [ "COMMON_PROFILE" ]
+}
+
+embedder("flutter_tizen_source") {
+  target_type = "source_set"
+
+  defines = []
+}
+
+executable("flutter_tizen_unittests") {
+  testonly = true
+
+  sources = [
+    "channels/lifecycle_channel_unittests.cc",
+    "channels/settings_channel_unittests.cc",
+    "flutter_project_bundle_unittests.cc",
+    "flutter_tizen_engine_unittest.cc",
+    "flutter_tizen_texture_registrar_unittests.cc",
+  ]
+
+  ldflags = [ "-Wl,--unresolved-symbols=ignore-in-shared-libs" ]
+
+  configs += [ ":flutter_tizen_config" ]
+
+  deps += [
+    ":flutter_tizen_source",
+    "//flutter/shell/platform/common:common_cpp",
+    "//flutter/shell/platform/common:common_cpp_accessibility",
+    "//flutter/shell/platform/common/client_wrapper:client_wrapper",
+    "//third_party/googletest:gtest_main",
+    "//third_party/rapidjson",
+  ]
+}
+
+publish_client_wrapper_core("publish_cpp_client_wrapper") {
+  visibility = [ ":*" ]
+}
+
+copy("publish_headers_tizen") {
+  sources = _public_headers
+
+  outputs = [ "$root_out_dir/public/{{source_file_part}}" ]
+}
+
+copy("copy_icu") {
+  visibility = [ ":*" ]
+
+  sources = [ "//third_party/icu/flutter/icudtl.dat" ]
+
+  outputs = [ "$root_out_dir/icu/{{source_file_part}}" ]
+}
+
+group("flutter_tizen") {
+  deps = [
+    ":copy_icu",
+    ":flutter_tizen_common",
+    ":flutter_tizen_mobile",
+    ":flutter_tizen_mobile_nui",
+    ":flutter_tizen_tv",
+    ":flutter_tizen_tv_nui",
+    ":flutter_tizen_wearable",
+    ":publish_cpp_client_wrapper",
+    ":publish_headers_tizen",
+  ]
+}
