@@ -4790,9 +4790,9 @@ AXPlatformNodeAuraLinux::GetUnclippedHypertextRangeBoundsRect(int start_offset,
   end_offset = UnicodeToUTF16OffsetInText(end_offset);
 
   std::u16string text = GetHypertext();
-  if (start_offset < 0 || start_offset > int{text.length()})
+  if (start_offset < 0 || start_offset > static_cast<int>(text.length()))
     return std::nullopt;
-  if (end_offset < 0 || end_offset > int{text.length()})
+  if (end_offset < 0 || end_offset > static_cast<int>(text.length()))
     return std::nullopt;
 
   if (end_offset < start_offset)
