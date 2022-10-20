@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-
 source_set("gfx") {
   visibility = [ "//flutter/third_party/accessibility/*" ]
   include_dirs = [ "//flutter/third_party/accessibility" ]
@@ -45,13 +43,6 @@ source_set("gfx") {
     "transform.cc",
     "transform.h",
   ]
-
-  if (is_mac) {
-    sources += [
-      "mac/coordinate_conversion.h",
-      "mac/coordinate_conversion.mm",
-    ]
-  }
 
   deps = [
     "//flutter/third_party/accessibility/ax_build",

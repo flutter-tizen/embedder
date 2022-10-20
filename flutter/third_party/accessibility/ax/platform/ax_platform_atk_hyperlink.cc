@@ -102,8 +102,11 @@ static void AXPlatformAtkHyperlinkClassInit(AtkHyperlinkClass* klass) {
   GObjectClass* gobject_class = G_OBJECT_CLASS(klass);
   kAXPlatformAtkHyperlinkParentClass = g_type_class_peek_parent(klass);
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   g_type_class_add_private(gobject_class,
                            sizeof(AXPlatformAtkHyperlinkPrivate));
+#pragma clang diagnostic pop
 
   gobject_class->finalize = AXPlatformAtkHyperlinkFinalize;
   klass->get_uri = AXPlatformAtkHyperlinkGetUri;
