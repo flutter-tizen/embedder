@@ -8,6 +8,7 @@
 #include <pthread.h>
 
 #include <cassert>
+#include <cstring>
 #include <sstream>
 #include <string>
 

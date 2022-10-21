@@ -9,6 +9,7 @@
 #include <linux/limits.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <filesystem>
 
 #include "flutter/shell/platform/common/path_utils.h"
