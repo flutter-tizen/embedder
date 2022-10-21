@@ -4,7 +4,9 @@
 
 #include "key_event_channel.h"
 
+#include <chrono>
 #include <codecvt>
+#include <locale>
 #include <string>
 
 #include "flutter/shell/platform/common/json_message_codec.h"
