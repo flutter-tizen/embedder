@@ -1,0 +1,126 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        arch: [arm, arm64, x86]
+        include:
+          - arch: arm
+            triple: arm-linux-gnueabi
+          - arch: arm64
+            triple: aarch64-linux-gnu
+          - arch: x86
+            triple: i686-linux-gnu
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: src
+
+      - uses: actions/cache@v3
+        with:
+          path: src/sysroot
+          key: sysroot
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm2cpio cpio binutils-${{ matrix.triple }}
+          pip3 install requests
+
+      - name: Install depot_tools
+        run: |
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          echo "$PWD/depot_tools" >> $GITHUB_PATH
+
+      - name: Run gclient sync
+        run: |
+          gclient config --name=src --unmanaged https://github.com/${{ github.repository }}
+          gclient sync -v --no-history --shallow
+
+      - name: Run ninja build
+        run: |
+          src/tools/gn \
+            --target-cpu ${{ matrix.arch }} \
+            --target-toolchain /usr/lib/llvm-14 \
+            --target-dir build
+          ninja -C src/out/build
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: tizen-${{ matrix.arch }}
+          path: src/out/build/libflutter_tizen*.so
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: tizen-${{ matrix.arch }}-unittests
+          path: src/out/build/flutter_tizen_unittests
+          if-no-files-found: error
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm
+
+      - uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: tizen-arm-unittests
+
+      - name: Download engine
+        run: |
+          python3 tools/download_engine.py
+          cp engine/arm/libflutter_engine.so .
+          rm -rf engine
+
+      - name: Run tests
+        run: |
+          chmod +x flutter_tizen_unittests
+          docker run --rm -t -v $PWD:/root ghcr.io/flutter-tizen/tizen-headed-armv7l /root/flutter_tizen_unittests
+
+  release:
+    needs: test
+    if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/download-artifact@v3
+
+      - name: Create archives
+        run: |
+          rm -r *-unittests
+          for name in tizen-*; do
+            7z a $name.zip ./$name/*
+          done
+
+      - name: Set version
+        run: echo "SHORT_SHA=$(git rev-parse --short $GITHUB_SHA)" >> $GITHUB_ENV
+
+      - uses: softprops/action-gh-release@v1
+        with:
+          name: tizen-embedder-${{ env.SHORT_SHA }}
+          tag_name: ${{ env.SHORT_SHA }}
+          target_commitish: ${{ github.sha }}
+          files: tizen-*.zip
+          body: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

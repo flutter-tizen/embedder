@@ -1,0 +1,65 @@
+name: Check symbols
+
+on:
+  workflow_run:
+    workflows:
+      - Build
+    types:
+      - completed
+
+jobs:
+  check:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/checkout@v3
+        with:
+          repository: flutter-tizen/tizen_allowlist
+          token: ${{ secrets.TIZENAPI_TOKEN }}
+          path: tizen_allowlist
+
+      - name: Download artifacts
+        uses: TizenAPI/tizenfx-build-actions/download-workflow-artifacts@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+          name: tizen-arm
+          path: artifacts
+
+      - name: Check symbols
+        run: |
+          python3 tools/check_symbols.py \
+            --allowlist=tizen_allowlist/4.0.0_native_whitelist_wearable_v12.txt \
+            artifacts/libflutter_tizen_wearable.so
+
+      - name: Commit success status
+        if: ${{ success() }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.workflow_run.head_sha,
+              context: 'Check symbols',
+              state: 'success',
+              description: 'All symbols are valid',
+            });
+
+      - name: Commit failure status
+        if: ${{ failure() }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.workflow_run.head_sha,
+              context: 'Check symbols',
+              state: 'failure',
+              description: 'Failed in checking symbols',
+              target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+            });
