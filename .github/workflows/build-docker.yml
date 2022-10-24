@@ -1,0 +1,26 @@
+name: Build Docker
+
+on: [workflow_dispatch]
+
+jobs:
+  testbed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        env:
+          REPO_URL: http://download.tizen.org/releases/milestone/tizen/unified
+          BUILD_ID: tizen-unified_20220517.1
+          IMAGE: tizen-headed-armv7l
+        run: |
+          wget -q ${REPO_URL}/${BUILD_ID}/images/standard/${IMAGE}/${BUILD_ID}_${IMAGE}.tar.gz
+          tar -zxf ${BUILD_ID}_${IMAGE}.tar.gz
+          mkdir rootfs
+          sudo mount rootfs.img rootfs
+          sudo tar -cC rootfs . | docker import - ghcr.io/${{ github.repository_owner }}/${IMAGE}
+          sudo umount rootfs
+          docker push ghcr.io/${{ github.repository_owner }}/${IMAGE}:latest

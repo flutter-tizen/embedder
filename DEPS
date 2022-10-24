@@ -8,6 +8,15 @@ deps = {
   'src/third_party/libcxxabi': 'https://llvm.googlesource.com/llvm-project/libcxxabi@65a68da0f1b102574db316d326a53735b03a4574',
   'src/third_party/googletest': 'https://github.com/google/googletest@054a986a8513149e8374fc669a5fe40117ca6b41',
   'src/third_party/dart': 'https://dart.googlesource.com/sdk.git@63c2197b976931c6472d9dc9574f98ff2ae9408c',
+  'src/third_party/clang': {
+    'packages': [
+      {
+        'package': 'fuchsia/third_party/clang/linux-amd64',
+        'version': 'ugk-KfeqO9fhSfhBFRG4Z-56Kr2AQVSEbku9AEUdotYC'
+      }
+    ],
+    'dep_type': 'cipd',
+  },
   'src/third_party/gn': {
     'packages': [
       {
