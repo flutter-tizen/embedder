@@ -1,0 +1,36 @@
+name: Analyze
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: src
+
+      - name: Install depot_tools
+        run: |
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          echo "$PWD/depot_tools" >> $GITHUB_PATH
+
+      - name: Run gclient sync
+        run: |
+          pip3 install requests
+          gclient config --name=src --unmanaged https://github.com/${{ github.repository }}
+          gclient sync -v --no-history --shallow --nohooks
+
+      - name: Verify C/C++ formatting
+        working-directory: src
+        run: |
+          FILES=$(git ls-files -- '*.h' '*.cc' '*.cpp' | grep -v /third_party/)
+          third_party/clang/bin/clang-format --style=file --dry-run --Werror $FILES
+
+      - name: Verify GN formatting
+        working-directory: src
+        run: |
+          FILES=$(git ls-files -- '*.gn' '*.gni')
+          third_party/gn/gn format --dry-run $FILES
