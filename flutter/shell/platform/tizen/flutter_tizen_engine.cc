@@ -28,6 +28,11 @@ namespace {
 constexpr size_t kPlatformTaskRunnerIdentifier = 1;
 constexpr size_t kRenderTaskRunnerIdentifier = 2;
 
+#ifndef WEARABLE_PROFILE
+const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
+const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
+#endif
+
 // Converts a LanguageInfo struct to a FlutterLocale struct. |info| must outlive
 // the returned value, since the returned FlutterLocale has pointers into it.
 FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
