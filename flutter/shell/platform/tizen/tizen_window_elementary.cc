@@ -5,6 +5,9 @@
 #include "tizen_window_elementary.h"
 
 #include <efl_extension.h>
+#ifdef EOM_SUPPORT
+#include <eom.h>
+#endif
 #include <ui/efl_util.h>
 
 #include "flutter/shell/platform/tizen/logger.h"
@@ -34,11 +37,27 @@ uint32_t EvasModifierToEcoreEventModifiers(const Evas_Modifier* evas_modifier) {
 
 }  // namespace
 
-TizenWindowElementary::TizenWindowElementary(TizenGeometry geometry,
-                                             bool transparent,
-                                             bool focusable,
-                                             bool top_level)
+TizenWindowElementary::TizenWindowElementary(
+    TizenGeometry geometry,
+    bool transparent,
+    bool focusable,
+    bool top_level,
+    FlutterDesktopExternalOutputType external_output_type)
     : TizenWindow(geometry, transparent, focusable, top_level) {
+#ifdef EOM_SUPPORT
+  external_output_type_ = external_output_type;
+
+  if (external_output_type_ != FlutterDesktopExternalOutputType::kNone &&
+      !InitializeEom()) {
+    FT_LOG(Error) << "Failed to initialize eom.";
+    return;
+  }
+#else
+  if (external_output_type != FlutterDesktopExternalOutputType::kNone) {
+    FT_LOG(Error) << "External output is not supported by this profile.";
+  }
+#endif
+
   if (!CreateWindow()) {
     FT_LOG(Error) << "Failed to create a platform window.";
     return;
@@ -51,6 +70,11 @@ TizenWindowElementary::TizenWindowElementary(TizenGeometry geometry,
 }
 
 TizenWindowElementary::~TizenWindowElementary() {
+#ifdef EOM_SUPPORT
+  if (external_output_type_ != FlutterDesktopExternalOutputType::kNone) {
+    DestroyEom();
+  }
+#endif
   UnregisterEventHandlers();
   DestroyWindow();
 }
@@ -69,11 +93,28 @@ bool TizenWindowElementary::CreateWindow() {
   elm_win_aux_hint_add(elm_win_, "wm.policy.win.user.geometry", "1");
 #endif
 
-  Ecore_Evas* ecore_evas =
-      ecore_evas_ecore_evas_get(evas_object_evas_get(elm_win_));
-
   int32_t width, height;
-  ecore_evas_screen_geometry_get(ecore_evas, nullptr, nullptr, &width, &height);
+#ifdef EOM_SUPPORT
+  if (external_output_type_ != FlutterDesktopExternalOutputType::kNone) {
+    eom_get_output_resolution(ext_output_id_, &width, &height);
+
+    if (width == 0 || height == 0) {
+      FT_LOG(Error) << "Invalid screen size: " << width << " x " << height;
+      return false;
+    }
+
+    if (eom_set_output_window(ext_output_id_, elm_win_) != EOM_ERROR_NONE) {
+      FT_LOG(Error) << "eom_set_output_window() failed.";
+    }
+  } else
+#endif
+  {
+    Ecore_Evas* ecore_evas =
+        ecore_evas_ecore_evas_get(evas_object_evas_get(elm_win_));
+
+    ecore_evas_screen_geometry_get(ecore_evas, nullptr, nullptr, &width,
+                                   &height);
+  }
   if (width == 0 || height == 0) {
     FT_LOG(Error) << "Invalid screen size: " << width << " x " << height;
     return false;
@@ -323,8 +364,8 @@ void TizenWindowElementary::UnregisterEventHandlers() {
 }
 
 TizenGeometry TizenWindowElementary::GetGeometry() {
-  // FIXME : evas_object_geometry_get() and ecore_wl2_window_geometry_get() are
-  // not equivalent.
+  // FIXME : evas_object_geometry_get() and ecore_wl2_window_geometry_get()
+  // are not equivalent.
   TizenGeometry result;
   evas_object_geometry_get(elm_win_, &result.left, &result.top, &result.width,
                            &result.height);
@@ -402,5 +443,75 @@ void TizenWindowElementary::PrepareInputMethod() {
   input_method_context_->SetOnCommit(
       [this](std::string str) { view_delegate_->OnCommit(str); });
 }
+
+#ifdef EOM_SUPPORT
+
+int32_t TizenWindowElementary::GetExternalOutputId() {
+  eom_output_id* output_ids = NULL;
+  eom_output_id output_id = 0;
+  eom_output_type_e output_type = EOM_OUTPUT_TYPE_UNKNOWN;
+  int32_t id_cnt = 0;
+
+  output_ids = eom_get_eom_output_ids(&id_cnt);
+  if (id_cnt == 0) {
+    FT_LOG(Error) << "No external outputs supported";
+    return 0;
+  }
+
+  for (int32_t i = 0; i < id_cnt; i++) {
+    eom_get_output_type(output_ids[i], &output_type);
+
+    if (external_output_type_ == FlutterDesktopExternalOutputType::kHDMI &&
+        (output_type == EOM_OUTPUT_TYPE_HDMIA ||
+         output_type == EOM_OUTPUT_TYPE_HDMIB)) {
+      output_id = output_ids[i];
+      break;
+    }
+  }
+
+  if (output_ids)
+    free(output_ids);
+
+  return output_id;
+}
+
+bool TizenWindowElementary::InitializeEom() {
+  if (eom_init()) {
+    FT_LOG(Error) << "Eom init fail.";
+    return false;
+  }
+
+  int eom_ret;
+  ext_output_id_ = GetExternalOutputId();
+  eom_output_mode_e output_mode = EOM_OUTPUT_MODE_NONE;
+  if (ext_output_id_ == 0) {
+    FT_LOG(Error) << "External output id is NULL.";
+    eom_deinit();
+    return false;
+  }
+
+  eom_ret =
+      eom_set_output_attribute(ext_output_id_, EOM_OUTPUT_ATTRIBUTE_EXCLUSIVE);
+  if (eom_ret != EOM_ERROR_NONE) {
+    FT_LOG(Error)
+        << "eom_set_output_attribute() failed. Cannot use external output.";
+    eom_deinit();
+    return false;
+  }
+
+  eom_ret = eom_get_output_mode(ext_output_id_, &output_mode);
+  if (eom_ret != EOM_ERROR_NONE) {
+    FT_LOG(Error)
+        << "eom_get_output_mode() failed. Cannot use external output.";
+    eom_deinit();
+    return false;
+  }
+  return true;
+}
+
+void TizenWindowElementary::DestroyEom() {
+  eom_deinit();
+}
+#endif
 
 }  // namespace flutter

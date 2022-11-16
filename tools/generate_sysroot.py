@@ -109,6 +109,8 @@ unified_packages = [
   'vulkan-loader-devel',
   'wayland-extension-client-devel',
   'wayland-devel',
+  'libeom',
+  'libeom-devel',
 ]
 
 # Only available for Tizen 6.5 and above.

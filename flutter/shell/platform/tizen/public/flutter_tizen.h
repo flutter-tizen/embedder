@@ -38,6 +38,13 @@ typedef enum {
   kMouseMove,
 } FlutterDesktopPointerEventType;
 
+typedef enum {
+  // No use external output.
+  kNone,
+  // Display to the HDMI external output.
+  kHDMI,
+} FlutterDesktopExternalOutputType;
+
 // Properties for configuring the initial settings of a Flutter window.
 typedef struct {
   // The x-coordinate of the top left corner of the window.
@@ -56,6 +63,8 @@ typedef struct {
   bool top_level;
   // The renderer type of the engine.
   FlutterDesktopRendererType renderer_type;
+  // The external output type of the window.
+  FlutterDesktopExternalOutputType external_output_type;
 } FlutterDesktopWindowProperties;
 
 // Properties for configuring the initial settings of a Flutter view.
