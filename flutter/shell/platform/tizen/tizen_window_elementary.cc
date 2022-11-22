@@ -436,7 +436,9 @@ int32_t TizenWindowElementary::GetExternalOutputId() {
     return 0;
   }
 
+  eom_output_id output_id = 0;
   for (int32_t i = 0; i < id_cnt; i++) {
+    eom_output_type_e output_type = EOM_OUTPUT_TYPE_UNKNOWN;
     eom_get_output_type(output_ids[i], &output_type);
 
     if (external_output_type_ == FlutterDesktopExternalOutputType::kHDMI &&
