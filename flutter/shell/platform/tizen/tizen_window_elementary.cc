@@ -429,12 +429,8 @@ void TizenWindowElementary::PrepareInputMethod() {
 }
 
 int32_t TizenWindowElementary::GetExternalOutputId() {
-  eom_output_id* output_ids = nullptr;
-  eom_output_id output_id = 0;
-  eom_output_type_e output_type = EOM_OUTPUT_TYPE_UNKNOWN;
-  int32_t id_cnt = 0;
-
-  output_ids = eom_get_eom_output_ids(&id_cnt);
+  int32_t num_ids = 0;
+  eom_output_id* output_ids = eom_get_eom_output_ids(&num_ids);
   if (!output_ids || id_cnt == 0) {
     FT_LOG(Error) << "No external output found.";
     return 0;
