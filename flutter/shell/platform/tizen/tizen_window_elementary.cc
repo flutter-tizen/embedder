@@ -431,13 +431,13 @@ void TizenWindowElementary::PrepareInputMethod() {
 int32_t TizenWindowElementary::GetExternalOutputId() {
   int32_t num_ids = 0;
   eom_output_id* output_ids = eom_get_eom_output_ids(&num_ids);
-  if (!output_ids || id_cnt == 0) {
+  if (!output_ids || num_ids == 0) {
     FT_LOG(Error) << "No external output found.";
     return 0;
   }
 
   eom_output_id output_id = 0;
-  for (int32_t i = 0; i < id_cnt; i++) {
+  for (int32_t i = 0; i < num_ids; i++) {
     eom_output_type_e output_type = EOM_OUTPUT_TYPE_UNKNOWN;
     eom_get_output_type(output_ids[i], &output_type);
 
@@ -461,7 +461,6 @@ bool TizenWindowElementary::InitializeExternalOutputManager() {
   external_output_id_ = GetExternalOutputId();
   if (external_output_id_ == 0) {
     FT_LOG(Error) << "Invalid external output ID.";
-    eom_deinit();
     return false;
   }
 
@@ -470,7 +469,6 @@ bool TizenWindowElementary::InitializeExternalOutputManager() {
   if (ret != EOM_ERROR_NONE) {
     FT_LOG(Error)
         << "eom_set_output_attribute() failed. Cannot use external output.";
-    eom_deinit();
     return false;
   }
   return true;
