@@ -52,13 +52,11 @@ class TizenWindowElementary : public TizenWindow {
   void Show() override;
 
  private:
-#ifdef COMMON_PROFILE
-  bool InitializeEom();
+  bool InitializeExternalOutputManager();
 
-  void DestroyEom();
+  void DestroyExternalOutputManager();
 
   int GetExternalOutputId();
-#endif
 
   bool CreateWindow();
 
@@ -79,11 +77,9 @@ class TizenWindowElementary : public TizenWindow {
   std::unordered_map<Evas_Callback_Type, Evas_Object_Event_Cb>
       evas_object_callbacks_;
 
-#ifdef COMMON_PROFILE
-  int ext_output_id_;
+  int32_t external_output_id_;
   FlutterDesktopExternalOutputType external_output_type_ =
       FlutterDesktopExternalOutputType::kNone;
-#endif
 };
 
 }  // namespace flutter

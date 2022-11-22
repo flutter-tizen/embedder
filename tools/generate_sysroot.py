@@ -85,6 +85,8 @@ unified_packages = [
   'jsoncpp-devel',
   'libatk',
   'libatk-bridge-2_0-0',
+  'libeom',
+  'libeom-devel',
   'libfeedback',
   'libfeedback-devel',
   'libdlog',
@@ -109,8 +111,6 @@ unified_packages = [
   'vulkan-loader-devel',
   'wayland-extension-client-devel',
   'wayland-devel',
-  'libeom',
-  'libeom-devel',
 ]
 
 # Only available for Tizen 6.5 and above.

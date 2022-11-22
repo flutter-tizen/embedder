@@ -128,6 +128,7 @@ template("embedder") {
       "efl-extension",
       "eina",
       "elementary",
+      "eom",
       "evas",
       "feedback",
       "flutter_engine",
@@ -159,7 +160,6 @@ template("embedder") {
       sources += [ "channels/tizen_shell.cc" ]
 
       libs += [
-        "eom",
         "tzsh_common",
         "tzsh_softkey",
       ]
