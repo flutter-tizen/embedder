@@ -159,11 +159,10 @@ template("embedder") {
       sources += [ "channels/tizen_shell.cc" ]
 
       libs += [
+        "eom",
         "tzsh_common",
         "tzsh_softkey",
-        "eom",
       ]
-      defines += [ "EOM_SUPPORT" ]
     }
 
     defines += invoker.defines

@@ -5,7 +5,7 @@
 #include "tizen_window_elementary.h"
 
 #include <efl_extension.h>
-#ifdef EOM_SUPPORT
+#ifdef COMMON_PROFILE
 #include <eom.h>
 #endif
 #include <ui/efl_util.h>
@@ -44,7 +44,7 @@ TizenWindowElementary::TizenWindowElementary(
     bool top_level,
     FlutterDesktopExternalOutputType external_output_type)
     : TizenWindow(geometry, transparent, focusable, top_level) {
-#ifdef EOM_SUPPORT
+#ifdef COMMON_PROFILE
   external_output_type_ = external_output_type;
 
   if (external_output_type_ != FlutterDesktopExternalOutputType::kNone &&
@@ -70,7 +70,7 @@ TizenWindowElementary::TizenWindowElementary(
 }
 
 TizenWindowElementary::~TizenWindowElementary() {
-#ifdef EOM_SUPPORT
+#ifdef COMMON_PROFILE
   if (external_output_type_ != FlutterDesktopExternalOutputType::kNone) {
     DestroyEom();
   }
@@ -94,7 +94,7 @@ bool TizenWindowElementary::CreateWindow() {
 #endif
 
   int32_t width, height;
-#ifdef EOM_SUPPORT
+#ifdef COMMON_PROFILE
   if (external_output_type_ != FlutterDesktopExternalOutputType::kNone) {
     eom_get_output_resolution(ext_output_id_, &width, &height);
 
@@ -444,7 +444,7 @@ void TizenWindowElementary::PrepareInputMethod() {
       [this](std::string str) { view_delegate_->OnCommit(str); });
 }
 
-#ifdef EOM_SUPPORT
+#ifdef COMMON_PROFILE
 
 int32_t TizenWindowElementary::GetExternalOutputId() {
   eom_output_id* output_ids = NULL;

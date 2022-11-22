@@ -39,7 +39,7 @@ typedef enum {
 } FlutterDesktopPointerEventType;
 
 typedef enum {
-  // No use external output.
+  // No external output.
   kNone,
   // Display to the HDMI external output.
   kHDMI,
