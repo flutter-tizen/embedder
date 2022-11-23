@@ -21,7 +21,7 @@ class Symbol:
 
   @staticmethod
   def parse(line):
-    return Symbol(line[:8].strip(), line[9], line[11:].strip())
+    return Symbol(line[:8].strip(), line[9], line[11:].strip().split('@')[0])
 
 
 def check_symbol(sofile, allowlist):
