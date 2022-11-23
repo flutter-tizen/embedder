@@ -85,6 +85,8 @@ unified_packages = [
   'jsoncpp-devel',
   'libatk',
   'libatk-bridge-2_0-0',
+  'libeom',
+  'libeom-devel',
   'libfeedback',
   'libfeedback-devel',
   'libdlog',

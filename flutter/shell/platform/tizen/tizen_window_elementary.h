@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "flutter/shell/platform/tizen/public/flutter_tizen.h"
 #include "flutter/shell/platform/tizen/tizen_window.h"
 
 namespace flutter {
@@ -21,7 +22,8 @@ class TizenWindowElementary : public TizenWindow {
   TizenWindowElementary(TizenGeometry geometry,
                         bool transparent,
                         bool focusable,
-                        bool top_level);
+                        bool top_level,
+                        FlutterDesktopExternalOutputType external_output_type);
 
   ~TizenWindowElementary();
 
@@ -50,6 +52,12 @@ class TizenWindowElementary : public TizenWindow {
   void Show() override;
 
  private:
+  bool InitializeExternalOutputManager();
+
+  void DestroyExternalOutputManager();
+
+  int GetExternalOutputId();
+
   bool CreateWindow();
 
   void DestroyWindow();
@@ -68,6 +76,10 @@ class TizenWindowElementary : public TizenWindow {
   Evas_Smart_Cb rotation_changed_callback_ = nullptr;
   std::unordered_map<Evas_Callback_Type, Evas_Object_Event_Cb>
       evas_object_callbacks_;
+
+  int32_t external_output_id_;
+  FlutterDesktopExternalOutputType external_output_type_ =
+      FlutterDesktopExternalOutputType::kNone;
 };
 
 }  // namespace flutter

@@ -204,7 +204,8 @@ FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindow(
   if (window_properties.renderer_type == FlutterDesktopRendererType::kEvasGL) {
     window = std::make_unique<flutter::TizenWindowElementary>(
         window_geometry, window_properties.transparent,
-        window_properties.focusable, window_properties.top_level);
+        window_properties.focusable, window_properties.top_level,
+        window_properties.external_output_type);
   } else {
 #ifndef WEARABLE_PROFILE
     window = std::make_unique<flutter::TizenWindowEcoreWl2>(
