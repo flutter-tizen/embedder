@@ -21,6 +21,7 @@ class Symbol:
 
   @staticmethod
   def parse(line):
+    # Format: "         U abort@GLIBC_2.4" (addr can be empty)
     return Symbol(line[:8].strip(), line[9], line[11:].strip().split('@')[0])
 
 
