@@ -21,7 +21,8 @@ class Symbol:
 
   @staticmethod
   def parse(line):
-    return Symbol(line[:8].strip(), line[9], line[11:].strip())
+    # Format: "         U abort@GLIBC_2.4" (addr can be empty)
+    return Symbol(line[:8].strip(), line[9], line[11:].strip().split('@')[0])
 
 
 def check_symbol(sofile, allowlist):
