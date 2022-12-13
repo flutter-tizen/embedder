@@ -323,6 +323,8 @@ AppControlResult AppControl::SendLaunchRequest() {
 
 AppControlResult AppControl::SendLaunchRequestWithReply(
     ReplyCallback on_reply) {
+  on_reply_ = std::move(on_reply);
+
   auto reply_callback = [](app_control_h request, app_control_h reply,
                            app_control_result_e result, void* user_data) {
     auto* app_control = static_cast<AppControl*>(user_data);
@@ -342,7 +344,6 @@ AppControlResult AppControl::SendLaunchRequestWithReply(
     app_control->on_reply_(EncodableValue(map));
     app_control->on_reply_ = nullptr;
   };
-  on_reply_ = on_reply;
   return app_control_send_launch_request(handle_, reply_callback, this);
 }
 

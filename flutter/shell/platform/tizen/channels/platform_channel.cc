@@ -188,7 +188,7 @@ void PlatformChannel::HapticFeedbackVibrate(const std::string& feedback_type) {
 }
 
 void PlatformChannel::GetClipboardData(ClipboardCallback on_data) {
-  on_clipboard_data_ = on_data;
+  on_clipboard_data_ = std::move(on_data);
 
 #if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
   int ret = cbhm_selection_get(
