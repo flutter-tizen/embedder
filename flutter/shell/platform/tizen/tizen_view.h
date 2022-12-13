@@ -18,8 +18,6 @@ class TizenView : public TizenViewBase {
   TizenView() = default;
   virtual ~TizenView() = default;
 
-  TizenViewType GetType() override { return TizenViewType::kView; };
-
   bool focused() { return focused_; };
 
   void SetFocus(bool focused) { focused_ = focused; };

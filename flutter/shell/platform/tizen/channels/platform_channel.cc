@@ -168,10 +168,11 @@ void PlatformChannel::HandleMethodCall(
 }
 
 void PlatformChannel::SystemNavigatorPop() {
-  if (view_->GetType() == TizenViewType::kWindow) {
-    ui_app_exit();
+  auto* view = dynamic_cast<TizenView*>(view_);
+  if (view) {
+    view->SetFocus(false);
   } else {
-    reinterpret_cast<TizenView*>(view_)->SetFocus(false);
+    ui_app_exit();
   }
 }
 
@@ -241,13 +242,14 @@ bool PlatformChannel::ClipboardHasStrings() {
 }
 
 void PlatformChannel::RestoreSystemUiOverlays() {
-  if (view_->GetType() != TizenViewType::kWindow) {
+  auto* window = dynamic_cast<TizenWindow*>(view_);
+  if (!window) {
     return;
   }
 
 #ifdef COMMON_PROFILE
   auto& shell = TizenShell::GetInstance();
-  shell.InitializeSoftkey(view_->GetWindowId());
+  shell.InitializeSoftkey(window->GetWindowId());
 
   if (shell.IsSoftkeyShown()) {
     shell.ShowSoftkey();
@@ -259,13 +261,14 @@ void PlatformChannel::RestoreSystemUiOverlays() {
 
 void PlatformChannel::SetEnabledSystemUiOverlays(
     const std::vector<std::string>& overlays) {
-  if (view_->GetType() != TizenViewType::kWindow) {
+  auto* window = dynamic_cast<TizenWindow*>(view_);
+  if (!window) {
     return;
   }
 
 #ifdef COMMON_PROFILE
   auto& shell = TizenShell::GetInstance();
-  shell.InitializeSoftkey(view_->GetWindowId());
+  shell.InitializeSoftkey(window->GetWindowId());
 
   if (std::find(overlays.begin(), overlays.end(), kSystemUiOverlayBottom) !=
       overlays.end()) {
@@ -278,7 +281,8 @@ void PlatformChannel::SetEnabledSystemUiOverlays(
 
 void PlatformChannel::SetPreferredOrientations(
     const std::vector<std::string>& orientations) {
-  if (view_->GetType() != TizenViewType::kWindow) {
+  auto* window = dynamic_cast<TizenWindow*>(view_);
+  if (!window) {
     return;
   }
 
@@ -297,7 +301,7 @@ void PlatformChannel::SetPreferredOrientations(
     // default.
     rotations = {0, 90, 180, 270};
   }
-  reinterpret_cast<TizenWindow*>(view_)->SetPreferredOrientations(rotations);
+  window->SetPreferredOrientations(rotations);
 }
 
 }  // namespace flutter

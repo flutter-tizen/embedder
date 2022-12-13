@@ -49,9 +49,8 @@ namespace flutter {
 FlutterTizenView::FlutterTizenView(std::unique_ptr<TizenViewBase> tizen_view)
     : tizen_view_(std::move(tizen_view)) {
   tizen_view_->SetView(this);
-
-  if (tizen_view_->GetType() == TizenViewType::kWindow) {
-    auto* window = reinterpret_cast<TizenWindow*>(tizen_view_.get());
+  auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get());
+  if (window) {
     window->BindKeys(kBindableSystemKeys);
   }
 }
@@ -73,12 +72,9 @@ void FlutterTizenView::SetEngine(std::unique_ptr<FlutterTizenEngine> engine) {
   // Set up window dependent channels.
   BinaryMessenger* messenger = internal_plugin_registrar_->messenger();
 
-  if (tizen_view_->GetType() == TizenViewType::kWindow) {
-    auto* window = reinterpret_cast<TizenWindow*>(tizen_view_.get());
-    window_channel_ = std::make_unique<WindowChannel>(messenger, window);
-  } else {
-    window_channel_ = std::make_unique<WindowChannel>(messenger, nullptr);
-  }
+  auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get());
+  window_channel_ = std::make_unique<WindowChannel>(messenger, window);
+
   platform_channel_ =
       std::make_unique<PlatformChannel>(messenger, tizen_view_.get());
   text_input_channel_ = std::make_unique<TextInputChannel>(
@@ -94,13 +90,13 @@ void FlutterTizenView::CreateRenderSurface(
 
   if (engine_ && engine_->renderer()) {
     TizenGeometry geometry = tizen_view_->GetGeometry();
-    if (tizen_view_->GetType() == TizenViewType::kWindow) {
-      auto* window = reinterpret_cast<TizenWindow*>(tizen_view_.get());
+    if (dynamic_cast<TizenWindow*>(tizen_view_.get())) {
+      auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get());
       engine_->renderer()->CreateSurface(window->GetRenderTarget(),
                                          window->GetRenderTargetDisplay(),
                                          geometry.width, geometry.height);
     } else {
-      auto* tizen_view = reinterpret_cast<TizenView*>(tizen_view_.get());
+      auto* tizen_view = dynamic_cast<TizenView*>(tizen_view_.get());
       engine_->renderer()->CreateSurface(tizen_view->GetRenderTarget(), nullptr,
                                          geometry.width, geometry.height);
     }
@@ -135,9 +131,8 @@ bool FlutterTizenView::OnMakeResourceCurrent() {
 bool FlutterTizenView::OnPresent() {
   bool result = engine_->renderer()->OnPresent();
 #ifdef NUI_SUPPORT
-  if (tizen_view_->GetType() == flutter::TizenViewType::kView &&
-      engine_->renderer()->type() == FlutterDesktopRendererType::kEGL) {
-    auto* view = reinterpret_cast<TizenViewNui*>(tizen_view_.get());
+  auto* view = dynamic_cast<TizenViewNui*>(tizen_view_.get());
+  if (view && engine_->renderer()->type() == FlutterDesktopRendererType::kEGL) {
     view->RequestRendering();
   }
 #endif
@@ -309,8 +304,8 @@ void FlutterTizenView::OnCommit(const std::string& str) {
 }
 
 void FlutterTizenView::SendInitialGeometry() {
-  if (tizen_view_->GetType() == TizenViewType::kWindow) {
-    auto* window = reinterpret_cast<TizenWindow*>(tizen_view_.get());
+  auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get());
+  if (window) {
     OnRotate(window->GetRotation());
   } else {
     TizenGeometry geometry = tizen_view_->GetGeometry();
