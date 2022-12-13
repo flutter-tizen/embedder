@@ -19,9 +19,7 @@
 
 namespace flutter {
 
-TizenRendererEgl::TizenRendererEgl() {
-  type_ = FlutterDesktopRendererType::kEGL;
-}
+TizenRendererEgl::TizenRendererEgl() {}
 
 TizenRendererEgl::~TizenRendererEgl() {
   DestroySurface();

@@ -15,6 +15,7 @@
 #include "flutter/shell/platform/tizen/external_texture_surface_evas_gl.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/logger.h"
+#include "flutter/shell/platform/tizen/tizen_renderer_evas_gl.h"
 
 namespace flutter {
 
@@ -44,8 +45,8 @@ int64_t FlutterTizenTextureRegistrar::RegisterTexture(
     }
   }
   FlutterDesktopRendererType renderer_type = FlutterDesktopRendererType::kEGL;
-  if (engine_->renderer()) {
-    renderer_type = engine_->renderer()->type();
+  if (dynamic_cast<TizenRendererEvasGL*>(engine_->renderer())) {
+    renderer_type = FlutterDesktopRendererType::kEvasGL;
   }
   std::unique_ptr<ExternalTexture> texture_gl =
       CreateExternalTexture(texture_info, renderer_type);

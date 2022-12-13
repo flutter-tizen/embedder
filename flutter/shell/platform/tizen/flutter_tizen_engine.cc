@@ -160,7 +160,7 @@ bool FlutterTizenEngine::RunEngine() {
 
   FlutterTaskRunnerDescription render_task_runner = {};
 
-  if (IsHeaded() && renderer_->type() == FlutterDesktopRendererType::kEvasGL) {
+  if (IsHeaded() && dynamic_cast<TizenRendererEvasGL*>(renderer_.get())) {
     render_task_runner.struct_size = sizeof(FlutterTaskRunnerDescription);
     render_task_runner.user_data = render_loop_.get();
     render_task_runner.runs_task_on_current_thread_callback =
@@ -209,7 +209,7 @@ bool FlutterTizenEngine::RunEngine() {
   args.update_semantics_node_callback = OnUpdateSemanticsNode;
   args.update_semantics_custom_action_callback = OnUpdateSemanticsCustomActions;
 
-  if (IsHeaded() && renderer_->type() == FlutterDesktopRendererType::kEGL) {
+  if (IsHeaded() && dynamic_cast<TizenRendererEgl*>(renderer_.get())) {
     vsync_waiter_ = std::make_unique<TizenVsyncWaiter>(this);
     args.vsync_callback = [](void* user_data, intptr_t baton) -> void {
       auto* engine = reinterpret_cast<FlutterTizenEngine*>(user_data);

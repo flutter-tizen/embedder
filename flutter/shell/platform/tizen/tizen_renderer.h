@@ -26,8 +26,6 @@ class TizenRenderer {
 
   bool IsValid() { return is_valid_; }
 
-  FlutterDesktopRendererType type() { return type_; }
-
   virtual bool OnMakeCurrent() = 0;
 
   virtual bool OnClearCurrent() = 0;
@@ -46,8 +44,6 @@ class TizenRenderer {
 
  protected:
   bool is_valid_ = false;
-
-  FlutterDesktopRendererType type_;
 };
 
 }  // namespace flutter

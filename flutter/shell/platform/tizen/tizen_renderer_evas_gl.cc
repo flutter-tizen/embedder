@@ -14,9 +14,7 @@ EVAS_GL_GLOBAL_GLES2_DEFINE();
 
 namespace flutter {
 
-TizenRendererEvasGL::TizenRendererEvasGL() {
-  type_ = FlutterDesktopRendererType::kEvasGL;
-}
+TizenRendererEvasGL::TizenRendererEvasGL() {}
 
 TizenRendererEvasGL::~TizenRendererEvasGL() {
   DestroySurface();
