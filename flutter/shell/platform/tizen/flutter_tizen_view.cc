@@ -5,8 +5,6 @@
 
 #include "flutter_tizen_view.h"
 
-#include <iostream>
-
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/tizen_view.h"
 #ifdef NUI_SUPPORT
@@ -93,7 +91,7 @@ void FlutterTizenView::CreateRenderSurface(
 
   if (engine_ && engine_->renderer()) {
     TizenGeometry geometry = tizen_view_->GetGeometry();
-    if (typeid(TizenWindow) == typeid(tizen_view_)) {
+    if (dynamic_cast<TizenWindow*>(tizen_view_.get())) {
       auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get());
       engine_->renderer()->CreateSurface(window->GetRenderTarget(),
                                          window->GetRenderTargetDisplay(),
