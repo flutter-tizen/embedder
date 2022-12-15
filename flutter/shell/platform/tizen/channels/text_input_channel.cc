@@ -25,6 +25,7 @@ constexpr char kUpdateEditingStateMethod[] =
 constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
 constexpr char kSetPlatformViewClient[] = "TextInput.setPlatformViewClient";
 constexpr char kTextCapitalization[] = "textCapitalization";
+constexpr char kTextEnableSuggestions[] = "enableSuggestions";
 constexpr char kTextInputAction[] = "inputAction";
 constexpr char kTextInputType[] = "inputType";
 constexpr char kTextInputTypeName[] = "name";
@@ -162,6 +163,15 @@ void TextInputChannel::HandleMethodCall(
     }
 
     client_id_ = client_id_json.GetInt();
+
+    auto enable_suggestions_iter =
+        client_config.FindMember(kTextEnableSuggestions);
+    if (enable_suggestions_iter != client_config.MemberEnd() &&
+        enable_suggestions_iter->value.IsBool()) {
+      bool enable = enable_suggestions_iter->value.GetBool();
+      input_method_context_->SetEnableSuggestions(enable);
+    }
+
     input_action_ = "";
     auto input_action_iter = client_config.FindMember(kTextInputAction);
     if (input_action_iter != client_config.MemberEnd() &&

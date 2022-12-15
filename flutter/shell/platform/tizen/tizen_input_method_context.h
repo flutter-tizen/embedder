@@ -57,6 +57,8 @@ class TizenInputMethodContext {
 
   bool IsInputPanelShown();
 
+  void SetEnableSuggestions(bool enable);
+
   void SetInputAction(const std::string& input_action);
 
   void SetInputPanelLayout(const std::string& layout);

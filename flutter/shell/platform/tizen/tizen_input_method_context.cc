@@ -273,6 +273,13 @@ bool TizenInputMethodContext::IsInputPanelShown() {
   return state == ECORE_IMF_INPUT_PANEL_STATE_SHOW;
 }
 
+void TizenInputMethodContext::SetEnableSuggestions(bool enable) {
+  FT_ASSERT(imf_context_);
+
+  ecore_imf_context_prediction_allow_set(imf_context_,
+                                         enable ? EINA_TRUE : EINA_FALSE);
+}
+
 void TizenInputMethodContext::SetInputAction(const std::string& input_action) {
   FT_ASSERT(imf_context_);
   Ecore_IMF_Input_Panel_Return_Key_Type return_key_type =
