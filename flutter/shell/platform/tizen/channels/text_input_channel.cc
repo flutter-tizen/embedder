@@ -167,6 +167,7 @@ void TextInputChannel::HandleMethodCall(
     if (input_action_iter != client_config.MemberEnd() &&
         input_action_iter->value.IsString()) {
       input_action_ = input_action_iter->value.GetString();
+      input_method_context_->SetInputAction(input_action_);
     }
 
     text_capitalization_ = "";

@@ -273,6 +273,32 @@ bool TizenInputMethodContext::IsInputPanelShown() {
   return state == ECORE_IMF_INPUT_PANEL_STATE_SHOW;
 }
 
+void TizenInputMethodContext::SetInputAction(const std::string& input_action) {
+  FT_ASSERT(imf_context_);
+  Ecore_IMF_Input_Panel_Return_Key_Type return_key_type =
+      ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_DEFAULT;
+
+  // Not support : none, previous, continueAction, route, emergencycall, newline
+  if (input_action == "TextInputAction.unspecified") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_DEFAULT;
+  } else if (input_action == "TextInputAction.done") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_DONE;
+  } else if (input_action == "TextInputAction.go") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_GO;
+  } else if (input_action == "TextInputAction.join") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_JOIN;
+  } else if (input_action == "TextInputAction.next") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_NEXT;
+  } else if (input_action == "TextInputAction.search") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_SEARCH;
+  } else if (input_action == "TextInputAction.send") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_SEND;
+  }
+
+  ecore_imf_context_input_panel_return_key_type_set(imf_context_,
+                                                    return_key_type);
+}
+
 void TizenInputMethodContext::SetInputPanelLayout(
     const std::string& input_type) {
   FT_ASSERT(imf_context_);

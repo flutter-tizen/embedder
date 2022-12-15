@@ -57,6 +57,8 @@ class TizenInputMethodContext {
 
   bool IsInputPanelShown();
 
+  void SetInputAction(const std::string& input_action);
+
   void SetInputPanelLayout(const std::string& layout);
 
   void SetInputPanelLayoutVariation(bool is_signed, bool is_decimal);
