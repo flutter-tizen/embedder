@@ -27,7 +27,7 @@ class WindowChannel {
   std::unique_ptr<MethodChannel<EncodableValue>> channel_;
 
   // A reference to the native window managed by FlutterTizenView.
-  TizenWindow* window_;
+  TizenWindow* window_ = nullptr;
 };
 
 }  // namespace flutter

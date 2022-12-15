@@ -5,6 +5,11 @@
 #ifndef EMBEDDER_PLATFORM_CHANNEL_H_
 #define EMBEDDER_PLATFORM_CHANNEL_H_
 
+#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+#include <cbhm.h>
+#endif
+
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,6 +27,8 @@ class PlatformChannel {
   virtual ~PlatformChannel();
 
  private:
+  using ClipboardCallback = std::function<void(const std::string& data)>;
+
   void HandleMethodCall(
       const MethodCall<rapidjson::Document>& call,
       std::unique_ptr<MethodResult<rapidjson::Document>> result);
@@ -29,6 +36,9 @@ class PlatformChannel {
   void SystemNavigatorPop();
   void PlaySystemSound(const std::string& sound_type);
   void HapticFeedbackVibrate(const std::string& feedback_type);
+  void GetClipboardData(ClipboardCallback on_data);
+  void SetClipboardData(const std::string& data);
+  bool ClipboardHasStrings();
   void RestoreSystemUiOverlays();
   void SetEnabledSystemUiOverlays(const std::vector<std::string>& overlays);
   void SetPreferredOrientations(const std::vector<std::string>& orientations);
@@ -36,7 +46,20 @@ class PlatformChannel {
   std::unique_ptr<MethodChannel<rapidjson::Document>> channel_;
 
   // A reference to the native view managed by FlutterTizenView.
-  TizenViewBase* view_;
+  TizenViewBase* view_ = nullptr;
+
+#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+  // The clipboard history manager.
+  cbhm_h cbhm_handle_ = nullptr;
+#else
+  // A container that holds clipboard data during the engine lifetime.
+  //
+  // Only used by profiles that do not support the Tizen clipboard API
+  // (wearable and TV).
+  std::string clipboard_;
+#endif
+
+  ClipboardCallback on_clipboard_data_ = nullptr;
 };
 
 }  // namespace flutter

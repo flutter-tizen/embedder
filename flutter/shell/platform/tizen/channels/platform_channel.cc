@@ -57,10 +57,6 @@ constexpr char kPortraitDown[] = "DeviceOrientation.portraitDown";
 constexpr char kLandscapeLeft[] = "DeviceOrientation.landscapeLeft";
 constexpr char kLandscapeRight[] = "DeviceOrientation.landscapeRight";
 
-// Naive implementation using std::string as a container of internal clipboard
-// data.
-std::string text_clipboard = "";
-
 }  // namespace
 
 PlatformChannel::PlatformChannel(BinaryMessenger* messenger,
@@ -70,6 +66,13 @@ PlatformChannel::PlatformChannel(BinaryMessenger* messenger,
           kChannelName,
           &JsonMethodCodec::GetInstance())),
       view_(view) {
+#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+  int ret = cbhm_open_service(&cbhm_handle_);
+  if (ret != CBHM_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to initialize the clipboard service.";
+  }
+#endif
+
   channel_->SetMethodCallHandler(
       [this](const MethodCall<rapidjson::Document>& call,
              std::unique_ptr<MethodResult<rapidjson::Document>> result) {
@@ -77,7 +80,11 @@ PlatformChannel::PlatformChannel(BinaryMessenger* messenger,
       });
 }
 
-PlatformChannel::~PlatformChannel() {}
+PlatformChannel::~PlatformChannel() {
+#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+  cbhm_close_service(cbhm_handle_);
+#endif
+}
 
 void PlatformChannel::HandleMethodCall(
     const MethodCall<rapidjson::Document>& method_call,
@@ -100,18 +107,21 @@ void PlatformChannel::HandleMethodCall(
     result->Success();
   } else if (method == kGetClipboardDataMethod) {
     // https://api.flutter.dev/flutter/services/Clipboard/kTextPlain-constant.html
-    // The API supports only kTextPlain format.
+    // The API only supports the plain text format.
     if (strcmp(arguments[0].GetString(), kTextPlainFormat) != 0) {
       result->Error(kUnknownClipboardFormatError,
                     "Clipboard API only supports text.");
       return;
     }
-    rapidjson::Document document;
-    document.SetObject();
-    rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
-    document.AddMember(rapidjson::Value(kTextKey, allocator),
-                       rapidjson::Value(text_clipboard, allocator), allocator);
-    result->Success(document);
+    GetClipboardData([result = result.release()](const std::string& data) {
+      rapidjson::Document document;
+      document.SetObject();
+      rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+      document.AddMember(rapidjson::Value(kTextKey, allocator),
+                         rapidjson::Value(data, allocator), allocator);
+      result->Success(document);
+      delete result;
+    });
   } else if (method == kSetClipboardDataMethod) {
     const rapidjson::Value& document = *arguments;
     auto iter = document.FindMember(kTextKey);
@@ -119,14 +129,14 @@ void PlatformChannel::HandleMethodCall(
       result->Error(kUnknownClipboardError, "Invalid message format.");
       return;
     }
-    text_clipboard = iter->value.GetString();
+    SetClipboardData(iter->value.GetString());
     result->Success();
   } else if (method == kClipboardHasStringsMethod) {
     rapidjson::Document document;
     document.SetObject();
     rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
     document.AddMember(rapidjson::Value(kValueKey, allocator),
-                       rapidjson::Value(!text_clipboard.empty()), allocator);
+                       rapidjson::Value(ClipboardHasStrings()), allocator);
     result->Success(document);
   } else if (method == kRestoreSystemUiOverlaysMethod) {
     RestoreSystemUiOverlays();
@@ -175,6 +185,59 @@ void PlatformChannel::PlaySystemSound(const std::string& sound_type) {
 
 void PlatformChannel::HapticFeedbackVibrate(const std::string& feedback_type) {
   FeedbackManager::GetInstance().Vibrate();
+}
+
+void PlatformChannel::GetClipboardData(ClipboardCallback on_data) {
+  on_clipboard_data_ = std::move(on_data);
+
+#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+  int ret = cbhm_selection_get(
+      cbhm_handle_, CBHM_SEL_TYPE_TEXT,
+      [](cbhm_h cbhm_handle, const char* buf, size_t len,
+         void* user_data) -> int {
+        auto* self = static_cast<PlatformChannel*>(user_data);
+        std::string data;
+        if (buf) {
+          data = std::string(buf, len);
+        }
+        self->on_clipboard_data_(data);
+        self->on_clipboard_data_ = nullptr;
+        return CBHM_ERROR_NONE;
+      },
+      this);
+  if (ret != CBHM_ERROR_NONE) {
+    if (ret == CBHM_ERROR_NO_DATA) {
+      FT_LOG(Info) << "No clipboard data available.";
+    } else {
+      FT_LOG(Error) << "Failed to get clipboard data.";
+    }
+    on_clipboard_data_("");
+    on_clipboard_data_ = nullptr;
+  }
+#else
+  on_clipboard_data_(clipboard_);
+  on_clipboard_data_ = nullptr;
+#endif
+}
+
+void PlatformChannel::SetClipboardData(const std::string& data) {
+#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+  int ret = cbhm_selection_set(cbhm_handle_, CBHM_SEL_TYPE_TEXT, data.c_str(),
+                               data.length());
+  if (ret != CBHM_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to set clipboard data.";
+  }
+#else
+  clipboard_ = data;
+#endif
+}
+
+bool PlatformChannel::ClipboardHasStrings() {
+#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+  return cbhm_item_count_get(cbhm_handle_) > 0;
+#else
+  return !clipboard_.empty();
+#endif
 }
 
 void PlatformChannel::RestoreSystemUiOverlays() {
