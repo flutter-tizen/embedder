@@ -168,8 +168,7 @@ void PlatformChannel::HandleMethodCall(
 }
 
 void PlatformChannel::SystemNavigatorPop() {
-  auto* view = dynamic_cast<TizenView*>(view_);
-  if (view) {
+  if (auto* view = dynamic_cast<TizenView*>(view_)) {
     view->SetFocus(false);
   } else {
     ui_app_exit();
@@ -242,66 +241,57 @@ bool PlatformChannel::ClipboardHasStrings() {
 }
 
 void PlatformChannel::RestoreSystemUiOverlays() {
-  auto* window = dynamic_cast<TizenWindow*>(view_);
-  if (!window) {
-    return;
-  }
-
+  if (auto* window = dynamic_cast<TizenWindow*>(view_)) {
 #ifdef COMMON_PROFILE
-  auto& shell = TizenShell::GetInstance();
-  shell.InitializeSoftkey(window->GetWindowId());
+    auto& shell = TizenShell::GetInstance();
+    shell.InitializeSoftkey(window->GetWindowId());
 
-  if (shell.IsSoftkeyShown()) {
-    shell.ShowSoftkey();
-  } else {
-    shell.HideSoftkey();
-  }
+    if (shell.IsSoftkeyShown()) {
+      shell.ShowSoftkey();
+    } else {
+      shell.HideSoftkey();
+    }
 #endif
+  }
 }
 
 void PlatformChannel::SetEnabledSystemUiOverlays(
     const std::vector<std::string>& overlays) {
-  auto* window = dynamic_cast<TizenWindow*>(view_);
-  if (!window) {
-    return;
-  }
-
+  if (auto* window = dynamic_cast<TizenWindow*>(view_)) {
 #ifdef COMMON_PROFILE
-  auto& shell = TizenShell::GetInstance();
-  shell.InitializeSoftkey(window->GetWindowId());
+    auto& shell = TizenShell::GetInstance();
+    shell.InitializeSoftkey(window->GetWindowId());
 
-  if (std::find(overlays.begin(), overlays.end(), kSystemUiOverlayBottom) !=
-      overlays.end()) {
-    shell.ShowSoftkey();
-  } else {
-    shell.HideSoftkey();
-  }
+    if (std::find(overlays.begin(), overlays.end(), kSystemUiOverlayBottom) !=
+        overlays.end()) {
+      shell.ShowSoftkey();
+    } else {
+      shell.HideSoftkey();
+    }
 #endif
+  }
 }
 
 void PlatformChannel::SetPreferredOrientations(
     const std::vector<std::string>& orientations) {
-  auto* window = dynamic_cast<TizenWindow*>(view_);
-  if (!window) {
-    return;
+  if (auto* window = dynamic_cast<TizenWindow*>(view_)) {
+    static const std::map<std::string, int> orientation_mapping = {
+        {kPortraitUp, 0},
+        {kLandscapeLeft, 90},
+        {kPortraitDown, 180},
+        {kLandscapeRight, 270},
+    };
+    std::vector<int> rotations;
+    for (const auto& orientation : orientations) {
+      rotations.push_back(orientation_mapping.at(orientation));
+    }
+    if (rotations.empty()) {
+      // The empty list causes the application to defer to the operating system
+      // default.
+      rotations = {0, 90, 180, 270};
+    }
+    window->SetPreferredOrientations(rotations);
   }
-
-  static const std::map<std::string, int> orientation_mapping = {
-      {kPortraitUp, 0},
-      {kLandscapeLeft, 90},
-      {kPortraitDown, 180},
-      {kLandscapeRight, 270},
-  };
-  std::vector<int> rotations;
-  for (const auto& orientation : orientations) {
-    rotations.push_back(orientation_mapping.at(orientation));
-  }
-  if (rotations.empty()) {
-    // The empty list causes the application to defer to the operating system
-    // default.
-    rotations = {0, 90, 180, 270};
-  }
-  window->SetPreferredOrientations(rotations);
 }
 
 }  // namespace flutter

@@ -50,8 +50,7 @@ FlutterTizenView::FlutterTizenView(std::unique_ptr<TizenViewBase> tizen_view)
     : tizen_view_(std::move(tizen_view)) {
   tizen_view_->SetView(this);
 
-  auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get());
-  if (window) {
+  if (auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get())) {
     window->BindKeys(kBindableSystemKeys);
   }
 }
@@ -132,9 +131,10 @@ bool FlutterTizenView::OnMakeResourceCurrent() {
 bool FlutterTizenView::OnPresent() {
   bool result = engine_->renderer()->OnPresent();
 #ifdef NUI_SUPPORT
-  auto* view = dynamic_cast<TizenViewNui*>(tizen_view_.get());
-  if (view && engine_->renderer()->type() == FlutterDesktopRendererType::kEGL) {
-    view->RequestRendering();
+  if (auto* view = dynamic_cast<TizenViewNui*>(tizen_view_.get())) {
+    if (engine_->renderer()->type() == FlutterDesktopRendererType::kEGL) {
+      view->RequestRendering();
+    }
   }
 #endif
   return result;
@@ -305,8 +305,7 @@ void FlutterTizenView::OnCommit(const std::string& str) {
 }
 
 void FlutterTizenView::SendInitialGeometry() {
-  auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get());
-  if (window) {
+  if (auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get())) {
     OnRotate(window->GetRotation());
   } else {
     TizenGeometry geometry = tizen_view_->GetGeometry();

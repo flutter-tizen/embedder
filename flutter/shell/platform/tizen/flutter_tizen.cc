@@ -280,13 +280,16 @@ void FlutterDesktopViewOnKeyEvent(FlutterDesktopViewRef view,
                                   size_t timestamp,
                                   bool is_down) {
 #ifdef NUI_SUPPORT
-  auto* tizen_view =
-      dynamic_cast<flutter::TizenViewNui*>(ViewFromHandle(view)->tizen_view());
-  if (tizen_view && ViewFromHandle(view)->engine()->renderer()->type() ==
-                        FlutterDesktopRendererType::kEGL) {
-    tizen_view->OnKey(device_name, device_class, device_subclass, key, string,
-                      nullptr, modifiers, scan_code, timestamp, is_down);
+
+  if (auto* tizen_view = dynamic_cast<flutter::TizenViewNui*>(
+          ViewFromHandle(view)->tizen_view())) {
+    if (ViewFromHandle(view)->engine()->renderer()->type() ==
+        FlutterDesktopRendererType::kEGL) {
+      tizen_view->OnKey(device_name, device_class, device_subclass, key, string,
+                        nullptr, modifiers, scan_code, timestamp, is_down);
+    }
   }
+
 #else
   ViewFromHandle(view)->OnKey(key, string, nullptr, modifiers, scan_code,
                               is_down);
@@ -294,17 +297,15 @@ void FlutterDesktopViewOnKeyEvent(FlutterDesktopViewRef view,
 }
 
 void FlutterDesktopViewSetFocus(FlutterDesktopViewRef view, bool focused) {
-  auto* tizen_view =
-      dynamic_cast<flutter::TizenView*>(ViewFromHandle(view)->tizen_view());
-  if (tizen_view) {
+  if (auto* tizen_view = dynamic_cast<flutter::TizenView*>(
+          ViewFromHandle(view)->tizen_view())) {
     tizen_view->SetFocus(focused);
   }
 }
 
 bool FlutterDesktopViewIsFocused(FlutterDesktopViewRef view) {
-  auto* tizen_view =
-      dynamic_cast<flutter::TizenView*>(ViewFromHandle(view)->tizen_view());
-  if (tizen_view) {
+  if (auto* tizen_view = dynamic_cast<flutter::TizenView*>(
+          ViewFromHandle(view)->tizen_view())) {
     return tizen_view->focused();
   }
   return false;
