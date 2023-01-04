@@ -30,8 +30,6 @@ class TizenWindow : public TizenViewBase {
 
   virtual void BindKeys(const std::vector<std::string>& keys) = 0;
 
-  TizenViewType GetType() override { return TizenViewType::kWindow; };
-
  protected:
   explicit TizenWindow(TizenGeometry geometry,
                        bool transparent,

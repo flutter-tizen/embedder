@@ -19,8 +19,6 @@ struct TizenGeometry {
   int32_t left = 0, top = 0, width = 0, height = 0;
 };
 
-enum class TizenViewType { kView, kWindow };
-
 class TizenViewBase {
  public:
   TizenViewBase() = default;
@@ -50,8 +48,6 @@ class TizenViewBase {
   }
 
   virtual void Show() = 0;
-
-  virtual TizenViewType GetType() = 0;
 
   TizenInputMethodContext* input_method_context() {
     return input_method_context_.get();
