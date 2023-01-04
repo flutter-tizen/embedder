@@ -280,7 +280,6 @@ void FlutterDesktopViewOnKeyEvent(FlutterDesktopViewRef view,
                                   size_t timestamp,
                                   bool is_down) {
 #ifdef NUI_SUPPORT
-
   if (auto* tizen_view = dynamic_cast<flutter::TizenViewNui*>(
           ViewFromHandle(view)->tizen_view())) {
     if (ViewFromHandle(view)->engine()->renderer()->type() ==
@@ -289,7 +288,6 @@ void FlutterDesktopViewOnKeyEvent(FlutterDesktopViewRef view,
                         nullptr, modifiers, scan_code, timestamp, is_down);
     }
   }
-
 #else
   ViewFromHandle(view)->OnKey(key, string, nullptr, modifiers, scan_code,
                               is_down);
