@@ -7,8 +7,6 @@
 
 #include <cstdint>
 
-#include "flutter/shell/platform/tizen/public/flutter_tizen.h"
-
 namespace flutter {
 
 class TizenRenderer {
