@@ -10,6 +10,9 @@
 #ifdef NUI_SUPPORT
 #include "flutter/shell/platform/tizen/tizen_view_nui.h"
 #endif
+#ifndef WEARABLE_PROFILE
+#include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
+#endif
 #include "flutter/shell/platform/tizen/tizen_window.h"
 
 namespace {
@@ -131,10 +134,9 @@ bool FlutterTizenView::OnMakeResourceCurrent() {
 bool FlutterTizenView::OnPresent() {
   bool result = engine_->renderer()->OnPresent();
 #ifdef NUI_SUPPORT
-  if (auto* view = dynamic_cast<TizenViewNui*>(tizen_view_.get())) {
-    if (engine_->renderer()->type() == FlutterDesktopRendererType::kEGL) {
-      view->RequestRendering();
-    }
+  if (auto* nui_view =
+          dynamic_cast<flutter::TizenViewNui*>(tizen_view_.get())) {
+    nui_view->RequestRendering();
   }
 #endif
   return result;
@@ -165,8 +167,8 @@ void FlutterTizenView::OnRotate(int32_t degree) {
   TizenGeometry geometry = tizen_view_->GetGeometry();
   int32_t width = geometry.width;
   int32_t height = geometry.height;
-
-  if (engine_->renderer()->type() == FlutterDesktopRendererType::kEGL) {
+#ifndef WEARABLE_PROFILE
+  if (dynamic_cast<TizenRendererEgl*>(engine_->renderer())) {
     rotation_degree_ = degree;
     // Compute renderer transformation based on the angle of rotation.
     double rad = (360 - rotation_degree_) * M_PI / 180;
@@ -190,6 +192,7 @@ void FlutterTizenView::OnRotate(int32_t degree) {
       std::swap(width, height);
     }
   }
+#endif
 
   engine_->renderer()->ResizeSurface(width, height);
 

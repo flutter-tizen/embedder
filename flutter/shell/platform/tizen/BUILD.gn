@@ -174,7 +174,7 @@ template("embedder") {
     defines += invoker.defines
     defines += [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
 
-    if (api_version == "6.5") {
+    if (api_version == "6.5" && target_name != "flutter_tizen_wearable") {
       sources += [
         "flutter_tizen_nui.cc",
         "tizen_view_nui.cc",
