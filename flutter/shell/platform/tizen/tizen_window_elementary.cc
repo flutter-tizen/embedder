@@ -8,6 +8,8 @@
 #include <eom.h>
 #include <ui/efl_util.h>
 
+#include <memory>
+
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/tizen_view_event_handler_delegate.h"
 
@@ -426,6 +428,35 @@ void TizenWindowElementary::PrepareInputMethod() {
       [this]() { view_delegate_->OnComposeEnd(); });
   input_method_context_->SetOnCommit(
       [this](std::string str) { view_delegate_->OnCommit(str); });
+
+#ifdef AUTOFILL_SUPPORT
+  ctxpopup_ = elm_ctxpopup_add(elm_win_);
+
+  input_method_context_->SetOnPopupAutofillContext([this]() {
+    if (TizenAutofill::GetInstance().GetAutofillItems().size() > 0) {
+      for (auto& item : TizenAutofill::GetInstance().GetAutofillItems()) {
+        elm_ctxpopup_item_append(
+            ctxpopup_, item->label_.c_str(), nullptr,
+            [](void* data, Evas_Object* obj, void* event_info) {
+              AutofillItem* item = static_cast<AutofillItem*>(data);
+              TizenAutofill::GetInstance().OnCommit(item->value_);
+              evas_object_hide(obj);
+            },
+            item.get());
+      }
+    }
+    // TODO : Change ctxpopup's position to focused input field.
+    evas_object_move(ctxpopup_, initial_geometry_.left, initial_geometry_.top);
+    evas_object_show(ctxpopup_);
+  });
+
+  evas_object_event_callback_add(
+      ctxpopup_, EVAS_CALLBACK_HIDE,
+      [](void* data, Evas* e, Evas_Object* obj, void* event_info) {
+        elm_ctxpopup_clear(obj);
+      },
+      nullptr);
+#endif
 }
 
 int32_t TizenWindowElementary::GetExternalOutputId() {
