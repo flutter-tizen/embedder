@@ -174,7 +174,34 @@ template("embedder") {
     defines += invoker.defines
     defines += [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
 
-    if (api_version == "6.5" && target_name != "flutter_tizen_wearable") {
+    if (api_version == "5.5") {
+      major_version = 5
+      minor_version = 5
+    } else if (api_version == "6.0") {
+      major_version = 6
+      minor_version = 0
+    } else if (api_version == "6.5") {
+      major_version = 6
+      minor_version = 5
+    } else if (api_version == "7.0") {
+      major_version = 7
+      minor_version = 0
+    }
+
+    if (major_version >= 6 || (major_version >= 5 && minor_version >= 5)) {
+      sources += [
+        "tizen_autofill.cc",
+      ]
+
+      libs += [
+        "capi-ui-autofill",
+        "capi-ui-autofill-common",
+      ]
+
+      defines += [ "AUTOFILL_SUPPORT" ]
+    }
+
+    if (target_name != "flutter_tizen_wearable" && (major_version >= 7 || (major_version >= 6 && minor_version >= 5))) {
       sources += [
         "flutter_tizen_nui.cc",
         "tizen_view_nui.cc",
@@ -183,6 +210,7 @@ template("embedder") {
       libs += [
         "dali2-adaptor",
         "dali2-core",
+        "dali2-toolkit",
       ]
 
       defines += [ "NUI_SUPPORT" ]
