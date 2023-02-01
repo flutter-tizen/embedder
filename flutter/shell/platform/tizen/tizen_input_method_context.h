@@ -13,12 +13,15 @@
 #include <string>
 #include <unordered_map>
 
+#include "flutter/shell/platform/tizen/tizen_autofill.h"
+
 namespace flutter {
 
 using OnCommit = std::function<void(std::string str)>;
 using OnPreeditChanged = std::function<void(std::string str, int cursor_pos)>;
 using OnPreeditStart = std::function<void()>;
 using OnPreeditEnd = std::function<void()>;
+using OnPopupAutofillContext = std::function<void()>;
 
 struct InputPanelGeometry {
   int32_t x = 0, y = 0, w = 0, h = 0;
@@ -79,6 +82,12 @@ class TizenInputMethodContext {
 
   void SetOnPreeditEnd(OnPreeditEnd callback) { on_preedit_end_ = callback; }
 
+  void SetOnPopupAutofillContext(OnPopupAutofillContext callback) {
+    popup_autofill_context_ = callback;
+  }
+
+  void PopupAutofillItems() { popup_autofill_context_(); }
+
  private:
   void RegisterEventCallbacks();
   void UnregisterEventCallbacks();
@@ -94,6 +103,7 @@ class TizenInputMethodContext {
   OnPreeditChanged on_preedit_changed_;
   OnPreeditStart on_preedit_start_;
   OnPreeditEnd on_preedit_end_;
+  OnPopupAutofillContext popup_autofill_context_;
   std::unordered_map<Ecore_IMF_Callback_Type, Ecore_IMF_Event_Cb>
       event_callbacks_;
 };

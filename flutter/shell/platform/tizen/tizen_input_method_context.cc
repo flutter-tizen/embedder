@@ -259,6 +259,10 @@ void TizenInputMethodContext::ShowInputPanel() {
   FT_ASSERT(imf_context_);
   ecore_imf_context_input_panel_show(imf_context_);
   ecore_imf_context_focus_in(imf_context_);
+  int x = 0, y = 0, w = 0, h = 0;
+
+  ecore_imf_context_input_panel_geometry_get(imf_context_, &x, &y, &w, &h);
+  FT_LOG(Error) << x << " " << y << " " << w << " " << h;
 }
 
 void TizenInputMethodContext::HideInputPanel() {
@@ -275,7 +279,6 @@ bool TizenInputMethodContext::IsInputPanelShown() {
 
 void TizenInputMethodContext::SetEnableSuggestions(bool enable) {
   FT_ASSERT(imf_context_);
-
   ecore_imf_context_prediction_allow_set(imf_context_,
                                          enable ? EINA_TRUE : EINA_FALSE);
 }

@@ -8,6 +8,10 @@
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/logger.h"
 
+#ifdef AUTOFILL_SUPPORT
+#include "flutter/shell/platform/tizen/tizen_autofill.h"
+#endif
+
 namespace flutter {
 
 namespace {
@@ -42,6 +46,11 @@ constexpr char kTextKey[] = "text";
 constexpr char kBadArgumentError[] = "Bad Arguments";
 constexpr char kInternalConsistencyError[] = "Internal Consistency Error";
 
+constexpr char kRequestAutofillMethod[] = "TextInput.requestAutofill";
+constexpr char kAutofill[] = "autofill";
+constexpr char kUniqueIdentifier[] = "uniqueIdentifier";
+constexpr char kHints[] = "hints";
+
 bool IsAsciiPrintableKey(char ch) {
   return ch >= 32 && ch <= 126;
 }
@@ -61,6 +70,10 @@ TextInputChannel::TextInputChannel(
              std::unique_ptr<MethodResult<rapidjson::Document>> result) {
         HandleMethodCall(call, std::move(result));
       });
+  TizenAutofill& instance = TizenAutofill::GetInstance();
+  instance.SetPopupCallback(
+      [this]() { input_method_context_->PopupAutofillItems(); });
+  instance.SetCommitCallback([this](std::string value) { OnCommit(value); });
 }
 
 TextInputChannel::~TextInputChannel() {}
@@ -222,6 +235,27 @@ void TextInputChannel::HandleMethodCall(
       }
     }
 
+    auto autofill_iter = client_config.FindMember(kAutofill);
+    if (autofill_iter != client_config.MemberEnd() &&
+        autofill_iter->value.IsObject()) {
+      auto unique_identifier_iter =
+          autofill_iter->value.FindMember(kUniqueIdentifier);
+      if (unique_identifier_iter != autofill_iter->value.MemberEnd() &&
+          unique_identifier_iter->value.IsString()) {
+        autofill_id_ = unique_identifier_iter->value.GetString();
+      }
+
+      auto hints_iter = autofill_iter->value.FindMember(kHints);
+      if (hints_iter != autofill_iter->value.MemberEnd() &&
+          hints_iter->value.IsArray()) {
+        for (auto hint = hints_iter->value.GetArray().Begin();
+             hint != hints_iter->value.GetArray().End(); hint++) {
+          autofill_hints_.clear();
+          autofill_hints_.push_back(hint->GetString());
+        }
+      }
+    }
+
     active_model_ = std::make_unique<TextInputModel>();
   } else if (method.compare(kSetEditingStateMethod) == 0) {
     input_method_context_->ResetInputMethodContext();
@@ -284,6 +318,11 @@ void TextInputChannel::HandleMethodCall(
           cursor_offset);
     }
     SendStateUpdate();
+#ifdef AUTOFILL_SUPPORT
+  } else if (method.compare(kRequestAutofillMethod) == 0) {
+    TizenAutofill& instance = TizenAutofill::GetInstance();
+    instance.RequestAutofill(autofill_hints_, autofill_id_);
+#endif
   } else {
     result->NotImplemented();
     return;
