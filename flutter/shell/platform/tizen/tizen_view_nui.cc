@@ -5,7 +5,6 @@
 #include "flutter/shell/platform/tizen/tizen_view_nui.h"
 
 #include <dali/devel-api/common/stage.h>
-
 #include <string>
 
 #include "flutter/shell/platform/tizen/logger.h"
@@ -111,6 +110,12 @@ void TizenViewNui::PrepareInputMethod() {
   input_method_context_->SetOnPreeditEnd(
       [this]() { view_delegate_->OnComposeEnd(); });
   input_method_context_->SetOnCommit(
+      [this](std::string str) { view_delegate_->OnCommit(str); });
+
+  input_method_context_->SetOnPopupAutofillContext(
+      [this]() { autofill_.PopupAutofill(image_view_); });
+
+  autofill_.SetOnCommit(
       [this](std::string str) { view_delegate_->OnCommit(str); });
 }
 

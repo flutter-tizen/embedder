@@ -201,10 +201,11 @@ template("embedder") {
       defines += [ "AUTOFILL_SUPPORT" ]
     }
 
-    if (target_name != "flutter_tizen_wearable" && (major_version >= 7 || (major_version >= 6 && minor_version >= 5))) {
+    if ((major_version >= 7 || (major_version >= 6 && minor_version >= 5)) && target_name != "flutter_tizen_wearable") {
       sources += [
         "flutter_tizen_nui.cc",
         "tizen_view_nui.cc",
+        "nui_autofill_popup.cc",
       ]
 
       libs += [

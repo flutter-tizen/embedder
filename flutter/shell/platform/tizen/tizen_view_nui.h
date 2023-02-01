@@ -12,6 +12,7 @@
 
 #include <memory>
 
+#include "flutter/shell/platform/tizen/nui_autofill_popup.h"
 #include "flutter/shell/platform/tizen/tizen_view.h"
 
 namespace flutter {
@@ -66,6 +67,7 @@ class TizenViewNui : public TizenView {
   Dali::NativeImageSourceQueuePtr native_image_queue_;
   int32_t default_window_id_;
   std::unique_ptr<Dali::EventThreadCallback> rendering_callback_;
+  NuiAutofillPopup autofill_;
 };
 
 }  // namespace flutter
