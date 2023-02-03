@@ -51,3 +51,13 @@
 #else
 #define BASE_FALLTHROUGH
 #endif
+
+// Sanitizers annotations.
+#if defined(__has_attribute)
+#if __has_attribute(no_sanitize)
+#define NO_SANITIZE(what) __attribute__((no_sanitize(what)))
+#endif
+#endif
+#if !defined(NO_SANITIZE)
+#define NO_SANITIZE(what)
+#endif
