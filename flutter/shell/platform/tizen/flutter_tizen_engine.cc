@@ -206,8 +206,11 @@ bool FlutterTizenEngine::RunEngine() {
     args.custom_dart_entrypoint = project_->custom_dart_entrypoint().c_str();
   }
 #ifndef WEARABLE_PROFILE
-  args.update_semantics_node_callback = OnUpdateSemanticsNode;
-  args.update_semantics_custom_action_callback = OnUpdateSemanticsCustomActions;
+  args.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
+                                      void* user_data) {
+    auto* engine = static_cast<FlutterTizenEngine*>(user_data);
+    engine->OnUpdateSemantics(update);
+  };
 
   if (IsHeaded() && dynamic_cast<TizenRendererEgl*>(renderer_.get())) {
     vsync_waiter_ = std::make_unique<TizenVsyncWaiter>(this);
@@ -521,51 +524,34 @@ void FlutterTizenEngine::SetSemanticsEnabled(bool enabled) {
   embedder_api_.UpdateSemanticsEnabled(engine_, enabled);
 }
 
-void FlutterTizenEngine::OnUpdateSemanticsNode(const FlutterSemanticsNode* node,
-                                               void* user_data) {
-  if (node->id == kFlutterSemanticsNodeIdBatchEnd) {
+void FlutterTizenEngine::OnUpdateSemantics(
+    const FlutterSemanticsUpdate* update) {
+  if (!accessibility_bridge_) {
+    FT_LOG(Error) << "The accessibility bridge must be initialized.";
     return;
   }
 
-  FT_LOG(Debug) << "Update semantics node [id=" << node->id
-                << ", label=" << node->label << ", hint=" << node->hint
-                << ", value=" << node->value << "]";
-  auto* engine = reinterpret_cast<FlutterTizenEngine*>(user_data);
-  if (engine->accessibility_bridge_) {
-    engine->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(node);
-  } else {
-    FT_LOG(Error) << "Accessibility bridge must be initialized.";
+  for (size_t i = 0; i < update->nodes_count; i++) {
+    const FlutterSemanticsNode* node = &update->nodes[i];
+    accessibility_bridge_->AddFlutterSemanticsNodeUpdate(node);
   }
-}
 
-void FlutterTizenEngine::OnUpdateSemanticsCustomActions(
-    const FlutterSemanticsCustomAction* action,
-    void* user_data) {
-  auto* engine = reinterpret_cast<FlutterTizenEngine*>(user_data);
-  std::shared_ptr<AccessibilityBridge> bridge = engine->accessibility_bridge_;
-  if (bridge) {
-    if (action->id == kFlutterSemanticsCustomActionIdBatchEnd) {
-      // Custom action with id = kFlutterSemanticsCustomActionIdBatchEnd
-      // indicates this is the end of the update batch.
-      bridge->CommitUpdates();
-      // Attaches the accessibility root to the window delegate.
-      std::weak_ptr<FlutterPlatformNodeDelegate> root =
-          bridge->GetFlutterPlatformNodeDelegateFromID(0);
-      std::shared_ptr<FlutterPlatformWindowDelegateTizen> window =
-          FlutterPlatformAppDelegateTizen::GetInstance().GetWindow().lock();
-      TizenGeometry geometry = engine->view_->tizen_view()->GetGeometry();
-      window->SetGeometry(geometry.left, geometry.top, geometry.width,
-                          geometry.height);
-      window->SetRootNode(root);
-      return;
-    }
-    FT_LOG(Debug) << "Update semantics custom action [id=" << action->id
-                  << ", label=" << action->label << ", hint=" << action->hint
-                  << "]";
-    bridge->AddFlutterSemanticsCustomActionUpdate(action);
-  } else {
-    FT_LOG(Error) << "Accessibility bridge must be initialized.";
+  for (size_t i = 0; i < update->custom_actions_count; i++) {
+    const FlutterSemanticsCustomAction* action = &update->custom_actions[i];
+    accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(action);
   }
+
+  accessibility_bridge_->CommitUpdates();
+
+  // Attaches the accessibility root to the window delegate.
+  std::weak_ptr<FlutterPlatformNodeDelegate> root =
+      accessibility_bridge_->GetFlutterPlatformNodeDelegateFromID(0);
+  std::shared_ptr<FlutterPlatformWindowDelegateTizen> window =
+      FlutterPlatformAppDelegateTizen::GetInstance().GetWindow().lock();
+  TizenGeometry geometry = view_->tizen_view()->GetGeometry();
+  window->SetGeometry(geometry.left, geometry.top, geometry.width,
+                      geometry.height);
+  window->SetRootNode(root);
 }
 #endif
 
