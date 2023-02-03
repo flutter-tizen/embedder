@@ -10,7 +10,7 @@
 #include <vector>
 
 #ifndef WEARABLE_PROFILE
-#include "flutter/shell/platform/tizen/accessibility_bridge_delegate_tizen.h"
+#include "flutter/shell/platform/tizen/accessibility_bridge_tizen.h"
 #include "flutter/shell/platform/tizen/flutter_platform_node_delegate_tizen.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
 #endif
@@ -511,8 +511,7 @@ void FlutterTizenEngine::SetSemanticsEnabled(bool enabled) {
   if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.reset();
   } else if (enabled && !accessibility_bridge_) {
-    accessibility_bridge_ = std::make_shared<AccessibilityBridge>(
-        std::make_unique<AccessibilityBridgeDelegateTizen>(this));
+    accessibility_bridge_ = std::make_shared<AccessibilityBridgeTizen>(this);
   }
 
   FlutterPlatformAppDelegateTizen::GetInstance().SetAccessibilityStatus(

@@ -139,7 +139,7 @@ template("embedder") {
 
     if (target_name != "flutter_tizen_wearable") {
       sources += [
-        "accessibility_bridge_delegate_tizen.cc",
+        "accessibility_bridge_tizen.cc",
         "external_texture_pixel_egl.cc",
         "external_texture_surface_egl.cc",
         "flutter_platform_node_delegate_tizen.cc",
