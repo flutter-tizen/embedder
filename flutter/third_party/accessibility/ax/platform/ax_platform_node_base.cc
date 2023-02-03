@@ -1764,6 +1764,91 @@ bool AXPlatformNodeBase::IsPlatformCheckable() const {
   return delegate_ && GetData().HasCheckedState();
 }
 
+void AXPlatformNodeBase::ComputeHypertextRemovedAndInserted(
+    const AXHypertext& old_hypertext,
+    size_t* start,
+    size_t* old_len,
+    size_t* new_len) {
+  *start = 0;
+  *old_len = 0;
+  *new_len = 0;
+
+  // Do not compute for text objects, otherwise redundant text change
+  // announcements will occur in live regions, as the parent hypertext also
+  // changes.
+  if (IsText())
+    return;
+
+  const std::u16string& old_text = old_hypertext.hypertext;
+  const std::u16string& new_text = hypertext_.hypertext;
+
+  // TODO(accessibility) Plumb through which part of text changed so we don't
+  // have to guess what changed based on character differences. This can be
+  // wrong in some cases as follows:
+  // -- EDITABLE --
+  // If editable: when part of the text node changes, assume only that part
+  // changed, and not the entire thing. For example, if "car" changes to
+  // "cat", assume only 1 letter changed. This code compares common characters
+  // to guess what has changed.
+  // -- NOT EDITABLE --
+  // When part of the text changes, assume the entire node's text changed. For
+  // example, if "car" changes to "cat" then assume all 3 letters changed.
+  // Note, it is possible (though rare) that CharacterData methods are used to
+  // remove, insert, replace or append a substring.
+  bool allow_partial_text_node_changes =
+      GetData().HasState(ax::mojom::State::kEditable);
+  size_t prefix_index = 0;
+  size_t common_prefix = 0;
+  while (prefix_index < old_text.size() && prefix_index < new_text.size() &&
+         IsSameHypertextCharacter(old_hypertext, prefix_index, prefix_index)) {
+    ++prefix_index;
+    if (allow_partial_text_node_changes ||
+        (!IsText(old_text, prefix_index) && !IsText(new_text, prefix_index))) {
+      common_prefix = prefix_index;
+    }
+  }
+
+  size_t suffix_index = 0;
+  size_t common_suffix = 0;
+  while (common_prefix + suffix_index < old_text.size() &&
+         common_prefix + suffix_index < new_text.size() &&
+         IsSameHypertextCharacter(old_hypertext,
+                                  old_text.size() - suffix_index - 1,
+                                  new_text.size() - suffix_index - 1)) {
+    ++suffix_index;
+    if (allow_partial_text_node_changes ||
+        (!IsText(old_text, suffix_index, true) &&
+         !IsText(new_text, suffix_index, true))) {
+      common_suffix = suffix_index;
+    }
+  }
+
+  *start = common_prefix;
+  *old_len = old_text.size() - common_prefix - common_suffix;
+  *new_len = new_text.size() - common_prefix - common_suffix;
+}
+
+int AXPlatformNodeBase::FindTextBoundary(
+    ax::mojom::TextBoundary boundary,
+    int offset,
+    ax::mojom::MoveDirection direction,
+    ax::mojom::TextAffinity affinity) const {
+  if (boundary != ax::mojom::TextBoundary::kSentenceStart) {
+    std::optional<int> boundary_offset =
+        GetDelegate()->FindTextBoundary(boundary, offset, direction, affinity);
+    if (boundary_offset.has_value())
+      return *boundary_offset;
+  }
+
+  // std::vector<int32_t> unused_line_start_offsets;
+  // return static_cast<int>(
+  //     FindAccessibleTextBoundary(GetHypertext(), unused_line_start_offsets,
+  //                                boundary, offset, direction, affinity));
+  BASE_LOG() << "FindTextBoundary of SentenceStart is not yet supported.";
+  BASE_UNREACHABLE();
+  return offset;
+}
+
 AXPlatformNodeBase* AXPlatformNodeBase::NearestLeafToPoint(
     gfx::Point point) const {
   // First, scope the search to the node that contains point.
