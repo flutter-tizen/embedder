@@ -4,8 +4,6 @@
 
 #include "ax_enum_util.h"
 
-#include <cstring>
-
 namespace ui {
 
 const char* ToString(ax::mojom::Event event) {

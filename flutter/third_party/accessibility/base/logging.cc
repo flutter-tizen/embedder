@@ -5,7 +5,6 @@
 #include "logging.h"
 
 #include <algorithm>
-#include <cstring>
 #include <iostream>
 
 #include "ax_build/build_config.h"
