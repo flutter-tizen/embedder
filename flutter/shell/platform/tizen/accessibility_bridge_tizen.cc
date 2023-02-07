@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "accessibility_bridge_delegate_tizen.h"
+#include "accessibility_bridge_tizen.h"
 
 #include "flutter/shell/platform/tizen/flutter_platform_node_delegate_tizen.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
@@ -10,22 +10,13 @@
 
 namespace flutter {
 
-AccessibilityBridgeDelegateTizen::AccessibilityBridgeDelegateTizen(
-    FlutterTizenEngine* engine)
+AccessibilityBridgeTizen::AccessibilityBridgeTizen(FlutterTizenEngine* engine)
     : engine_(engine) {}
 
-void AccessibilityBridgeDelegateTizen::OnAccessibilityEvent(
+void AccessibilityBridgeTizen::OnAccessibilityEvent(
     ui::AXEventGenerator::TargetedEvent targeted_event) {
-  std::shared_ptr<AccessibilityBridge> bridge =
-      engine_->accessibility_bridge().lock();
-  if (!bridge) {
-    FT_LOG(Error) << "Accessibility bridge is deallocated";
-    return;
-  }
-
   std::shared_ptr<FlutterPlatformNodeDelegate> platform_node_delegate =
-      bridge->GetFlutterPlatformNodeDelegateFromID(targeted_event.node->id())
-          .lock();
+      GetFlutterPlatformNodeDelegateFromID(targeted_event.node->id()).lock();
   if (!platform_node_delegate) {
     FT_LOG(Error) << "Platform node delegate is deallocated";
     return;
@@ -37,7 +28,7 @@ void AccessibilityBridgeDelegateTizen::OnAccessibilityEvent(
       targeted_event.event_params.event);
 }
 
-void AccessibilityBridgeDelegateTizen::DispatchAccessibilityAction(
+void AccessibilityBridgeTizen::DispatchAccessibilityAction(
     AccessibilityNodeId target,
     FlutterSemanticsAction action,
     fml::MallocMapping data) {
@@ -45,7 +36,7 @@ void AccessibilityBridgeDelegateTizen::DispatchAccessibilityAction(
 }
 
 std::shared_ptr<FlutterPlatformNodeDelegate>
-AccessibilityBridgeDelegateTizen::CreateFlutterPlatformNodeDelegate() {
+AccessibilityBridgeTizen::CreateFlutterPlatformNodeDelegate() {
   return std::make_shared<FlutterPlatformNodeDelegateTizen>();
 }
 
