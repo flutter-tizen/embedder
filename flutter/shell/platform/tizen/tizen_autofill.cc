@@ -8,7 +8,6 @@
 #include <autofill_common.h>
 
 #include <functional>
-#include <memory>
 
 #include "flutter/shell/platform/tizen/logger.h"
 
@@ -17,15 +16,14 @@ TizenAutofill::TizenAutofill() {
 }
 
 TizenAutofill::~TizenAutofill() {
-  autofill_destroy(ah_);
+  autofill_destroy(autofill_);
 }
 
 void TizenAutofill::InitailizeAutofill() {
-  autofill_create(&ah_);
+  autofill_create(&autofill_);
 
-  int ret;
-  ret = autofill_connect(
-      ah_,
+  int ret = autofill_connect(
+      autofill_,
       [](autofill_h ah, autofill_connection_status_e status, void* user_data) {
       },
       NULL);
@@ -34,7 +32,7 @@ void TizenAutofill::InitailizeAutofill() {
   }
 
   autofill_fill_response_set_received_cb(
-      ah_,
+      autofill_,
       [](autofill_h ah, autofill_fill_response_h fill_response, void* data) {
         int count = 0;
         autofill_fill_response_get_group_count(fill_response, &count);
@@ -110,7 +108,7 @@ void TizenAutofill::RequestAutofill(std::vector<std::string> hints,
     }
   }
 
-  int ret = autofill_fill_request(ah_, view_info);
+  int ret = autofill_fill_request(autofill_, view_info);
   if (ret != AUTOFILL_ERROR_NONE) {
     FT_LOG(Error) << "autofill_fill_request error";
   }
@@ -145,9 +143,7 @@ void TizenAutofill::RegisterAutofillItem(std::string view_id,
     free(app_id);
   }
 
-  int ret;
-
-  ret = autofill_commit(ah_, svi_h);
+  int ret = autofill_commit(autofill_, svi_h);
   if (ret != AUTOFILL_ERROR_NONE) {
     FT_LOG(Error) << "autofill_commit error";
   }

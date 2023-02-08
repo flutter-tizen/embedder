@@ -66,7 +66,7 @@ class TizenAutofill {
   // TODO : implement convert flutter hint to tizen hint function
   std::optional<autofill_hint_e> ConvertAutofillHint(std::string hint);
 
-  autofill_h ah_;
+  autofill_h autofill_;
 
   std::vector<std::unique_ptr<AutofillItem>> response_items_;
 

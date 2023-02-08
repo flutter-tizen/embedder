@@ -188,10 +188,9 @@ template("embedder") {
       minor_version = 0
     }
 
-    if (major_version >= 6 || (major_version >= 5 && minor_version >= 5)) {
-      sources += [
-        "tizen_autofill.cc",
-      ]
+    if (((major_version >= 5 && minor_version >= 5) || major_version >= 6) &&
+        target_name != "flutter_tizen_wearable") {
+      sources += [ "tizen_autofill.cc" ]
 
       libs += [
         "capi-ui-autofill",
@@ -201,11 +200,12 @@ template("embedder") {
       defines += [ "AUTOFILL_SUPPORT" ]
     }
 
-    if ((major_version >= 7 || (major_version >= 6 && minor_version >= 5)) && target_name != "flutter_tizen_wearable") {
+    if (((major_version >= 6 && minor_version >= 5) || major_version >= 7) &&
+        target_name != "flutter_tizen_wearable") {
       sources += [
         "flutter_tizen_nui.cc",
-        "tizen_view_nui.cc",
         "nui_autofill_popup.cc",
+        "tizen_view_nui.cc",
       ]
 
       libs += [

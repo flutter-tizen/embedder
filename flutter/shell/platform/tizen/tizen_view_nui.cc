@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/tizen/tizen_view_nui.h"
 
 #include <dali/devel-api/common/stage.h>
+
 #include <string>
 
 #include "flutter/shell/platform/tizen/logger.h"

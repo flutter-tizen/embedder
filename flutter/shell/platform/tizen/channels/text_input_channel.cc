@@ -27,6 +27,7 @@ constexpr char kMultilineInputType[] = "TextInputType.multiline";
 constexpr char kUpdateEditingStateMethod[] =
     "TextInputClient.updateEditingState";
 constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
+constexpr char kRequestAutofillMethod[] = "TextInput.requestAutofill";
 constexpr char kSetPlatformViewClient[] = "TextInput.setPlatformViewClient";
 constexpr char kTextCapitalization[] = "textCapitalization";
 constexpr char kTextEnableSuggestions[] = "enableSuggestions";
@@ -45,8 +46,6 @@ constexpr char kSelectionIsDirectionalKey[] = "selectionIsDirectional";
 constexpr char kTextKey[] = "text";
 constexpr char kBadArgumentError[] = "Bad Arguments";
 constexpr char kInternalConsistencyError[] = "Internal Consistency Error";
-
-constexpr char kRequestAutofillMethod[] = "TextInput.requestAutofill";
 constexpr char kAutofill[] = "autofill";
 constexpr char kUniqueIdentifier[] = "uniqueIdentifier";
 constexpr char kHints[] = "hints";
@@ -70,10 +69,12 @@ TextInputChannel::TextInputChannel(
              std::unique_ptr<MethodResult<rapidjson::Document>> result) {
         HandleMethodCall(call, std::move(result));
       });
+#ifdef AUTOFILL_SUPPORT
   TizenAutofill& instance = TizenAutofill::GetInstance();
   instance.SetPopupCallback(
       [this]() { input_method_context_->PopupAutofillItems(); });
   instance.SetCommitCallback([this](std::string value) { OnCommit(value); });
+#endif
 }
 
 TextInputChannel::~TextInputChannel() {}
@@ -318,10 +319,12 @@ void TextInputChannel::HandleMethodCall(
           cursor_offset);
     }
     SendStateUpdate();
-#ifdef AUTOFILL_SUPPORT
   } else if (method.compare(kRequestAutofillMethod) == 0) {
+#ifdef AUTOFILL_SUPPORT
     TizenAutofill& instance = TizenAutofill::GetInstance();
     instance.RequestAutofill(autofill_hints_, autofill_id_);
+#else
+    result->NotImplemented();
 #endif
   } else {
     result->NotImplemented();

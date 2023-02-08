@@ -1,3 +1,7 @@
+// Copyright 2023 Samsung Electronics Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include "flutter/shell/platform/tizen/nui_autofill_popup.h"
 
 #include <dali-toolkit/dali-toolkit.h>
@@ -5,8 +9,6 @@
 #include <dali-toolkit/public-api/controls/text-controls/text-label.h>
 
 #include "flutter/shell/platform/tizen/tizen_autofill.h"
-
-#include "flutter/shell/platform/tizen/logger.h"
 
 namespace flutter {
 bool NuiAutofillPopup::OnTouch(Dali::Actor actor,

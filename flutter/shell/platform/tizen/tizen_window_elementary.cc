@@ -11,6 +11,9 @@
 #include <memory>
 
 #include "flutter/shell/platform/tizen/logger.h"
+#ifdef AUTOFILL_SUPPORT
+#include "flutter/shell/platform/tizen/tizen_autofill.h"
+#endif
 #include "flutter/shell/platform/tizen/tizen_view_event_handler_delegate.h"
 
 namespace flutter {
