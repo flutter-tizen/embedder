@@ -8,7 +8,7 @@
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/logger.h"
 
-#ifdef AUTOFILL_SUPPORT
+#ifndef WEARABLE_PROFILE
 #include "flutter/shell/platform/tizen/tizen_autofill.h"
 #endif
 
@@ -69,11 +69,11 @@ TextInputChannel::TextInputChannel(
              std::unique_ptr<MethodResult<rapidjson::Document>> result) {
         HandleMethodCall(call, std::move(result));
       });
-#ifdef AUTOFILL_SUPPORT
+#ifndef WEARABLE_PROFILE
   TizenAutofill& instance = TizenAutofill::GetInstance();
-  instance.SetPopupCallback(
+  instance.SetOnPopup(
       [this]() { input_method_context_->PopupAutofillItems(); });
-  instance.SetCommitCallback([this](std::string value) { OnCommit(value); });
+  instance.SetOnCommit([this](std::string value) { OnCommit(value); });
 #endif
 }
 
@@ -320,7 +320,7 @@ void TextInputChannel::HandleMethodCall(
     }
     SendStateUpdate();
   } else if (method.compare(kRequestAutofillMethod) == 0) {
-#ifdef AUTOFILL_SUPPORT
+#ifndef WEARABLE_PROFILE
     TizenAutofill& instance = TizenAutofill::GetInstance();
     instance.RequestAutofill(autofill_hints_, autofill_id_);
 #else

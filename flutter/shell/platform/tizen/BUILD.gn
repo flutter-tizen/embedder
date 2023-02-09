@@ -158,8 +158,6 @@ template("embedder") {
         "EGL",
         "GLESv2",
       ]
-
-      defines += [ "AUTOFILL_SUPPORT" ]
     }
 
     if (target_name == "flutter_tizen_common") {

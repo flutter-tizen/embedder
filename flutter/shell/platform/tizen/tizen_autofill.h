@@ -36,18 +36,16 @@ class TizenAutofill {
     response_items_.push_back(move(item));
   }
 
-  void SetPopupCallback(std::function<void()> callback) {
-    popup_callback_ = callback;
+  void SetOnPopup(std::function<void()> on_popup) { on_popup_ = on_popup; }
+
+  void SetOnCommit(std::function<void(std::string)> on_commit) {
+    on_commit_ = on_commit;
   }
 
-  void SetCommitCallback(std::function<void(std::string)> callback) {
-    commit_callback_ = callback;
-  }
+  void OnCommit(std::string str) { on_commit_(str); }
 
-  void OnCommit(std::string str) { commit_callback_(str); }
-
-  void CallPopupCallback() { popup_callback_(); }
-
+  void OnPopup() { on_popup_(); }
+#
   const std::vector<std::unique_ptr<AutofillItem>>& GetAutofillItems() {
     return response_items_;
   }
@@ -66,9 +64,9 @@ class TizenAutofill {
 
   std::vector<std::unique_ptr<AutofillItem>> response_items_;
 
-  std::function<void()> popup_callback_;
+  std::function<void()> on_popup_;
 
-  std::function<void(std::string)> commit_callback_;
+  std::function<void(std::string)> on_commit_;
 };
 
 #endif

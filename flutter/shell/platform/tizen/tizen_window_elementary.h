@@ -72,8 +72,9 @@ class TizenWindowElementary : public TizenWindow {
 
   Evas_Object* elm_win_ = nullptr;
   Evas_Object* image_ = nullptr;
-#ifdef AUTOFILL_SUPPORT
+#ifndef WEARABLE_PROFILE
   Evas_Object* ctxpopup_ = nullptr;
+  Evas_Object_Event_Cb popup_hide_callback_ = nullptr;
 #endif
 
   Evas_Smart_Cb rotation_changed_callback_ = nullptr;

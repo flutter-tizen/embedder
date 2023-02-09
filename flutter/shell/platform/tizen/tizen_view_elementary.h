@@ -51,8 +51,9 @@ class TizenViewElementary : public TizenView {
   Evas_Object* parent_ = nullptr;
   Evas_Object* container_ = nullptr;
   Evas_Object* image_ = nullptr;
-#ifdef AUTOFILL_SUPPORT
+#ifndef WEARABLE_PROFILE
   Evas_Object* ctxpopup_ = nullptr;
+  Evas_Object_Event_Cb popup_hide_callback_ = nullptr;
 #endif
 
   std::unordered_map<Evas_Callback_Type, Evas_Object_Event_Cb>

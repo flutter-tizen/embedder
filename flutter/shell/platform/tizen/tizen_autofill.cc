@@ -24,23 +24,24 @@ void TizenAutofill::InitailizeAutofill() {
 
   int ret = autofill_connect(
       autofill_,
-      [](autofill_h ah, autofill_connection_status_e status, void* user_data) {
-      },
-      NULL);
+      [](autofill_h autofill, autofill_connection_status_e status,
+         void* user_data) {},
+      nullptr);
   if (ret != AUTOFILL_ERROR_NONE) {
-    FT_LOG(Error) << __FUNCTION__ << "connect_autofill_daemon error";
+    FT_LOG(Error) << "connect_autofill_daemon error";
   }
 
   autofill_fill_response_set_received_cb(
       autofill_,
-      [](autofill_h ah, autofill_fill_response_h fill_response, void* data) {
+      [](autofill_h autofill, autofill_fill_response_h fill_response,
+         void* data) {
         int count = 0;
         autofill_fill_response_get_group_count(fill_response, &count);
         autofill_fill_response_foreach_group(
             fill_response,
-            [](autofill_fill_response_group_h group_h, void* user_data) {
+            [](autofill_fill_response_group_h group, void* user_data) {
               autofill_fill_response_group_foreach_item(
-                  group_h,
+                  group,
                   [](autofill_fill_response_item_h item, void* user_data) {
                     char* id = nullptr;
                     char* value = nullptr;
@@ -74,11 +75,11 @@ void TizenAutofill::InitailizeAutofill() {
 
                     return true;
                   },
-                  group_h);
+                  group);
               return true;
             },
             &count);
-        TizenAutofill::GetInstance().CallPopupCallback();
+        TizenAutofill::GetInstance().OnPopup();
       },
       nullptr);
 
@@ -95,10 +96,14 @@ void TizenAutofill::RequestAutofill(std::vector<std::string> hints,
   autofill_view_info_set_app_id(view_info, app_id);
   autofill_view_info_set_view_id(view_info, id.c_str());
 
+  if (app_id) {
+    free(app_id);
+  }
+
   for (auto hint : hints) {
     std::optional<autofill_hint_e> autofill_hint = ConvertAutofillHint(hint);
     if (autofill_hint.has_value()) {
-      autofill_item_h item;
+      autofill_item_h item = nullptr;
       autofill_item_create(&item);
       autofill_item_set_autofill_hint(item, autofill_hint.value());
       autofill_item_set_id(item, id.c_str());
@@ -119,36 +124,36 @@ void TizenAutofill::RequestAutofill(std::vector<std::string> hints,
 
 void TizenAutofill::RegisterAutofillItem(std::string view_id,
                                          AutofillItem item) {
-  autofill_save_item_h si_h;
+  autofill_save_item_h save_item = nullptr;
 
-  autofill_save_item_create(&si_h);
-  autofill_save_item_set_autofill_hint(si_h, item.hint_);
-  autofill_save_item_set_id(si_h, item.id_.c_str());
-  autofill_save_item_set_label(si_h, item.label_.c_str());
-  autofill_save_item_set_sensitive_data(si_h, item.sensitive_data_);
-  autofill_save_item_set_value(si_h, item.value_.c_str());
+  autofill_save_item_create(&save_item);
+  autofill_save_item_set_autofill_hint(save_item, item.hint_);
+  autofill_save_item_set_id(save_item, item.id_.c_str());
+  autofill_save_item_set_label(save_item, item.label_.c_str());
+  autofill_save_item_set_sensitive_data(save_item, item.sensitive_data_);
+  autofill_save_item_set_value(save_item, item.value_.c_str());
 
   char* app_id;
   app_get_id(&app_id);
 
-  autofill_save_view_info_h svi_h;
+  autofill_save_view_info_h save_view_info = nullptr;
 
-  autofill_save_view_info_create(&svi_h);
-  autofill_save_view_info_set_app_id(svi_h, app_id);
-  autofill_save_view_info_set_view_id(svi_h, view_id.c_str());
+  autofill_save_view_info_create(&save_view_info);
+  autofill_save_view_info_set_app_id(save_view_info, app_id);
+  autofill_save_view_info_set_view_id(save_view_info, view_id.c_str());
 
-  autofill_save_view_info_add_item(svi_h, si_h);
+  autofill_save_view_info_add_item(save_view_info, save_item);
 
   if (app_id) {
     free(app_id);
   }
 
-  int ret = autofill_commit(autofill_, svi_h);
+  int ret = autofill_commit(autofill_, save_view_info);
   if (ret != AUTOFILL_ERROR_NONE) {
     FT_LOG(Error) << "autofill_commit error";
   }
 
-  autofill_save_view_info_destroy(svi_h);
+  autofill_save_view_info_destroy(save_view_info);
 }
 
 std::optional<autofill_hint_e> TizenAutofill::ConvertAutofillHint(

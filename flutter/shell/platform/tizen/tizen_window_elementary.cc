@@ -11,7 +11,7 @@
 #include <memory>
 
 #include "flutter/shell/platform/tizen/logger.h"
-#ifdef AUTOFILL_SUPPORT
+#ifndef WEARABLE_PROFILE
 #include "flutter/shell/platform/tizen/tizen_autofill.h"
 #endif
 #include "flutter/shell/platform/tizen/tizen_view_event_handler_delegate.h"
@@ -113,6 +113,10 @@ bool TizenWindowElementary::CreateWindow() {
                      initial_geometry_.height);
   evas_object_raise(elm_win_);
 
+#ifndef WEARABLE_PROFILE
+  ctxpopup_ = elm_ctxpopup_add(elm_win_);
+
+#endif
   image_ = evas_object_image_filled_add(evas_object_evas_get(elm_win_));
   evas_object_resize(image_, initial_geometry_.width, initial_geometry_.height);
   evas_object_move(image_, initial_geometry_.left, initial_geometry_.top);
@@ -135,6 +139,9 @@ bool TizenWindowElementary::CreateWindow() {
 void TizenWindowElementary::DestroyWindow() {
   evas_object_del(elm_win_);
   evas_object_del(image_);
+#ifndef WEARABLE_PROFILE
+  evas_object_del(ctxpopup_);
+#endif
 }
 
 void TizenWindowElementary::SetWindowOptions() {
@@ -326,6 +333,13 @@ void TizenWindowElementary::RegisterEventHandlers() {
   evas_object_event_callback_add(elm_win_, EVAS_CALLBACK_KEY_UP,
                                  evas_object_callbacks_[EVAS_CALLBACK_KEY_UP],
                                  this);
+
+#ifndef WEARABLE_PROFILE
+  popup_hide_callback_ = [](void* data, Evas* e, Evas_Object* obj,
+                            void* event_info) { elm_ctxpopup_clear(obj); };
+  evas_object_event_callback_add(ctxpopup_, EVAS_CALLBACK_HIDE,
+                                 popup_hide_callback_, nullptr);
+#endif
 }
 
 void TizenWindowElementary::UnregisterEventHandlers() {
@@ -350,6 +364,10 @@ void TizenWindowElementary::UnregisterEventHandlers() {
       evas_object_callbacks_[EVAS_CALLBACK_KEY_DOWN]);
   evas_object_event_callback_del(elm_win_, EVAS_CALLBACK_KEY_UP,
                                  evas_object_callbacks_[EVAS_CALLBACK_KEY_UP]);
+#ifndef WEARABLE_PROFILE
+  evas_object_event_callback_del(ctxpopup_, EVAS_CALLBACK_HIDE,
+                                 popup_hide_callback_);
+#endif
 }
 
 TizenGeometry TizenWindowElementary::GetGeometry() {
@@ -432,9 +450,7 @@ void TizenWindowElementary::PrepareInputMethod() {
   input_method_context_->SetOnCommit(
       [this](std::string str) { view_delegate_->OnCommit(str); });
 
-#ifdef AUTOFILL_SUPPORT
-  ctxpopup_ = elm_ctxpopup_add(elm_win_);
-
+#ifndef WEARABLE_PROFILE
   input_method_context_->SetOnPopupAutofillContext([this]() {
     if (TizenAutofill::GetInstance().GetAutofillItems().size() > 0) {
       for (auto& item : TizenAutofill::GetInstance().GetAutofillItems()) {
@@ -452,13 +468,6 @@ void TizenWindowElementary::PrepareInputMethod() {
     evas_object_move(ctxpopup_, initial_geometry_.left, initial_geometry_.top);
     evas_object_show(ctxpopup_);
   });
-
-  evas_object_event_callback_add(
-      ctxpopup_, EVAS_CALLBACK_HIDE,
-      [](void* data, Evas* e, Evas_Object* obj, void* event_info) {
-        elm_ctxpopup_clear(obj);
-      },
-      nullptr);
 #endif
 }
 

@@ -54,7 +54,6 @@ void NuiAutofillPopup::PopupAutofill(Dali::Actor* actor) {
     PrepareAutofill();
     Dali::Toolkit::TableView content =
         Dali::Toolkit::TableView::New(items.size(), 1);
-    // content.SetCellPadding(Dali::Size(10.0f, 0));
     content.SetResizePolicy(Dali::ResizePolicy::FILL_TO_PARENT,
                             Dali::Dimension::ALL_DIMENSIONS);
     content.SetProperty(Dali::Actor::Property::PADDING,

@@ -8,7 +8,7 @@
 #include <string>
 
 #include "flutter/shell/platform/tizen/logger.h"
-#ifdef AUTOFILL_SUPPORT
+#ifndef WEARABLE_PROFILE
 #include "flutter/shell/platform/tizen/tizen_autofill.h"
 #endif
 #include "flutter/shell/platform/tizen/tizen_view_event_handler_delegate.h"
@@ -97,6 +97,9 @@ bool TizenViewElementary::CreateView() {
   evas_object_image_size_set(image_, initial_width_, initial_height_);
   evas_object_image_alpha_set(image_, EINA_TRUE);
   elm_object_part_content_set(container_, "overlay", image_);
+#ifndef WEARABLE_PROFILE
+  ctxpopup_ = elm_ctxpopup_add(container_);
+#endif
   return true;
 }
 
@@ -286,6 +289,13 @@ void TizenViewElementary::RegisterEventHandlers() {
   };
   evas_object_smart_callback_add(container_, "focused", focused_callback_,
                                  this);
+
+#ifndef WEARABLE_PROFILE
+  popup_hide_callback_ = [](void* data, Evas* e, Evas_Object* obj,
+                            void* event_info) { elm_ctxpopup_clear(obj); };
+  evas_object_event_callback_add(ctxpopup_, EVAS_CALLBACK_HIDE,
+                                 popup_hide_callback_, nullptr);
+#endif
 }
 
 void TizenViewElementary::UnregisterEventHandlers() {
@@ -309,6 +319,10 @@ void TizenViewElementary::UnregisterEventHandlers() {
   evas_object_event_callback_del(container_, EVAS_CALLBACK_KEY_UP,
                                  evas_object_callbacks_[EVAS_CALLBACK_KEY_UP]);
   evas_object_smart_callback_del(container_, "focused", focused_callback_);
+#ifndef WEARABLE_PROFILE
+  evas_object_event_callback_del(ctxpopup_, EVAS_CALLBACK_HIDE,
+                                 popup_hide_callback_);
+#endif
 }
 
 TizenGeometry TizenViewElementary::GetGeometry() {
@@ -357,9 +371,7 @@ void TizenViewElementary::PrepareInputMethod() {
       [this]() { view_delegate_->OnComposeEnd(); });
   input_method_context_->SetOnCommit(
       [this](std::string str) { view_delegate_->OnCommit(str); });
-#ifdef AUTOFILL_SUPPORT
-  ctxpopup_ = elm_ctxpopup_add(container_);
-
+#ifndef WEARABLE_PROFILE
   input_method_context_->SetOnPopupAutofillContext([this]() {
     if (TizenAutofill::GetInstance().GetAutofillItems().size() > 0) {
       for (auto& item : TizenAutofill::GetInstance().GetAutofillItems()) {
@@ -377,13 +389,6 @@ void TizenViewElementary::PrepareInputMethod() {
     evas_object_move(ctxpopup_, 0, 0);
     evas_object_show(ctxpopup_);
   });
-
-  evas_object_event_callback_add(
-      ctxpopup_, EVAS_CALLBACK_HIDE,
-      [](void* data, Evas* e, Evas_Object* obj, void* event_info) {
-        elm_ctxpopup_clear(obj);
-      },
-      nullptr);
 #endif
 }
 
