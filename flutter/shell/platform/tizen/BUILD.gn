@@ -143,18 +143,23 @@ template("embedder") {
         "external_texture_pixel_egl.cc",
         "external_texture_surface_egl.cc",
         "flutter_platform_node_delegate_tizen.cc",
+        "tizen_autofill.cc",
         "tizen_renderer_egl.cc",
         "tizen_vsync_waiter.cc",
         "tizen_window_ecore_wl2.cc",
       ]
 
       libs += [
+        "capi-ui-autofill",
+        "capi-ui-autofill-common",
         "ecore_wl2",
         "tdm-client",
         "tizen-extension-client",
         "EGL",
         "GLESv2",
       ]
+
+      defines += [ "AUTOFILL_SUPPORT" ]
     }
 
     if (target_name == "flutter_tizen_common") {
@@ -174,34 +179,7 @@ template("embedder") {
     defines += invoker.defines
     defines += [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
 
-    if (api_version == "5.5") {
-      major_version = 5
-      minor_version = 5
-    } else if (api_version == "6.0") {
-      major_version = 6
-      minor_version = 0
-    } else if (api_version == "6.5") {
-      major_version = 6
-      minor_version = 5
-    } else if (api_version == "7.0") {
-      major_version = 7
-      minor_version = 0
-    }
-
-    if (((major_version >= 5 && minor_version >= 5) || major_version >= 6) &&
-        target_name != "flutter_tizen_wearable") {
-      sources += [ "tizen_autofill.cc" ]
-
-      libs += [
-        "capi-ui-autofill",
-        "capi-ui-autofill-common",
-      ]
-
-      defines += [ "AUTOFILL_SUPPORT" ]
-    }
-
-    if (((major_version >= 6 && minor_version >= 5) || major_version >= 7) &&
-        target_name != "flutter_tizen_wearable") {
+    if (api_version == "6.5" && target_name != "flutter_tizen_wearable") {
       sources += [
         "flutter_tizen_nui.cc",
         "nui_autofill_popup.cc",

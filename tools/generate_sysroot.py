@@ -41,6 +41,10 @@ unified_packages = [
   'capi-system-info-devel',
   'capi-system-system-settings',
   'capi-system-system-settings-devel',
+  'capi-ui-autofill',
+  'capi-ui-autofill-devel',
+  'capi-ui-autofill-common',
+  'capi-ui-autofill-common-devel',
   'capi-ui-efl-util',
   'capi-ui-efl-util-devel',
   'cbhm',
@@ -113,14 +117,6 @@ unified_packages = [
   'wayland-devel',
 ]
 
-# Only available for Tizen 5.5 and above.
-autofill_packages = [
-  'capi-ui-autofill',
-  'capi-ui-autofill-devel',
-  'capi-ui-autofill-common',
-  'capi-ui-autofill-common-devel',
-]
-
 # Only available for Tizen 6.5 and above.
 dali_packages = [
   'dali2',
@@ -163,8 +159,6 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
   existing_rpms = [f for f in download_path.iterdir() if f.suffix == '.rpm']
 
   packages = base_packages + unified_packages
-  if api_version >= 5.5:
-    packages += autofill_packages
 
   if api_version >= 6.5:
     packages += dali_packages
