@@ -83,10 +83,14 @@ class TizenInputMethodContext {
   void SetOnPreeditEnd(OnPreeditEnd callback) { on_preedit_end_ = callback; }
 
   void SetOnPopupAutofillContext(OnPopupAutofillContext callback) {
-    popup_autofill_context_ = callback;
+    on_popup_autofill_context_ = callback;
   }
 
-  void PopupAutofillItems() { popup_autofill_context_(); }
+  void PopupAutofillItems() {
+    if (on_popup_autofill_context_) {
+      on_popup_autofill_context_();
+    }
+  }
 
  private:
   void RegisterEventCallbacks();
@@ -103,7 +107,7 @@ class TizenInputMethodContext {
   OnPreeditChanged on_preedit_changed_;
   OnPreeditStart on_preedit_start_;
   OnPreeditEnd on_preedit_end_;
-  OnPopupAutofillContext popup_autofill_context_;
+  OnPopupAutofillContext on_popup_autofill_context_;
   std::unordered_map<Ecore_IMF_Callback_Type, Ecore_IMF_Event_Cb>
       event_callbacks_;
 };

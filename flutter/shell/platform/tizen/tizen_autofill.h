@@ -46,11 +46,7 @@ class TizenAutofill {
 
   void OnCommit(std::string str) { commit_callback_(str); }
 
-  void CallPopupCallback() {
-    popup_callback_();
-    // response_items_.clear();
-    //  TODO : reponse_item_ must be cleared when popup is disappeared
-  }
+  void CallPopupCallback() { popup_callback_(); }
 
   const std::vector<std::unique_ptr<AutofillItem>>& GetAutofillItems() {
     return response_items_;

@@ -83,6 +83,8 @@ class TextInputChannel {
 
   std::string autofill_id_;
 
+  // Hints for request autofill. See availabel options:
+  // https://api.flutter.dev/flutter/services/AutofillHints-class.html
   std::vector<std::string> autofill_hints_;
 };
 
