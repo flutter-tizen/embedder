@@ -11,28 +11,25 @@
 
 namespace flutter {
 
-using OnCommit = std::function<void(std::string str)>;
-using OnRendering = std::function<void()>;
-
 class NuiAutofillPopup : public Dali::ConnectionTracker {
  public:
-  void Hide();
+  void Prepare();
 
+  void Show(Dali::Actor* actor);
+
+  void SetOnCommit(std::function<void(const std::string&)> callback) {
+    on_commit_ = callback;
+  }
+
+ private:
   void Hidden();
 
   void OutsideTouched();
 
-  void PrepareAutofill();
-
-  void PopupAutofill(Dali::Actor* actor);
-
-  void SetOnCommit(OnCommit callback) { on_commit_ = callback; }
-
   bool Touched(Dali::Actor actor, const Dali::TouchEvent& event);
 
- private:
   Dali::Toolkit::Popup popup_;
-  OnCommit on_commit_;
+  std::function<void(const std::string&)> on_commit_;
 };
 
 }  // namespace flutter

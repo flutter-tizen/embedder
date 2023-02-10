@@ -30,15 +30,17 @@ class TizenAutofill {
 
   void RequestAutofill(std::vector<std::string> hints, std::string id);
 
-  void RegisterAutofillItem(std::string view_id, AutofillItem item);
+  void RegisterItem(std::string view_id, AutofillItem item);
 
   void StoreResponseItem(std::unique_ptr<AutofillItem> item) {
     response_items_.push_back(move(item));
   }
 
+  void SetConnected(bool connected) { connected_ = connected; };
+
   void SetOnPopup(std::function<void()> on_popup) { on_popup_ = on_popup; }
 
-  void SetOnCommit(std::function<void(std::string)> on_commit) {
+  void SetOnCommit(std::function<void(const std::string&)> on_commit) {
     on_commit_ = on_commit;
   }
 
@@ -46,7 +48,7 @@ class TizenAutofill {
 
   void OnPopup() { on_popup_(); }
 
-  const std::vector<std::unique_ptr<AutofillItem>>& GetAutofillItems() {
+  const std::vector<std::unique_ptr<AutofillItem>>& GetResponseItems() {
     return response_items_;
   }
 
@@ -55,17 +57,21 @@ class TizenAutofill {
 
   ~TizenAutofill();
 
-  void InitailizeAutofill();
+  void Initailize();
 
   std::optional<autofill_hint_e> ConvertAutofillHint(std::string hint);
 
-  autofill_h autofill_;
+  bool connected_ = false;
+
+  bool initailzed_ = false;
+
+  autofill_h autofill_ = nullptr;
 
   std::vector<std::unique_ptr<AutofillItem>> response_items_;
 
   std::function<void()> on_popup_;
 
-  std::function<void(std::string)> on_commit_;
+  std::function<void(const std::string&)> on_commit_;
 };
 
 #endif

@@ -456,8 +456,8 @@ void TizenWindowElementary::PrepareInputMethod() {
 
 #ifndef WEARABLE_PROFILE
   input_method_context_->SetOnPopupAutofillContext([this]() {
-    if (TizenAutofill::GetInstance().GetAutofillItems().size() > 0) {
-      for (auto& item : TizenAutofill::GetInstance().GetAutofillItems()) {
+    if (!TizenAutofill::GetInstance().GetResponseItems().empty()) {
+      for (auto& item : TizenAutofill::GetInstance().GetResponseItems()) {
         elm_ctxpopup_item_append(
             ctxpopup_, item->label_.c_str(), nullptr,
             [](void* data, Evas_Object* obj, void* event_info) {
@@ -468,7 +468,7 @@ void TizenWindowElementary::PrepareInputMethod() {
             item.get());
       }
     }
-    // TODO(Swanseo0) : Change ctxpopup's position to focused input field.
+    // TODO(Swanseo0): Change ctxpopup's position to focused input field.
     evas_object_move(ctxpopup_, initial_geometry_.left, initial_geometry_.top);
     evas_object_show(ctxpopup_);
   });

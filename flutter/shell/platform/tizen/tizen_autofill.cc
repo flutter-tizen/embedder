@@ -12,26 +12,35 @@
 #include "flutter/shell/platform/tizen/logger.h"
 
 TizenAutofill::TizenAutofill() {
-  InitailizeAutofill();
+  Initailize();
 }
 
 TizenAutofill::~TizenAutofill() {
+  autofill_fill_response_unset_received_cb(autofill_);
   autofill_destroy(autofill_);
 }
 
-void TizenAutofill::InitailizeAutofill() {
-  autofill_create(&autofill_);
-
-  int ret = autofill_connect(
-      autofill_,
-      [](autofill_h autofill, autofill_connection_status_e status,
-         void* user_data) {},
-      nullptr);
-  if (ret != AUTOFILL_ERROR_NONE) {
-    FT_LOG(Error) << "connect_autofill_daemon error";
+void TizenAutofill::Initailize() {
+  int ret = AUTOFILL_ERROR_NONE;
+  if (!autofill_) {
+    ret = autofill_create(&autofill_);
+    if (ret != AUTOFILL_ERROR_NONE) {
+      FT_LOG(Error) << "Fail to create autofill handle.";
+      return;
+    }
   }
 
-  autofill_fill_response_set_received_cb(
+  ret = autofill_connect(
+      autofill_,
+      [](autofill_h autofill, autofill_connection_status_e status,
+         void* user_data) { TizenAutofill::GetInstance().SetConnected(true); },
+      nullptr);
+  if (ret != AUTOFILL_ERROR_NONE) {
+    FT_LOG(Error) << "Fail to connect to the autofill daemon.";
+    return;
+  }
+
+  ret = autofill_fill_response_set_received_cb(
       autofill_,
       [](autofill_h autofill, autofill_fill_response_h fill_response,
          void* data) {
@@ -45,18 +54,18 @@ void TizenAutofill::InitailizeAutofill() {
                   [](autofill_fill_response_item_h item, void* user_data) {
                     char* id = nullptr;
                     char* value = nullptr;
-                    char* presentation_text = nullptr;
+                    char* label = nullptr;
 
                     autofill_fill_response_item_get_id(item, &id);
-                    autofill_fill_response_item_get_presentation_text(
-                        item, &presentation_text);
+                    autofill_fill_response_item_get_presentation_text(item,
+                                                                      &label);
                     autofill_fill_response_item_get_value(item, &value);
 
                     std::unique_ptr<AutofillItem> response_item =
                         std::make_unique<AutofillItem>();
-                    response_item->label_ = std::string(presentation_text);
                     response_item->id_ = std::string(id);
                     response_item->value_ = std::string(value);
+                    response_item->label_ = std::string(label);
 
                     TizenAutofill::GetInstance().StoreResponseItem(
                         move(response_item));
@@ -69,8 +78,8 @@ void TizenAutofill::InitailizeAutofill() {
                       free(value);
                     }
 
-                    if (presentation_text) {
-                      free(presentation_text);
+                    if (label) {
+                      free(label);
                     }
 
                     return true;
@@ -82,12 +91,26 @@ void TizenAutofill::InitailizeAutofill() {
         TizenAutofill::GetInstance().OnPopup();
       },
       nullptr);
+  if (ret != AUTOFILL_ERROR_NONE) {
+    FT_LOG(Error) << "Fail to set fill response received callback.";
+    return;
+  }
 
   response_items_.clear();
+  initailzed_ = true;
 }
 
 void TizenAutofill::RequestAutofill(std::vector<std::string> hints,
                                     std::string id) {
+  if (!initailzed_) {
+    Initailize();
+    return;
+  }
+
+  if (!connected_) {
+    return;
+  }
+
   char* app_id = nullptr;
   app_get_id(&app_id);
 
@@ -115,17 +138,24 @@ void TizenAutofill::RequestAutofill(std::vector<std::string> hints,
 
   int ret = autofill_fill_request(autofill_, view_info);
   if (ret != AUTOFILL_ERROR_NONE) {
-    FT_LOG(Error) << "autofill_fill_request error";
+    FT_LOG(Error) << "Fail to request autofill";
   }
   autofill_view_info_destroy(view_info);
 
   response_items_.clear();
 }
 
-void TizenAutofill::RegisterAutofillItem(std::string view_id,
-                                         AutofillItem item) {
-  autofill_save_item_h save_item = nullptr;
+void TizenAutofill::RegisterItem(std::string view_id, AutofillItem item) {
+  if (!initailzed_) {
+    Initailize();
+    return;
+  }
 
+  if (!connected_) {
+    return;
+  }
+
+  autofill_save_item_h save_item = nullptr;
   autofill_save_item_create(&save_item);
   autofill_save_item_set_autofill_hint(save_item, item.hint_);
   autofill_save_item_set_id(save_item, item.id_.c_str());
@@ -137,11 +167,9 @@ void TizenAutofill::RegisterAutofillItem(std::string view_id,
   app_get_id(&app_id);
 
   autofill_save_view_info_h save_view_info = nullptr;
-
   autofill_save_view_info_create(&save_view_info);
   autofill_save_view_info_set_app_id(save_view_info, app_id);
   autofill_save_view_info_set_view_id(save_view_info, view_id.c_str());
-
   autofill_save_view_info_add_item(save_view_info, save_item);
 
   if (app_id) {
@@ -150,7 +178,7 @@ void TizenAutofill::RegisterAutofillItem(std::string view_id,
 
   int ret = autofill_commit(autofill_, save_view_info);
   if (ret != AUTOFILL_ERROR_NONE) {
-    FT_LOG(Error) << "autofill_commit error";
+    FT_LOG(Error) << "Fail to register autofill item.";
   }
 
   autofill_save_view_info_destroy(save_view_info);

@@ -19,27 +19,23 @@ bool NuiAutofillPopup::Touched(Dali::Actor actor,
     std::string text =
         actor.GetProperty(Dali::Actor::Property::NAME).Get<std::string>();
     on_commit_(text);
-    Hide();
+    popup_.SetDisplayState(Dali::Toolkit::Popup::HIDDEN);
   }
   return true;
 }
 
-void NuiAutofillPopup::Hide() {
-  // TODO(Swanseo0) : There is a phenomenon where white traces remain for a
-  // while when popup disappears.
-  popup_.SetDisplayState(Dali::Toolkit::Popup::HIDDEN);
-}
-
 void NuiAutofillPopup::Hidden() {
+  // TODO(Swanseo0): There is a phenomenon where white traces remain for a
+  // while when popup disappears.
   popup_.Unparent();
   popup_.Reset();
 }
 
 void NuiAutofillPopup::OutsideTouched() {
-  Hide();
+  popup_.SetDisplayState(Dali::Toolkit::Popup::HIDDEN);
 }
 
-void NuiAutofillPopup::PrepareAutofill() {
+void NuiAutofillPopup::Prepare() {
   popup_ = Dali::Toolkit::Popup::New();
   popup_.SetProperty(Dali::Actor::Property::NAME, "popup");
   popup_.SetProperty(Dali::Actor::Property::PARENT_ORIGIN,
@@ -55,11 +51,11 @@ void NuiAutofillPopup::PrepareAutofill() {
   popup_.SetProperty(Dali::Toolkit::Popup::Property::AUTO_HIDE_DELAY, 2500);
 }
 
-void NuiAutofillPopup::PopupAutofill(Dali::Actor* actor) {
+void NuiAutofillPopup::Show(Dali::Actor* actor) {
   const std::vector<std::unique_ptr<AutofillItem>>& items =
-      TizenAutofill::GetInstance().GetAutofillItems();
-  if (items.size() > 0) {
-    PrepareAutofill();
+      TizenAutofill::GetInstance().GetResponseItems();
+  if (!items.empty()) {
+    Prepare();
     Dali::Toolkit::TableView content =
         Dali::Toolkit::TableView::New(items.size(), 1);
     content.SetResizePolicy(Dali::ResizePolicy::FILL_TO_PARENT,

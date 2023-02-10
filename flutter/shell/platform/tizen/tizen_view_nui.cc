@@ -114,7 +114,7 @@ void TizenViewNui::PrepareInputMethod() {
       [this](std::string str) { view_delegate_->OnCommit(str); });
 
   input_method_context_->SetOnPopupAutofillContext(
-      [this]() { autofill_.PopupAutofill(image_view_); });
+      [this]() { autofill_.Show(image_view_); });
 
   autofill_.SetOnCommit(
       [this](std::string str) { view_delegate_->OnCommit(str); });
