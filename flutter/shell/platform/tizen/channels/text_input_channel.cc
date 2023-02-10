@@ -7,7 +7,6 @@
 #include "flutter/shell/platform/common/json_method_codec.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/logger.h"
-
 #ifndef WEARABLE_PROFILE
 #include "flutter/shell/platform/tizen/tizen_autofill.h"
 #endif
@@ -27,7 +26,9 @@ constexpr char kMultilineInputType[] = "TextInputType.multiline";
 constexpr char kUpdateEditingStateMethod[] =
     "TextInputClient.updateEditingState";
 constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
+#ifndef WEARABLE_PROFILE
 constexpr char kRequestAutofillMethod[] = "TextInput.requestAutofill";
+#endif
 constexpr char kSetPlatformViewClient[] = "TextInput.setPlatformViewClient";
 constexpr char kTextCapitalization[] = "textCapitalization";
 constexpr char kTextEnableSuggestions[] = "enableSuggestions";
@@ -69,11 +70,12 @@ TextInputChannel::TextInputChannel(
              std::unique_ptr<MethodResult<rapidjson::Document>> result) {
         HandleMethodCall(call, std::move(result));
       });
+
 #ifndef WEARABLE_PROFILE
-  TizenAutofill& instance = TizenAutofill::GetInstance();
-  instance.SetOnPopup(
+  TizenAutofill& autofill = TizenAutofill::GetInstance();
+  autofill.SetOnPopup(
       [this]() { input_method_context_->PopupAutofillItems(); });
-  instance.SetOnCommit([this](std::string value) { OnCommit(value); });
+  autofill.SetOnCommit([this](std::string value) { OnCommit(value); });
 #endif
 }
 
@@ -249,9 +251,9 @@ void TextInputChannel::HandleMethodCall(
       auto hints_iter = autofill_iter->value.FindMember(kHints);
       if (hints_iter != autofill_iter->value.MemberEnd() &&
           hints_iter->value.IsArray()) {
+        autofill_hints_.clear();
         for (auto hint = hints_iter->value.GetArray().Begin();
              hint != hints_iter->value.GetArray().End(); hint++) {
-          autofill_hints_.clear();
           autofill_hints_.push_back(hint->GetString());
         }
       }
@@ -319,12 +321,9 @@ void TextInputChannel::HandleMethodCall(
           cursor_offset);
     }
     SendStateUpdate();
-  } else if (method.compare(kRequestAutofillMethod) == 0) {
 #ifndef WEARABLE_PROFILE
-    TizenAutofill& instance = TizenAutofill::GetInstance();
-    instance.RequestAutofill(autofill_hints_, autofill_id_);
-#else
-    result->NotImplemented();
+  } else if (method.compare(kRequestAutofillMethod) == 0) {
+    TizenAutofill::GetInstance().RequestAutofill(autofill_hints_, autofill_id_);
 #endif
   } else {
     result->NotImplemented();

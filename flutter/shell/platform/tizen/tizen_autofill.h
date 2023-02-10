@@ -45,7 +45,7 @@ class TizenAutofill {
   void OnCommit(std::string str) { on_commit_(str); }
 
   void OnPopup() { on_popup_(); }
-#
+
   const std::vector<std::unique_ptr<AutofillItem>>& GetAutofillItems() {
     return response_items_;
   }
@@ -57,7 +57,6 @@ class TizenAutofill {
 
   void InitailizeAutofill();
 
-  // TODO : implement convert flutter hint to tizen hint function
   std::optional<autofill_hint_e> ConvertAutofillHint(std::string hint);
 
   autofill_h autofill_;

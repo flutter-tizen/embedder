@@ -16,17 +16,19 @@ using OnRendering = std::function<void()>;
 
 class NuiAutofillPopup : public Dali::ConnectionTracker {
  public:
-  bool OnTouch(Dali::Actor actor, const Dali::TouchEvent& event);
+  void Hide();
 
-  void OnHide();
+  void Hidden();
 
-  void OnHidden();
+  void OutsideTouched();
 
   void PrepareAutofill();
 
   void PopupAutofill(Dali::Actor* actor);
 
   void SetOnCommit(OnCommit callback) { on_commit_ = callback; }
+
+  bool Touched(Dali::Actor actor, const Dali::TouchEvent& event);
 
  private:
   Dali::Toolkit::Popup popup_;

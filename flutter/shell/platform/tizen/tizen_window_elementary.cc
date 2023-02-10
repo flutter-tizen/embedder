@@ -335,10 +335,13 @@ void TizenWindowElementary::RegisterEventHandlers() {
                                  this);
 
 #ifndef WEARABLE_PROFILE
-  popup_hide_callback_ = [](void* data, Evas* e, Evas_Object* obj,
-                            void* event_info) { elm_ctxpopup_clear(obj); };
+  evas_object_callbacks_[EVAS_CALLBACK_HIDE] =
+      [](void* data, Evas* e, Evas_Object* obj, void* event_info) {
+        elm_ctxpopup_clear(obj);
+      };
   evas_object_event_callback_add(ctxpopup_, EVAS_CALLBACK_HIDE,
-                                 popup_hide_callback_, nullptr);
+                                 evas_object_callbacks_[EVAS_CALLBACK_HIDE],
+                                 nullptr);
 #endif
 }
 
@@ -364,9 +367,10 @@ void TizenWindowElementary::UnregisterEventHandlers() {
       evas_object_callbacks_[EVAS_CALLBACK_KEY_DOWN]);
   evas_object_event_callback_del(elm_win_, EVAS_CALLBACK_KEY_UP,
                                  evas_object_callbacks_[EVAS_CALLBACK_KEY_UP]);
+
 #ifndef WEARABLE_PROFILE
   evas_object_event_callback_del(ctxpopup_, EVAS_CALLBACK_HIDE,
-                                 popup_hide_callback_);
+                                 evas_object_callbacks_[EVAS_CALLBACK_HIDE]);
 #endif
 }
 
@@ -464,7 +468,7 @@ void TizenWindowElementary::PrepareInputMethod() {
             item.get());
       }
     }
-    // TODO : Change ctxpopup's position to focused input field.
+    // TODO(Swanseo0) : Change ctxpopup's position to focused input field.
     evas_object_move(ctxpopup_, initial_geometry_.left, initial_geometry_.top);
     evas_object_show(ctxpopup_);
   });

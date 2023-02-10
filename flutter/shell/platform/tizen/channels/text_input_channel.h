@@ -81,9 +81,10 @@ class TextInputChannel {
   // https://api.flutter.dev/flutter/services/TextCapitalization.html
   std::string text_capitalization_ = "";
 
+  // The active autofill client id.
   std::string autofill_id_;
 
-  // Hints for request autofill. See availabel options:
+  // A list of autofill hint strings. See available options:
   // https://api.flutter.dev/flutter/services/AutofillHints-class.html
   std::vector<std::string> autofill_hints_;
 };

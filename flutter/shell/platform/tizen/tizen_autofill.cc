@@ -133,7 +133,7 @@ void TizenAutofill::RegisterAutofillItem(std::string view_id,
   autofill_save_item_set_sensitive_data(save_item, item.sensitive_data_);
   autofill_save_item_set_value(save_item, item.value_.c_str());
 
-  char* app_id;
+  char* app_id = nullptr;
   app_get_id(&app_id);
 
   autofill_save_view_info_h save_view_info = nullptr;

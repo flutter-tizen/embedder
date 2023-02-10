@@ -11,26 +11,32 @@
 #include "flutter/shell/platform/tizen/tizen_autofill.h"
 
 namespace flutter {
-bool NuiAutofillPopup::OnTouch(Dali::Actor actor,
+
+bool NuiAutofillPopup::Touched(Dali::Actor actor,
                                const Dali::TouchEvent& event) {
   const Dali::PointState::Type state = event.GetState(0);
   if (Dali::PointState::DOWN == state) {
-    auto t = actor.GetProperty(Dali::Actor::Property::NAME).Get<std::string>();
-    on_commit_(t);
-    OnHide();
+    std::string text =
+        actor.GetProperty(Dali::Actor::Property::NAME).Get<std::string>();
+    on_commit_(text);
+    Hide();
   }
   return true;
 }
 
-void NuiAutofillPopup::OnHide() {
-  // TODO : There is a phenomenon where white traces remain for a while when
-  // popup disappears.
+void NuiAutofillPopup::Hide() {
+  // TODO(Swanseo0) : There is a phenomenon where white traces remain for a
+  // while when popup disappears.
   popup_.SetDisplayState(Dali::Toolkit::Popup::HIDDEN);
 }
 
-void NuiAutofillPopup::OnHidden() {
+void NuiAutofillPopup::Hidden() {
   popup_.Unparent();
   popup_.Reset();
+}
+
+void NuiAutofillPopup::OutsideTouched() {
+  Hide();
 }
 
 void NuiAutofillPopup::PrepareAutofill() {
@@ -42,14 +48,16 @@ void NuiAutofillPopup::PrepareAutofill() {
                      Dali::AnchorPoint::TOP_LEFT);
   popup_.SetProperty(Dali::Toolkit::Popup::Property::TAIL_VISIBILITY, false);
   popup_.SetBackgroundColor(Dali::Color::WHITE_SMOKE);
-  popup_.OutsideTouchedSignal().Connect(this, &NuiAutofillPopup::OnHide);
-  popup_.HiddenSignal().Connect(this, &NuiAutofillPopup::OnHidden);
+  popup_.OutsideTouchedSignal().Connect(this,
+                                        &NuiAutofillPopup::OutsideTouched);
+  popup_.HiddenSignal().Connect(this, &NuiAutofillPopup::Hidden);
   popup_.SetProperty(Dali::Toolkit::Popup::Property::BACKING_ENABLED, false);
   popup_.SetProperty(Dali::Toolkit::Popup::Property::AUTO_HIDE_DELAY, 2500);
 }
 
 void NuiAutofillPopup::PopupAutofill(Dali::Actor* actor) {
-  const auto& items = TizenAutofill::GetInstance().GetAutofillItems();
+  const std::vector<std::unique_ptr<AutofillItem>>& items =
+      TizenAutofill::GetInstance().GetAutofillItems();
   if (items.size() > 0) {
     PrepareAutofill();
     Dali::Toolkit::TableView content =
@@ -59,14 +67,15 @@ void NuiAutofillPopup::PopupAutofill(Dali::Actor* actor) {
     content.SetProperty(Dali::Actor::Property::PADDING,
                         Dali::Vector4(10, 10, 0, 0));
     for (uint32_t i = 0; i < items.size(); ++i) {
-      auto label = Dali::Toolkit::TextLabel::New(items[i]->label_);
+      Dali::Toolkit::TextLabel label =
+          Dali::Toolkit::TextLabel::New(items[i]->label_);
       label.SetProperty(Dali::Actor::Property::NAME, items[i]->value_);
       label.SetResizePolicy(Dali::ResizePolicy::DIMENSION_DEPENDENCY,
                             Dali::Dimension::HEIGHT);
       label.SetProperty(Dali::Toolkit::TextLabel::Property::TEXT_COLOR,
                         Dali::Color::WHITE_SMOKE);
       label.SetProperty(Dali::Toolkit::TextLabel::Property::POINT_SIZE, 7.0f);
-      label.TouchedSignal().Connect(this, &NuiAutofillPopup::OnTouch);
+      label.TouchedSignal().Connect(this, &NuiAutofillPopup::Touched);
       content.AddChild(label, Dali::Toolkit::TableView::CellPosition(i, 0));
       content.SetFitHeight(i);
     }
