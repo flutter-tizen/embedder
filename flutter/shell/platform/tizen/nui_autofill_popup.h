@@ -13,8 +13,6 @@ namespace flutter {
 
 class NuiAutofillPopup : public Dali::ConnectionTracker {
  public:
-  void Prepare();
-
   void Show(Dali::Actor* actor);
 
   void SetOnCommit(std::function<void(const std::string&)> callback) {
@@ -22,6 +20,8 @@ class NuiAutofillPopup : public Dali::ConnectionTracker {
   }
 
  private:
+  void Prepare();
+
   void Hidden();
 
   void OutsideTouched();

@@ -11,181 +11,11 @@
 
 #include "flutter/shell/platform/tizen/logger.h"
 
-TizenAutofill::TizenAutofill() {
-  Initailize();
-}
+namespace flutter {
 
-TizenAutofill::~TizenAutofill() {
-  autofill_fill_response_unset_received_cb(autofill_);
-  autofill_destroy(autofill_);
-}
+namespace {
 
-void TizenAutofill::Initailize() {
-  int ret = AUTOFILL_ERROR_NONE;
-  if (!autofill_) {
-    ret = autofill_create(&autofill_);
-    if (ret != AUTOFILL_ERROR_NONE) {
-      FT_LOG(Error) << "Fail to create autofill handle.";
-      return;
-    }
-  }
-
-  ret = autofill_connect(
-      autofill_,
-      [](autofill_h autofill, autofill_connection_status_e status,
-         void* user_data) { TizenAutofill::GetInstance().SetConnected(true); },
-      nullptr);
-  if (ret != AUTOFILL_ERROR_NONE) {
-    FT_LOG(Error) << "Fail to connect to the autofill daemon.";
-    return;
-  }
-
-  ret = autofill_fill_response_set_received_cb(
-      autofill_,
-      [](autofill_h autofill, autofill_fill_response_h fill_response,
-         void* data) {
-        int count = 0;
-        autofill_fill_response_get_group_count(fill_response, &count);
-        autofill_fill_response_foreach_group(
-            fill_response,
-            [](autofill_fill_response_group_h group, void* user_data) {
-              autofill_fill_response_group_foreach_item(
-                  group,
-                  [](autofill_fill_response_item_h item, void* user_data) {
-                    char* id = nullptr;
-                    char* value = nullptr;
-                    char* label = nullptr;
-
-                    autofill_fill_response_item_get_id(item, &id);
-                    autofill_fill_response_item_get_presentation_text(item,
-                                                                      &label);
-                    autofill_fill_response_item_get_value(item, &value);
-
-                    std::unique_ptr<AutofillItem> response_item =
-                        std::make_unique<AutofillItem>();
-                    response_item->id_ = std::string(id);
-                    response_item->value_ = std::string(value);
-                    response_item->label_ = std::string(label);
-
-                    TizenAutofill::GetInstance().StoreResponseItem(
-                        move(response_item));
-
-                    if (id) {
-                      free(id);
-                    }
-
-                    if (value) {
-                      free(value);
-                    }
-
-                    if (label) {
-                      free(label);
-                    }
-
-                    return true;
-                  },
-                  group);
-              return true;
-            },
-            &count);
-        TizenAutofill::GetInstance().OnPopup();
-      },
-      nullptr);
-  if (ret != AUTOFILL_ERROR_NONE) {
-    FT_LOG(Error) << "Fail to set fill response received callback.";
-    return;
-  }
-
-  response_items_.clear();
-  initailzed_ = true;
-}
-
-void TizenAutofill::RequestAutofill(std::vector<std::string> hints,
-                                    std::string id) {
-  if (!initailzed_) {
-    Initailize();
-    return;
-  }
-
-  if (!connected_) {
-    return;
-  }
-
-  char* app_id = nullptr;
-  app_get_id(&app_id);
-
-  autofill_view_info_h view_info = nullptr;
-  autofill_view_info_create(&view_info);
-  autofill_view_info_set_app_id(view_info, app_id);
-  autofill_view_info_set_view_id(view_info, id.c_str());
-
-  if (app_id) {
-    free(app_id);
-  }
-
-  for (auto hint : hints) {
-    std::optional<autofill_hint_e> autofill_hint = ConvertAutofillHint(hint);
-    if (autofill_hint.has_value()) {
-      autofill_item_h item = nullptr;
-      autofill_item_create(&item);
-      autofill_item_set_autofill_hint(item, autofill_hint.value());
-      autofill_item_set_id(item, id.c_str());
-      autofill_item_set_sensitive_data(item, false);
-      autofill_view_info_add_item(view_info, item);
-      autofill_item_destroy(item);
-    }
-  }
-
-  int ret = autofill_fill_request(autofill_, view_info);
-  if (ret != AUTOFILL_ERROR_NONE) {
-    FT_LOG(Error) << "Fail to request autofill";
-  }
-  autofill_view_info_destroy(view_info);
-
-  response_items_.clear();
-}
-
-void TizenAutofill::RegisterItem(std::string view_id, AutofillItem item) {
-  if (!initailzed_) {
-    Initailize();
-    return;
-  }
-
-  if (!connected_) {
-    return;
-  }
-
-  autofill_save_item_h save_item = nullptr;
-  autofill_save_item_create(&save_item);
-  autofill_save_item_set_autofill_hint(save_item, item.hint_);
-  autofill_save_item_set_id(save_item, item.id_.c_str());
-  autofill_save_item_set_label(save_item, item.label_.c_str());
-  autofill_save_item_set_sensitive_data(save_item, item.sensitive_data_);
-  autofill_save_item_set_value(save_item, item.value_.c_str());
-
-  char* app_id = nullptr;
-  app_get_id(&app_id);
-
-  autofill_save_view_info_h save_view_info = nullptr;
-  autofill_save_view_info_create(&save_view_info);
-  autofill_save_view_info_set_app_id(save_view_info, app_id);
-  autofill_save_view_info_set_view_id(save_view_info, view_id.c_str());
-  autofill_save_view_info_add_item(save_view_info, save_item);
-
-  if (app_id) {
-    free(app_id);
-  }
-
-  int ret = autofill_commit(autofill_, save_view_info);
-  if (ret != AUTOFILL_ERROR_NONE) {
-    FT_LOG(Error) << "Fail to register autofill item.";
-  }
-
-  autofill_save_view_info_destroy(save_view_info);
-}
-
-std::optional<autofill_hint_e> TizenAutofill::ConvertAutofillHint(
-    std::string hint) {
+std::optional<autofill_hint_e> ConvertAutofillHint(std::string hint) {
   if (hint == "creditCardExpirationDate") {
     return AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_DATE;
   } else if (hint == "creditCardExpirationDay") {
@@ -214,3 +44,228 @@ std::optional<autofill_hint_e> TizenAutofill::ConvertAutofillHint(
   FT_LOG(Error) << "Not supported autofill hint : " << hint;
   return std::nullopt;
 }
+
+bool StoreFillResponseItem(autofill_fill_response_item_h item, void* data) {
+  char* id = nullptr;
+  char* value = nullptr;
+  char* label = nullptr;
+
+  autofill_fill_response_item_get_id(item, &id);
+  autofill_fill_response_item_get_presentation_text(item, &label);
+  autofill_fill_response_item_get_value(item, &value);
+  std::unique_ptr<AutofillItem> response_item =
+      std::make_unique<AutofillItem>();
+  response_item->id_ = std::string(id);
+  response_item->value_ = std::string(value);
+  response_item->label_ = std::string(label);
+
+  TizenAutofill* tizen_autofill = static_cast<TizenAutofill*>(data);
+  tizen_autofill->StoreResponseItem(move(response_item));
+  if (id) {
+    free(id);
+  }
+
+  if (value) {
+    free(value);
+  }
+
+  if (label) {
+    free(label);
+  }
+  return true;
+}
+
+bool StoreForeachItem(autofill_fill_response_group_h group, void* data) {
+  autofill_fill_response_group_foreach_item(group, StoreFillResponseItem, data);
+  return true;
+};
+
+void ResponseReceived(autofill_h autofill,
+                      autofill_fill_response_h fill_response,
+                      void* data) {
+  autofill_fill_response_foreach_group(fill_response, StoreForeachItem, data);
+  TizenAutofill* tizen_autofill = static_cast<TizenAutofill*>(data);
+  tizen_autofill->OnPopup();
+};
+
+autofill_save_item_h CreateSaveItem(const AutofillItem& item) {
+  autofill_save_item_h save_item = nullptr;
+  int ret = autofill_save_item_create(&save_item);
+  if (ret != AUTOFILL_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to create autofill save item.";
+    return nullptr;
+  }
+
+  autofill_save_item_set_autofill_hint(save_item, item.hint_);
+  autofill_save_item_set_id(save_item, item.id_.c_str());
+  autofill_save_item_set_label(save_item, item.label_.c_str());
+  autofill_save_item_set_sensitive_data(save_item, item.sensitive_data_);
+  autofill_save_item_set_value(save_item, item.value_.c_str());
+
+  return save_item;
+}
+
+autofill_save_view_info_h CreateSaveViewInfo(const std::string& view_id,
+                                             const AutofillItem& item) {
+  autofill_save_item_h save_item = CreateSaveItem(item);
+  if (save_item == nullptr) {
+    return nullptr;
+  }
+
+  char* app_id = nullptr;
+  app_get_id(&app_id);
+
+  autofill_save_view_info_h save_view_info = nullptr;
+  int ret = autofill_save_view_info_create(&save_view_info);
+  if (ret != AUTOFILL_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to create autofill save view info.";
+    return nullptr;
+  }
+  autofill_save_view_info_set_app_id(save_view_info, app_id);
+  autofill_save_view_info_set_view_id(save_view_info, view_id.c_str());
+  autofill_save_view_info_add_item(save_view_info, save_item);
+
+  if (app_id) {
+    free(app_id);
+  }
+
+  return save_view_info;
+}
+
+void AddItemsToViewInfo(const autofill_view_info_h& view_info,
+                        const std::string id,
+                        const std::vector<std::string>& hints) {
+  for (auto hint : hints) {
+    std::optional<autofill_hint_e> autofill_hint = ConvertAutofillHint(hint);
+    if (autofill_hint.has_value()) {
+      autofill_item_h item = nullptr;
+      int ret = autofill_item_create(&item);
+      if (ret != AUTOFILL_ERROR_NONE) {
+        FT_LOG(Error) << "Failed to create autofill item.";
+        continue;
+      }
+      autofill_item_set_autofill_hint(item, autofill_hint.value());
+      autofill_item_set_id(item, id.c_str());
+      autofill_item_set_sensitive_data(item, false);
+      autofill_view_info_add_item(view_info, item);
+      autofill_item_destroy(item);
+    }
+  }
+}
+
+autofill_view_info_h CreateViewInfo(const std::string& id,
+                                    const std::vector<std::string>& hints) {
+  char* app_id = nullptr;
+  app_get_id(&app_id);
+
+  autofill_view_info_h view_info = nullptr;
+  int ret = autofill_view_info_create(&view_info);
+  if (ret != AUTOFILL_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to create autofill view info.";
+    return nullptr;
+  }
+  autofill_view_info_set_app_id(view_info, app_id);
+  autofill_view_info_set_view_id(view_info, id.c_str());
+
+  if (app_id) {
+    free(app_id);
+  }
+
+  AddItemsToViewInfo(view_info, id, hints);
+
+  return view_info;
+}
+
+}  // namespace
+
+TizenAutofill::TizenAutofill() {
+  Initialize();
+}
+
+TizenAutofill::~TizenAutofill() {
+  autofill_fill_response_unset_received_cb(autofill_);
+  autofill_destroy(autofill_);
+}
+
+void TizenAutofill::Initialize() {
+  int ret = AUTOFILL_ERROR_NONE;
+  if (!autofill_) {
+    ret = autofill_create(&autofill_);
+    if (ret != AUTOFILL_ERROR_NONE) {
+      FT_LOG(Error) << "Failed to create autofill handle.";
+      return;
+    }
+  }
+
+  ret = autofill_connect(
+      autofill_,
+      [](autofill_h autofill, autofill_connection_status_e status, void* data) {
+        TizenAutofill* tizen_autofill = static_cast<TizenAutofill*>(data);
+        if (status == AUTOFILL_CONNECTION_STATUS_CONNECTED) {
+          tizen_autofill->SetConnected(true);
+        } else {
+          tizen_autofill->SetConnected(false);
+        }
+      },
+      this);
+  if (ret != AUTOFILL_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to connect to the autofill daemon.";
+    return;
+  }
+
+  autofill_fill_response_set_received_cb(autofill_, ResponseReceived, this);
+
+  response_items_.clear();
+  is_initialized_ = true;
+}
+
+void TizenAutofill::RequestAutofill(const std::string& id,
+                                    const std::vector<std::string>& hints) {
+  if (!is_initialized_) {
+    Initialize();
+    return;
+  }
+
+  if (!is_connected_) {
+    return;
+  }
+
+  autofill_view_info_h view_info = CreateViewInfo(id, hints);
+  if (view_info == nullptr) {
+    return;
+  }
+
+  int ret = autofill_fill_request(autofill_, view_info);
+  if (ret != AUTOFILL_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to request autofill.";
+  }
+  autofill_view_info_destroy(view_info);
+
+  response_items_.clear();
+}
+
+void TizenAutofill::RegisterItem(const std::string& view_id,
+                                 const AutofillItem& item) {
+  if (!is_initialized_) {
+    Initialize();
+    return;
+  }
+
+  if (!is_connected_) {
+    return;
+  }
+
+  autofill_save_view_info_h save_view_info = CreateSaveViewInfo(view_id, item);
+  if (save_view_info == nullptr) {
+    return;
+  }
+
+  int ret = autofill_commit(autofill_, save_view_info);
+  if (ret != AUTOFILL_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to register autofill item.";
+  }
+
+  autofill_save_view_info_destroy(save_view_info);
+}
+
+}  // namespace flutter

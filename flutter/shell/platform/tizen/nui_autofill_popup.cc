@@ -54,33 +54,35 @@ void NuiAutofillPopup::Prepare() {
 void NuiAutofillPopup::Show(Dali::Actor* actor) {
   const std::vector<std::unique_ptr<AutofillItem>>& items =
       TizenAutofill::GetInstance().GetResponseItems();
-  if (!items.empty()) {
-    Prepare();
-    Dali::Toolkit::TableView content =
-        Dali::Toolkit::TableView::New(items.size(), 1);
-    content.SetResizePolicy(Dali::ResizePolicy::FILL_TO_PARENT,
-                            Dali::Dimension::ALL_DIMENSIONS);
-    content.SetProperty(Dali::Actor::Property::PADDING,
-                        Dali::Vector4(10, 10, 0, 0));
-    for (uint32_t i = 0; i < items.size(); ++i) {
-      Dali::Toolkit::TextLabel label =
-          Dali::Toolkit::TextLabel::New(items[i]->label_);
-      label.SetProperty(Dali::Actor::Property::NAME, items[i]->value_);
-      label.SetResizePolicy(Dali::ResizePolicy::DIMENSION_DEPENDENCY,
-                            Dali::Dimension::HEIGHT);
-      label.SetProperty(Dali::Toolkit::TextLabel::Property::TEXT_COLOR,
-                        Dali::Color::WHITE_SMOKE);
-      label.SetProperty(Dali::Toolkit::TextLabel::Property::POINT_SIZE, 7.0f);
-      label.TouchedSignal().Connect(this, &NuiAutofillPopup::Touched);
-      content.AddChild(label, Dali::Toolkit::TableView::CellPosition(i, 0));
-      content.SetFitHeight(i);
-    }
-    popup_.SetProperty(Dali::Actor::Property::SIZE,
-                       Dali::Vector2(140.0f, 35.0f * items.size()));
-    popup_.SetContent(content);
-    popup_.SetDisplayState(Dali::Toolkit::Popup::SHOWN);
-    actor->Add(popup_);
+  if (items.empty()) {
+    return;
   }
+
+  Prepare();
+  Dali::Toolkit::TableView content =
+      Dali::Toolkit::TableView::New(items.size(), 1);
+  content.SetResizePolicy(Dali::ResizePolicy::FILL_TO_PARENT,
+                          Dali::Dimension::ALL_DIMENSIONS);
+  content.SetProperty(Dali::Actor::Property::PADDING,
+                      Dali::Vector4(10, 10, 0, 0));
+  for (uint32_t i = 0; i < items.size(); ++i) {
+    Dali::Toolkit::TextLabel label =
+        Dali::Toolkit::TextLabel::New(items[i]->label_);
+    label.SetProperty(Dali::Actor::Property::NAME, items[i]->value_);
+    label.SetResizePolicy(Dali::ResizePolicy::DIMENSION_DEPENDENCY,
+                          Dali::Dimension::HEIGHT);
+    label.SetProperty(Dali::Toolkit::TextLabel::Property::TEXT_COLOR,
+                      Dali::Color::WHITE_SMOKE);
+    label.SetProperty(Dali::Toolkit::TextLabel::Property::POINT_SIZE, 7.0f);
+    label.TouchedSignal().Connect(this, &NuiAutofillPopup::Touched);
+    content.AddChild(label, Dali::Toolkit::TableView::CellPosition(i, 0));
+    content.SetFitHeight(i);
+  }
+  popup_.SetProperty(Dali::Actor::Property::SIZE,
+                     Dali::Vector2(140.0f, 35.0f * items.size()));
+  popup_.SetContent(content);
+  popup_.SetDisplayState(Dali::Toolkit::Popup::SHOWN);
+  actor->Add(popup_);
 }
 
 }  // namespace flutter

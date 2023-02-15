@@ -323,7 +323,7 @@ void TextInputChannel::HandleMethodCall(
     SendStateUpdate();
 #ifndef WEARABLE_PROFILE
   } else if (method.compare(kRequestAutofillMethod) == 0) {
-    TizenAutofill::GetInstance().RequestAutofill(autofill_hints_, autofill_id_);
+    TizenAutofill::GetInstance().RequestAutofill(autofill_id_, autofill_hints_);
 #endif
   } else {
     result->NotImplemented();

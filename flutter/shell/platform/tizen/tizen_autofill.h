@@ -13,6 +13,8 @@
 
 #include <autofill.h>
 
+namespace flutter {
+
 struct AutofillItem {
   autofill_hint_e hint_;
   bool sensitive_data_;
@@ -28,15 +30,16 @@ class TizenAutofill {
     return instance;
   }
 
-  void RequestAutofill(std::vector<std::string> hints, std::string id);
+  void RequestAutofill(const std::string& id,
+                       const std::vector<std::string>& hints);
 
-  void RegisterItem(std::string view_id, AutofillItem item);
+  void RegisterItem(const std::string& view_id, const AutofillItem& item);
 
   void StoreResponseItem(std::unique_ptr<AutofillItem> item) {
     response_items_.push_back(move(item));
   }
 
-  void SetConnected(bool connected) { connected_ = connected; };
+  void SetConnected(bool connected) { is_connected_ = connected; };
 
   void SetOnPopup(std::function<void()> on_popup) { on_popup_ = on_popup; }
 
@@ -44,7 +47,7 @@ class TizenAutofill {
     on_commit_ = on_commit;
   }
 
-  void OnCommit(std::string str) { on_commit_(str); }
+  void OnCommit(const std::string& str) { on_commit_(str); }
 
   void OnPopup() { on_popup_(); }
 
@@ -57,13 +60,11 @@ class TizenAutofill {
 
   ~TizenAutofill();
 
-  void Initailize();
+  void Initialize();
 
-  std::optional<autofill_hint_e> ConvertAutofillHint(std::string hint);
+  bool is_connected_ = false;
 
-  bool connected_ = false;
-
-  bool initailzed_ = false;
+  bool is_initialized_ = false;
 
   autofill_h autofill_ = nullptr;
 
@@ -74,4 +75,6 @@ class TizenAutofill {
   std::function<void(const std::string&)> on_commit_;
 };
 
-#endif
+}  // namespace flutter
+
+#endif  // EMBEDDER_TIZEN_AUTOFILL_H_
