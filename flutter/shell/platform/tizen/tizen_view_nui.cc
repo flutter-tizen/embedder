@@ -23,6 +23,7 @@ TizenViewNui::TizenViewNui(int32_t width,
       native_image_queue_(native_image_queue),
       default_window_id_(default_window_id) {
   RegisterEventHandlers();
+  PrepareAutofill();
   PrepareInputMethod();
   Show();
 }
@@ -97,6 +98,14 @@ void TizenViewNui::OnKey(const char* device_name,
   }
 }
 
+void TizenViewNui::PrepareAutofill() {
+  TizenAutofill& autofill = TizenAutofill::GetInstance();
+  autofill.SetOnPopup([this]() { autofill_.Show(image_view_); });
+
+  autofill_.SetOnCommit(
+      [this](std::string str) { view_delegate_->OnCommit(str); });
+}
+
 void TizenViewNui::PrepareInputMethod() {
   input_method_context_ =
       std::make_unique<TizenInputMethodContext>(GetWindowId());
@@ -111,12 +120,6 @@ void TizenViewNui::PrepareInputMethod() {
   input_method_context_->SetOnPreeditEnd(
       [this]() { view_delegate_->OnComposeEnd(); });
   input_method_context_->SetOnCommit(
-      [this](std::string str) { view_delegate_->OnCommit(str); });
-
-  input_method_context_->SetOnPopupAutofillContext(
-      [this]() { autofill_.Show(image_view_); });
-
-  autofill_.SetOnCommit(
       [this](std::string str) { view_delegate_->OnCommit(str); });
 }
 

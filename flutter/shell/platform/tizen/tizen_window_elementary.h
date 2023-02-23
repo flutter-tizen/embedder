@@ -68,6 +68,10 @@ class TizenWindowElementary : public TizenWindow {
 
   void UnregisterEventHandlers();
 
+#ifndef WEARABLE_PROFILE
+  void PrepareAutofill();
+#endif
+
   void PrepareInputMethod();
 
   Evas_Object* elm_win_ = nullptr;

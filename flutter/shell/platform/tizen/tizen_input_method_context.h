@@ -17,8 +17,9 @@
 
 namespace flutter {
 
-using OnCommit = std::function<void(std::string str)>;
-using OnPreeditChanged = std::function<void(std::string str, int cursor_pos)>;
+using OnCommit = std::function<void(const std::string& str)>;
+using OnPreeditChanged =
+    std::function<void(const std::string& str, int cursor_pos)>;
 using OnPreeditStart = std::function<void()>;
 using OnPreeditEnd = std::function<void()>;
 using OnPopupAutofillContext = std::function<void()>;
@@ -81,16 +82,6 @@ class TizenInputMethodContext {
   }
 
   void SetOnPreeditEnd(OnPreeditEnd callback) { on_preedit_end_ = callback; }
-
-  void SetOnPopupAutofillContext(OnPopupAutofillContext callback) {
-    on_popup_autofill_context_ = callback;
-  }
-
-  void PopupAutofillItems() {
-    if (on_popup_autofill_context_) {
-      on_popup_autofill_context_();
-    }
-  }
 
  private:
   void RegisterEventCallbacks();

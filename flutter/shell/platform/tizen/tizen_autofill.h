@@ -16,11 +16,11 @@
 namespace flutter {
 
 struct AutofillItem {
-  autofill_hint_e hint_;
-  bool sensitive_data_;
-  std::string label_;
-  std::string id_;
-  std::string value_;
+  autofill_hint_e hint;
+  bool sensitive_data;
+  std::string label;
+  std::string id;
+  std::string value;
 };
 
 class TizenAutofill {
@@ -36,7 +36,7 @@ class TizenAutofill {
   void RegisterItem(const std::string& view_id, const AutofillItem& item);
 
   void StoreResponseItem(std::unique_ptr<AutofillItem> item) {
-    response_items_.push_back(move(item));
+    response_items_.push_back(std::move(item));
   }
 
   void SetConnected(bool connected) { is_connected_ = connected; };
@@ -49,7 +49,11 @@ class TizenAutofill {
 
   void OnCommit(const std::string& str) { on_commit_(str); }
 
-  void OnPopup() { on_popup_(); }
+  void OnPopup() {
+    if (on_popup_) {
+      on_popup_();
+    }
+  }
 
   const std::vector<std::unique_ptr<AutofillItem>>& GetResponseItems() {
     return response_items_;

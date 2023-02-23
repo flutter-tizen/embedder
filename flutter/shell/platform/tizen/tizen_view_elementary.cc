@@ -55,6 +55,9 @@ TizenViewElementary::TizenViewElementary(int32_t width,
   }
 
   RegisterEventHandlers();
+#ifndef WEARABLE_PROFILE
+  PrepareAutofill();
+#endif
   PrepareInputMethod();
   Show();
 }
@@ -97,9 +100,11 @@ bool TizenViewElementary::CreateView() {
   evas_object_image_size_set(image_, initial_width_, initial_height_);
   evas_object_image_alpha_set(image_, EINA_TRUE);
   elm_object_part_content_set(container_, "overlay", image_);
+
 #ifndef WEARABLE_PROFILE
   ctxpopup_ = elm_ctxpopup_add(container_);
 #endif
+
   return true;
 }
 
@@ -360,6 +365,32 @@ void TizenViewElementary::Show() {
   evas_object_show(image_);
 }
 
+#ifndef WEARABLE_PROFILE
+void TizenViewElementary::PrepareAutofill() {
+  TizenAutofill& autofill = TizenAutofill::GetInstance();
+  autofill.SetOnPopup([this]() {
+    const std::vector<std::unique_ptr<AutofillItem>>& items =
+        TizenAutofill::GetInstance().GetResponseItems();
+    if (items.empty()) {
+      return;
+    }
+    for (const auto& item : items) {
+      elm_ctxpopup_item_append(
+          ctxpopup_, item->label.c_str(), nullptr,
+          [](void* data, Evas_Object* obj, void* event_info) {
+            AutofillItem* item = static_cast<AutofillItem*>(data);
+            TizenAutofill::GetInstance().OnCommit(item->value);
+            evas_object_hide(obj);
+          },
+          item.get());
+    }
+    // TODO(Swanseo0): Change ctxpopup's position to focused input field.
+    evas_object_move(ctxpopup_, 0, 0);
+    evas_object_show(ctxpopup_);
+  });
+}
+#endif
+
 void TizenViewElementary::PrepareInputMethod() {
   input_method_context_ =
       std::make_unique<TizenInputMethodContext>(GetWindowId());
@@ -375,25 +406,6 @@ void TizenViewElementary::PrepareInputMethod() {
       [this]() { view_delegate_->OnComposeEnd(); });
   input_method_context_->SetOnCommit(
       [this](std::string str) { view_delegate_->OnCommit(str); });
-#ifndef WEARABLE_PROFILE
-  input_method_context_->SetOnPopupAutofillContext([this]() {
-    if (!TizenAutofill::GetInstance().GetResponseItems().empty()) {
-      for (auto& item : TizenAutofill::GetInstance().GetResponseItems()) {
-        elm_ctxpopup_item_append(
-            ctxpopup_, item->label_.c_str(), nullptr,
-            [](void* data, Evas_Object* obj, void* event_info) {
-              AutofillItem* item = static_cast<AutofillItem*>(data);
-              TizenAutofill::GetInstance().OnCommit(item->value_);
-              evas_object_hide(obj);
-            },
-            item.get());
-      }
-    }
-    // TODO(Swanseo0): Change ctxpopup's position to focused input field.
-    evas_object_move(ctxpopup_, 0, 0);
-    evas_object_show(ctxpopup_);
-  });
-#endif
 }
 
 }  // namespace flutter

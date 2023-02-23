@@ -5,10 +5,7 @@
 #include "flutter/shell/platform/tizen/nui_autofill_popup.h"
 
 #include <dali-toolkit/dali-toolkit.h>
-#include <dali-toolkit/devel-api/controls/table-view/table-view.h>
 #include <dali-toolkit/public-api/controls/text-controls/text-label.h>
-
-#include "flutter/shell/platform/tizen/tizen_autofill.h"
 
 namespace flutter {
 
@@ -35,7 +32,32 @@ void NuiAutofillPopup::OutsideTouched() {
   popup_.SetDisplayState(Dali::Toolkit::Popup::HIDDEN);
 }
 
-void NuiAutofillPopup::Prepare() {
+Dali::Toolkit::TableView NuiAutofillPopup::MakeContent(
+    const std::vector<std::unique_ptr<AutofillItem>>& items) {
+  Dali::Toolkit::TableView content =
+      Dali::Toolkit::TableView::New(items.size(), 1);
+  content.SetResizePolicy(Dali::ResizePolicy::FILL_TO_PARENT,
+                          Dali::Dimension::ALL_DIMENSIONS);
+  content.SetProperty(Dali::Actor::Property::PADDING,
+                      Dali::Vector4(10, 10, 0, 0));
+  for (uint32_t i = 0; i < items.size(); ++i) {
+    Dali::Toolkit::TextLabel label =
+        Dali::Toolkit::TextLabel::New(items[i]->label);
+    label.SetProperty(Dali::Actor::Property::NAME, items[i]->value);
+    label.SetResizePolicy(Dali::ResizePolicy::DIMENSION_DEPENDENCY,
+                          Dali::Dimension::HEIGHT);
+    label.SetProperty(Dali::Toolkit::TextLabel::Property::TEXT_COLOR,
+                      Dali::Color::WHITE_SMOKE);
+    label.SetProperty(Dali::Toolkit::TextLabel::Property::POINT_SIZE, 7.0f);
+    label.TouchedSignal().Connect(this, &NuiAutofillPopup::Touched);
+    content.AddChild(label, Dali::Toolkit::TableView::CellPosition(i, 0));
+    content.SetFitHeight(i);
+  }
+  return content;
+}
+
+void NuiAutofillPopup::Prepare(
+    const std::vector<std::unique_ptr<AutofillItem>>& items) {
   popup_ = Dali::Toolkit::Popup::New();
   popup_.SetProperty(Dali::Actor::Property::NAME, "popup");
   popup_.SetProperty(Dali::Actor::Property::PARENT_ORIGIN,
@@ -49,6 +71,11 @@ void NuiAutofillPopup::Prepare() {
   popup_.HiddenSignal().Connect(this, &NuiAutofillPopup::Hidden);
   popup_.SetProperty(Dali::Toolkit::Popup::Property::BACKING_ENABLED, false);
   popup_.SetProperty(Dali::Toolkit::Popup::Property::AUTO_HIDE_DELAY, 2500);
+  popup_.SetProperty(Dali::Actor::Property::SIZE,
+                     Dali::Vector2(140.0f, 35.0f * items.size()));
+
+  Dali::Toolkit::TableView content = MakeContent(items);
+  popup_.SetContent(content);
 }
 
 void NuiAutofillPopup::Show(Dali::Actor* actor) {
@@ -58,29 +85,8 @@ void NuiAutofillPopup::Show(Dali::Actor* actor) {
     return;
   }
 
-  Prepare();
-  Dali::Toolkit::TableView content =
-      Dali::Toolkit::TableView::New(items.size(), 1);
-  content.SetResizePolicy(Dali::ResizePolicy::FILL_TO_PARENT,
-                          Dali::Dimension::ALL_DIMENSIONS);
-  content.SetProperty(Dali::Actor::Property::PADDING,
-                      Dali::Vector4(10, 10, 0, 0));
-  for (uint32_t i = 0; i < items.size(); ++i) {
-    Dali::Toolkit::TextLabel label =
-        Dali::Toolkit::TextLabel::New(items[i]->label_);
-    label.SetProperty(Dali::Actor::Property::NAME, items[i]->value_);
-    label.SetResizePolicy(Dali::ResizePolicy::DIMENSION_DEPENDENCY,
-                          Dali::Dimension::HEIGHT);
-    label.SetProperty(Dali::Toolkit::TextLabel::Property::TEXT_COLOR,
-                      Dali::Color::WHITE_SMOKE);
-    label.SetProperty(Dali::Toolkit::TextLabel::Property::POINT_SIZE, 7.0f);
-    label.TouchedSignal().Connect(this, &NuiAutofillPopup::Touched);
-    content.AddChild(label, Dali::Toolkit::TableView::CellPosition(i, 0));
-    content.SetFitHeight(i);
-  }
-  popup_.SetProperty(Dali::Actor::Property::SIZE,
-                     Dali::Vector2(140.0f, 35.0f * items.size()));
-  popup_.SetContent(content);
+  Prepare(items);
+
   popup_.SetDisplayState(Dali::Toolkit::Popup::SHOWN);
   actor->Add(popup_);
 }

@@ -59,6 +59,8 @@ class TizenViewNui : public TizenView {
 
   void UnregisterEventHandlers();
 
+  void PrepareAutofill();
+
   void PrepareInputMethod();
 
   void RenderOnce();

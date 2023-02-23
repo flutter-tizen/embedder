@@ -284,7 +284,8 @@ void TizenInputMethodContext::SetInputAction(const std::string& input_action) {
   Ecore_IMF_Input_Panel_Return_Key_Type return_key_type =
       ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_DEFAULT;
 
-  // Not support : none, previous, continueAction, route, emergencycall, newline
+  // Not supported : none, previous, continueAction, route, emergencyCall,
+  // newline
   if (input_action == "TextInputAction.unspecified") {
     return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_DEFAULT;
   } else if (input_action == "TextInputAction.done") {
@@ -423,15 +424,12 @@ void TizenInputMethodContext::SetContextOptions() {
   FT_ASSERT(imf_context_);
   ecore_imf_context_autocapital_type_set(imf_context_,
                                          ECORE_IMF_AUTOCAPITAL_TYPE_NONE);
-  ecore_imf_context_prediction_allow_set(imf_context_, EINA_FALSE);
 }
 
 void TizenInputMethodContext::SetInputPanelOptions() {
   FT_ASSERT(imf_context_);
   ecore_imf_context_input_panel_layout_set(imf_context_,
                                            ECORE_IMF_INPUT_PANEL_LAYOUT_NORMAL);
-  ecore_imf_context_input_panel_return_key_type_set(
-      imf_context_, ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_DEFAULT);
   ecore_imf_context_input_panel_language_set(
       imf_context_, ECORE_IMF_INPUT_PANEL_LANG_AUTOMATIC);
 }

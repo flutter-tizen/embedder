@@ -46,6 +46,10 @@ class TizenViewElementary : public TizenView {
 
   void UnregisterEventHandlers();
 
+#ifndef WEARABLE_PROFILE
+  void PrepareAutofill();
+#endif
+
   void PrepareInputMethod();
 
   Evas_Object* parent_ = nullptr;

@@ -159,7 +159,6 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
   existing_rpms = [f for f in download_path.iterdir() if f.suffix == '.rpm']
 
   packages = base_packages + unified_packages
-
   if api_version >= 6.5:
     packages += dali_packages
 

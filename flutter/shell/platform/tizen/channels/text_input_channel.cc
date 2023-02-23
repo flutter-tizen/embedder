@@ -73,8 +73,6 @@ TextInputChannel::TextInputChannel(
 
 #ifndef WEARABLE_PROFILE
   TizenAutofill& autofill = TizenAutofill::GetInstance();
-  autofill.SetOnPopup(
-      [this]() { input_method_context_->PopupAutofillItems(); });
   autofill.SetOnCommit([this](std::string value) { OnCommit(value); });
 #endif
 }

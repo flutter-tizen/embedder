@@ -45,7 +45,8 @@ std::optional<autofill_hint_e> ConvertAutofillHint(std::string hint) {
   return std::nullopt;
 }
 
-bool StoreFillResponseItem(autofill_fill_response_item_h item, void* data) {
+bool StoreFillResponseItem(autofill_fill_response_item_h item,
+                           void* user_data) {
   char* id = nullptr;
   char* value = nullptr;
   char* label = nullptr;
@@ -55,12 +56,12 @@ bool StoreFillResponseItem(autofill_fill_response_item_h item, void* data) {
   autofill_fill_response_item_get_value(item, &value);
   std::unique_ptr<AutofillItem> response_item =
       std::make_unique<AutofillItem>();
-  response_item->id_ = std::string(id);
-  response_item->value_ = std::string(value);
-  response_item->label_ = std::string(label);
+  response_item->id = std::string(id);
+  response_item->value = std::string(value);
+  response_item->label = std::string(label);
 
-  TizenAutofill* tizen_autofill = static_cast<TizenAutofill*>(data);
-  tizen_autofill->StoreResponseItem(move(response_item));
+  TizenAutofill* self = static_cast<TizenAutofill*>(user_data);
+  self->StoreResponseItem(std::move(response_item));
   if (id) {
     free(id);
   }
@@ -75,17 +76,19 @@ bool StoreFillResponseItem(autofill_fill_response_item_h item, void* data) {
   return true;
 }
 
-bool StoreForeachItem(autofill_fill_response_group_h group, void* data) {
-  autofill_fill_response_group_foreach_item(group, StoreFillResponseItem, data);
+bool StoreForeachItem(autofill_fill_response_group_h group, void* user_data) {
+  autofill_fill_response_group_foreach_item(group, StoreFillResponseItem,
+                                            user_data);
   return true;
 };
 
 void ResponseReceived(autofill_h autofill,
                       autofill_fill_response_h fill_response,
-                      void* data) {
-  autofill_fill_response_foreach_group(fill_response, StoreForeachItem, data);
-  TizenAutofill* tizen_autofill = static_cast<TizenAutofill*>(data);
-  tizen_autofill->OnPopup();
+                      void* user_data) {
+  autofill_fill_response_foreach_group(fill_response, StoreForeachItem,
+                                       user_data);
+  TizenAutofill* self = static_cast<TizenAutofill*>(user_data);
+  self->OnPopup();
 };
 
 autofill_save_item_h CreateSaveItem(const AutofillItem& item) {
@@ -96,11 +99,11 @@ autofill_save_item_h CreateSaveItem(const AutofillItem& item) {
     return nullptr;
   }
 
-  autofill_save_item_set_autofill_hint(save_item, item.hint_);
-  autofill_save_item_set_id(save_item, item.id_.c_str());
-  autofill_save_item_set_label(save_item, item.label_.c_str());
-  autofill_save_item_set_sensitive_data(save_item, item.sensitive_data_);
-  autofill_save_item_set_value(save_item, item.value_.c_str());
+  autofill_save_item_set_autofill_hint(save_item, item.hint);
+  autofill_save_item_set_id(save_item, item.id.c_str());
+  autofill_save_item_set_label(save_item, item.label.c_str());
+  autofill_save_item_set_sensitive_data(save_item, item.sensitive_data);
+  autofill_save_item_set_value(save_item, item.value.c_str());
 
   return save_item;
 }
@@ -132,8 +135,8 @@ autofill_save_view_info_h CreateSaveViewInfo(const std::string& view_id,
   return save_view_info;
 }
 
-void AddItemsToViewInfo(const autofill_view_info_h& view_info,
-                        const std::string id,
+void AddItemsToViewInfo(autofill_view_info_h view_info,
+                        const std::string& id,
                         const std::vector<std::string>& hints) {
   for (auto hint : hints) {
     std::optional<autofill_hint_e> autofill_hint = ConvertAutofillHint(hint);
@@ -199,17 +202,20 @@ void TizenAutofill::Initialize() {
 
   ret = autofill_connect(
       autofill_,
-      [](autofill_h autofill, autofill_connection_status_e status, void* data) {
-        TizenAutofill* tizen_autofill = static_cast<TizenAutofill*>(data);
+      [](autofill_h autofill, autofill_connection_status_e status,
+         void* user_data) {
+        TizenAutofill* self = static_cast<TizenAutofill*>(user_data);
         if (status == AUTOFILL_CONNECTION_STATUS_CONNECTED) {
-          tizen_autofill->SetConnected(true);
+          self->SetConnected(true);
         } else {
-          tizen_autofill->SetConnected(false);
+          self->SetConnected(false);
         }
       },
       this);
   if (ret != AUTOFILL_ERROR_NONE) {
     FT_LOG(Error) << "Failed to connect to the autofill daemon.";
+    autofill_destroy(autofill_);
+    autofill_ = nullptr;
     return;
   }
 
