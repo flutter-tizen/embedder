@@ -59,7 +59,7 @@ void AccessibilitySettings::OnHighContrastStateChanged(
     system_settings_key_e key,
     void* user_data) {
 #ifdef TV_PROFILE
-  auto* self = reinterpret_cast<AccessibilitySettings*>(user_data);
+  auto* self = static_cast<AccessibilitySettings*>(user_data);
 
   int enabled = 0;
   int ret = system_settings_get_value_int(
@@ -77,7 +77,7 @@ void AccessibilitySettings::OnScreenReaderStateChanged(
     system_settings_key_e key,
     void* user_data) {
 #ifndef WEARABLE_PROFILE
-  auto* self = reinterpret_cast<AccessibilitySettings*>(user_data);
+  auto* self = static_cast<AccessibilitySettings*>(user_data);
 
   bool enabled = false;
   int ret = system_settings_get_value_bool(key, &enabled);

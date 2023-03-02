@@ -105,7 +105,7 @@ void TizenViewElementary::DestroyView() {
 void TizenViewElementary::RegisterEventHandlers() {
   evas_object_callbacks_[EVAS_CALLBACK_RESIZE] =
       [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
-        auto* self = reinterpret_cast<TizenViewElementary*>(data);
+        auto* self = static_cast<TizenViewElementary*>(data);
         if (self->view_delegate_) {
           if (self->container_ == object) {
             int32_t width = 0, height = 0;
@@ -127,7 +127,7 @@ void TizenViewElementary::RegisterEventHandlers() {
 
   evas_object_callbacks_[EVAS_CALLBACK_MOUSE_DOWN] =
       [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
-        auto* self = reinterpret_cast<TizenViewElementary*>(data);
+        auto* self = static_cast<TizenViewElementary*>(data);
         if (self->view_delegate_) {
           if (self->container_ == object) {
             auto* mouse_event =
@@ -147,7 +147,7 @@ void TizenViewElementary::RegisterEventHandlers() {
   evas_object_callbacks_[EVAS_CALLBACK_MOUSE_UP] = [](void* data, Evas* evas,
                                                       Evas_Object* object,
                                                       void* event_info) {
-    auto* self = reinterpret_cast<TizenViewElementary*>(data);
+    auto* self = static_cast<TizenViewElementary*>(data);
     if (self->view_delegate_) {
       if (self->container_ == object) {
         auto* mouse_event = reinterpret_cast<Evas_Event_Mouse_Up*>(event_info);
@@ -170,7 +170,7 @@ void TizenViewElementary::RegisterEventHandlers() {
   evas_object_callbacks_[EVAS_CALLBACK_MOUSE_MOVE] = [](void* data, Evas* evas,
                                                         Evas_Object* object,
                                                         void* event_info) {
-    auto* self = reinterpret_cast<TizenViewElementary*>(data);
+    auto* self = static_cast<TizenViewElementary*>(data);
     if (self->view_delegate_) {
       if (self->container_ == object) {
         auto* mouse_event =
@@ -195,7 +195,7 @@ void TizenViewElementary::RegisterEventHandlers() {
 
   evas_object_callbacks_[EVAS_CALLBACK_MOUSE_WHEEL] =
       [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
-        auto* self = reinterpret_cast<TizenViewElementary*>(data);
+        auto* self = static_cast<TizenViewElementary*>(data);
         if (self->view_delegate_) {
           if (self->container_ == object) {
             auto* wheel_event =
@@ -223,7 +223,7 @@ void TizenViewElementary::RegisterEventHandlers() {
   evas_object_callbacks_[EVAS_CALLBACK_KEY_DOWN] = [](void* data, Evas* evas,
                                                       Evas_Object* object,
                                                       void* event_info) {
-    auto* self = reinterpret_cast<TizenViewElementary*>(data);
+    auto* self = static_cast<TizenViewElementary*>(data);
     if (self->view_delegate_) {
       if (self->container_ == object && self->focused_) {
         auto* key_event = reinterpret_cast<Evas_Event_Key_Down*>(event_info);
@@ -249,7 +249,7 @@ void TizenViewElementary::RegisterEventHandlers() {
 
   evas_object_callbacks_[EVAS_CALLBACK_KEY_UP] =
       [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
-        auto* self = reinterpret_cast<TizenViewElementary*>(data);
+        auto* self = static_cast<TizenViewElementary*>(data);
         if (self->view_delegate_) {
           if (self->container_ == object && self->focused_) {
             auto* key_event = reinterpret_cast<Evas_Event_Key_Up*>(event_info);
@@ -274,7 +274,7 @@ void TizenViewElementary::RegisterEventHandlers() {
                                  this);
 
   focused_callback_ = [](void* data, Evas_Object* object, void* event_info) {
-    auto* self = reinterpret_cast<TizenViewElementary*>(data);
+    auto* self = static_cast<TizenViewElementary*>(data);
     if (self->view_delegate_) {
       if (self->container_ == object) {
         self->focused_ = true;

@@ -163,38 +163,34 @@ bool TizenInputMethodContext::HandleEcoreEventKey(Ecore_Event_Key* event,
                                                   bool is_down) {
   FT_ASSERT(imf_context_);
   FT_ASSERT(event);
+
+  Ecore_IMF_Event imf_event;
   if (is_down) {
-    Ecore_IMF_Event_Key_Down imf_event =
+    imf_event.key_down =
         EcoreEventKeyToEcoreImfEvent<Ecore_IMF_Event_Key_Down>(event);
-    return ecore_imf_context_filter_event(
-        imf_context_, ECORE_IMF_EVENT_KEY_DOWN,
-        reinterpret_cast<Ecore_IMF_Event*>(&imf_event));
+    return ecore_imf_context_filter_event(imf_context_,
+                                          ECORE_IMF_EVENT_KEY_DOWN, &imf_event);
   } else {
-    Ecore_IMF_Event_Key_Up imf_event =
+    imf_event.key_up =
         EcoreEventKeyToEcoreImfEvent<Ecore_IMF_Event_Key_Up>(event);
-    return ecore_imf_context_filter_event(
-        imf_context_, ECORE_IMF_EVENT_KEY_UP,
-        reinterpret_cast<Ecore_IMF_Event*>(&imf_event));
+    return ecore_imf_context_filter_event(imf_context_, ECORE_IMF_EVENT_KEY_UP,
+                                          &imf_event);
   }
 }
 
 bool TizenInputMethodContext::HandleEvasEventKeyDown(
     Evas_Event_Key_Down* event) {
-  Ecore_IMF_Event_Key_Down imf_event;
-  ecore_imf_evas_event_key_down_wrap(event, &imf_event);
-
-  return ecore_imf_context_filter_event(
-      imf_context_, ECORE_IMF_EVENT_KEY_DOWN,
-      reinterpret_cast<Ecore_IMF_Event*>(&imf_event));
+  Ecore_IMF_Event imf_event;
+  ecore_imf_evas_event_key_down_wrap(event, &imf_event.key_down);
+  return ecore_imf_context_filter_event(imf_context_, ECORE_IMF_EVENT_KEY_DOWN,
+                                        &imf_event);
 }
 
 bool TizenInputMethodContext::HandleEvasEventKeyUp(Evas_Event_Key_Up* event) {
-  Ecore_IMF_Event_Key_Up imf_event;
-  ecore_imf_evas_event_key_up_wrap(event, &imf_event);
-
-  return ecore_imf_context_filter_event(
-      imf_context_, ECORE_IMF_EVENT_KEY_UP,
-      reinterpret_cast<Ecore_IMF_Event*>(&imf_event));
+  Ecore_IMF_Event imf_event;
+  ecore_imf_evas_event_key_up_wrap(event, &imf_event.key_up);
+  return ecore_imf_context_filter_event(imf_context_, ECORE_IMF_EVENT_KEY_UP,
+                                        &imf_event);
 }
 
 #ifdef NUI_SUPPORT
@@ -226,18 +222,17 @@ bool TizenInputMethodContext::HandleNuiKeyEvent(const char* device_name,
         event.dev, static_cast<Ecore_IMF_Device_Subclass>(device_subclass));
   }
 
+  Ecore_IMF_Event imf_event;
   if (is_down) {
-    Ecore_IMF_Event_Key_Down imf_event =
+    imf_event.key_down =
         EcoreEventKeyToEcoreImfEvent<Ecore_IMF_Event_Key_Down>(&event);
-    return ecore_imf_context_filter_event(
-        imf_context_, ECORE_IMF_EVENT_KEY_DOWN,
-        reinterpret_cast<Ecore_IMF_Event*>(&imf_event));
+    return ecore_imf_context_filter_event(imf_context_,
+                                          ECORE_IMF_EVENT_KEY_DOWN, &imf_event);
   } else {
-    Ecore_IMF_Event_Key_Up imf_event =
+    imf_event.key_up =
         EcoreEventKeyToEcoreImfEvent<Ecore_IMF_Event_Key_Up>(&event);
-    return ecore_imf_context_filter_event(
-        imf_context_, ECORE_IMF_EVENT_KEY_UP,
-        reinterpret_cast<Ecore_IMF_Event*>(&imf_event));
+    return ecore_imf_context_filter_event(imf_context_, ECORE_IMF_EVENT_KEY_UP,
+                                          &imf_event);
   }
 }
 #endif

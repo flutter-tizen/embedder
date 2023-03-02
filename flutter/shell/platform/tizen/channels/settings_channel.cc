@@ -28,14 +28,14 @@ SettingsChannel::SettingsChannel(BinaryMessenger* messenger)
   system_settings_set_changed_cb(
       SYSTEM_SETTINGS_KEY_LOCALE_TIMEFORMAT_24HOUR,
       [](system_settings_key_e key, void* user_data) -> void {
-        auto* self = reinterpret_cast<SettingsChannel*>(user_data);
+        auto* self = static_cast<SettingsChannel*>(user_data);
         self->SendSettingsEvent();
       },
       this);
   system_settings_set_changed_cb(
       SYSTEM_SETTINGS_KEY_FONT_SIZE,
       [](system_settings_key_e key, void* user_data) -> void {
-        auto* self = reinterpret_cast<SettingsChannel*>(user_data);
+        auto* self = static_cast<SettingsChannel*>(user_data);
         self->SendSettingsEvent();
       },
       this);

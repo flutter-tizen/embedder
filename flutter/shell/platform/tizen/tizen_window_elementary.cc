@@ -162,7 +162,7 @@ void TizenWindowElementary::SetWindowOptions() {
 void TizenWindowElementary::RegisterEventHandlers() {
   rotation_changed_callback_ = [](void* data, Evas_Object* object,
                                   void* event_info) {
-    auto* self = reinterpret_cast<TizenWindowElementary*>(data);
+    auto* self = static_cast<TizenWindowElementary*>(data);
     if (self->view_delegate_) {
       if (self->elm_win_ == object) {
         self->view_delegate_->OnRotate(self->GetRotation());
@@ -175,7 +175,7 @@ void TizenWindowElementary::RegisterEventHandlers() {
 
   evas_object_callbacks_[EVAS_CALLBACK_RESIZE] =
       [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
-        auto* self = reinterpret_cast<TizenWindowElementary*>(data);
+        auto* self = static_cast<TizenWindowElementary*>(data);
         if (self->view_delegate_) {
           if (self->elm_win_ == object) {
             int32_t x = 0, y = 0, width = 0, height = 0;
@@ -194,7 +194,7 @@ void TizenWindowElementary::RegisterEventHandlers() {
 
   evas_object_callbacks_[EVAS_CALLBACK_MOUSE_DOWN] =
       [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
-        auto* self = reinterpret_cast<TizenWindowElementary*>(data);
+        auto* self = static_cast<TizenWindowElementary*>(data);
         if (self->view_delegate_) {
           if (self->image_ == object) {
             auto* mouse_event =
@@ -213,7 +213,7 @@ void TizenWindowElementary::RegisterEventHandlers() {
   evas_object_callbacks_[EVAS_CALLBACK_MOUSE_UP] = [](void* data, Evas* evas,
                                                       Evas_Object* object,
                                                       void* event_info) {
-    auto* self = reinterpret_cast<TizenWindowElementary*>(data);
+    auto* self = static_cast<TizenWindowElementary*>(data);
     if (self->view_delegate_) {
       if (self->image_ == object) {
         auto* mouse_event = reinterpret_cast<Evas_Event_Mouse_Up*>(event_info);
@@ -230,7 +230,7 @@ void TizenWindowElementary::RegisterEventHandlers() {
 
   evas_object_callbacks_[EVAS_CALLBACK_MOUSE_MOVE] =
       [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
-        auto* self = reinterpret_cast<TizenWindowElementary*>(data);
+        auto* self = static_cast<TizenWindowElementary*>(data);
         if (self->view_delegate_) {
           if (self->image_ == object) {
             auto* mouse_event =
@@ -248,7 +248,7 @@ void TizenWindowElementary::RegisterEventHandlers() {
 
   evas_object_callbacks_[EVAS_CALLBACK_MOUSE_WHEEL] =
       [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
-        auto* self = reinterpret_cast<TizenWindowElementary*>(data);
+        auto* self = static_cast<TizenWindowElementary*>(data);
         if (self->view_delegate_) {
           if (self->image_ == object) {
             auto* wheel_event =
@@ -276,7 +276,7 @@ void TizenWindowElementary::RegisterEventHandlers() {
   evas_object_callbacks_[EVAS_CALLBACK_KEY_DOWN] = [](void* data, Evas* evas,
                                                       Evas_Object* object,
                                                       void* event_info) {
-    auto* self = reinterpret_cast<TizenWindowElementary*>(data);
+    auto* self = static_cast<TizenWindowElementary*>(data);
     if (self->view_delegate_) {
       if (self->elm_win_ == object) {
         auto* key_event = reinterpret_cast<Evas_Event_Key_Down*>(event_info);
@@ -300,7 +300,7 @@ void TizenWindowElementary::RegisterEventHandlers() {
 
   evas_object_callbacks_[EVAS_CALLBACK_KEY_UP] =
       [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
-        auto* self = reinterpret_cast<TizenWindowElementary*>(data);
+        auto* self = static_cast<TizenWindowElementary*>(data);
         if (self->view_delegate_) {
           if (self->elm_win_ == object) {
             auto* key_event = reinterpret_cast<Evas_Event_Key_Up*>(event_info);
@@ -395,9 +395,8 @@ uintptr_t TizenWindowElementary::GetWindowId() {
 
 void TizenWindowElementary::SetPreferredOrientations(
     const std::vector<int>& rotations) {
-  elm_win_wm_rotation_available_rotations_set(
-      elm_win_, reinterpret_cast<const int*>(rotations.data()),
-      rotations.size());
+  elm_win_wm_rotation_available_rotations_set(elm_win_, rotations.data(),
+                                              rotations.size());
 }
 
 void TizenWindowElementary::BindKeys(const std::vector<std::string>& keys) {

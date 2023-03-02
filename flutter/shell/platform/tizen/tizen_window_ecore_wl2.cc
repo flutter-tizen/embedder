@@ -190,7 +190,7 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
   ecore_event_handlers_.push_back(ecore_event_handler_add(
       ECORE_WL2_EVENT_WINDOW_ROTATE,
       [](void* data, int type, void* event) -> Eina_Bool {
-        auto* self = reinterpret_cast<TizenWindowEcoreWl2*>(data);
+        auto* self = static_cast<TizenWindowEcoreWl2*>(data);
         if (self->view_delegate_) {
           auto* rotation_event =
               reinterpret_cast<Ecore_Wl2_Event_Window_Rotation*>(event);
@@ -211,7 +211,7 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
   ecore_event_handlers_.push_back(ecore_event_handler_add(
       ECORE_WL2_EVENT_WINDOW_CONFIGURE,
       [](void* data, int type, void* event) -> Eina_Bool {
-        auto* self = reinterpret_cast<TizenWindowEcoreWl2*>(data);
+        auto* self = static_cast<TizenWindowEcoreWl2*>(data);
         if (self->view_delegate_) {
           auto* configure_event =
               reinterpret_cast<Ecore_Wl2_Event_Window_Configure*>(event);
@@ -234,7 +234,7 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
   ecore_event_handlers_.push_back(ecore_event_handler_add(
       ECORE_EVENT_MOUSE_BUTTON_DOWN,
       [](void* data, int type, void* event) -> Eina_Bool {
-        auto* self = reinterpret_cast<TizenWindowEcoreWl2*>(data);
+        auto* self = static_cast<TizenWindowEcoreWl2*>(data);
         if (self->view_delegate_) {
           auto* button_event =
               reinterpret_cast<Ecore_Event_Mouse_Button*>(event);
@@ -252,7 +252,7 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
   ecore_event_handlers_.push_back(ecore_event_handler_add(
       ECORE_EVENT_MOUSE_BUTTON_UP,
       [](void* data, int type, void* event) -> Eina_Bool {
-        auto* self = reinterpret_cast<TizenWindowEcoreWl2*>(data);
+        auto* self = static_cast<TizenWindowEcoreWl2*>(data);
         if (self->view_delegate_) {
           auto* button_event =
               reinterpret_cast<Ecore_Event_Mouse_Button*>(event);
@@ -270,7 +270,7 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
   ecore_event_handlers_.push_back(ecore_event_handler_add(
       ECORE_EVENT_MOUSE_MOVE,
       [](void* data, int type, void* event) -> Eina_Bool {
-        auto* self = reinterpret_cast<TizenWindowEcoreWl2*>(data);
+        auto* self = static_cast<TizenWindowEcoreWl2*>(data);
         if (self->view_delegate_) {
           auto* move_event = reinterpret_cast<Ecore_Event_Mouse_Move*>(event);
           if (move_event->window == self->GetWindowId()) {
@@ -287,7 +287,7 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
   ecore_event_handlers_.push_back(ecore_event_handler_add(
       ECORE_EVENT_MOUSE_WHEEL,
       [](void* data, int type, void* event) -> Eina_Bool {
-        auto* self = reinterpret_cast<TizenWindowEcoreWl2*>(data);
+        auto* self = static_cast<TizenWindowEcoreWl2*>(data);
         if (self->view_delegate_) {
           auto* wheel_event = reinterpret_cast<Ecore_Event_Mouse_Wheel*>(event);
           if (wheel_event->window == self->GetWindowId()) {
@@ -314,7 +314,7 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
   ecore_event_handlers_.push_back(ecore_event_handler_add(
       ECORE_EVENT_KEY_DOWN,
       [](void* data, int type, void* event) -> Eina_Bool {
-        auto* self = reinterpret_cast<TizenWindowEcoreWl2*>(data);
+        auto* self = static_cast<TizenWindowEcoreWl2*>(data);
         if (self->view_delegate_) {
           auto* key_event = reinterpret_cast<Ecore_Event_Key*>(event);
           if (key_event->window == self->GetWindowId()) {
@@ -338,7 +338,7 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
   ecore_event_handlers_.push_back(ecore_event_handler_add(
       ECORE_EVENT_KEY_UP,
       [](void* data, int type, void* event) -> Eina_Bool {
-        auto* self = reinterpret_cast<TizenWindowEcoreWl2*>(data);
+        auto* self = static_cast<TizenWindowEcoreWl2*>(data);
         if (self->view_delegate_) {
           auto* key_event = reinterpret_cast<Ecore_Event_Key*>(event);
           if (key_event->window == self->GetWindowId()) {

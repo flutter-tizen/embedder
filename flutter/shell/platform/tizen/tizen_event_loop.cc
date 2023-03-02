@@ -19,7 +19,7 @@ TizenEventLoop::TizenEventLoop(std::thread::id main_thread_id,
       on_task_expired_(std::move(on_task_expired)) {
   ecore_pipe_ = ecore_pipe_add(
       [](void* data, void* buffer, unsigned int nbyte) -> void {
-        auto* self = reinterpret_cast<TizenEventLoop*>(data);
+        auto* self = static_cast<TizenEventLoop*>(data);
         self->ExecuteTaskEvents();
       },
       this);
@@ -79,7 +79,7 @@ void TizenEventLoop::PostTask(FlutterTask flutter_task,
     ecore_timer_add(
         flutter_duration / 1000000000.0,
         [](void* data) -> Eina_Bool {
-          auto* self = reinterpret_cast<TizenEventLoop*>(data);
+          auto* self = static_cast<TizenEventLoop*>(data);
           if (self->ecore_pipe_) {
             ecore_pipe_write(self->ecore_pipe_, nullptr, 0);
           }
