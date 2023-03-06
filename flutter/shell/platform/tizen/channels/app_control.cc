@@ -20,7 +20,7 @@ int32_t NativeCreateAppControl(Dart_Handle handle) {
   Dart_NewFinalizableHandle_DL(
       handle, app_control.get(), 64,
       [](void* isolate_callback_data, void* peer) {
-        auto* app_control = reinterpret_cast<flutter::AppControl*>(peer);
+        auto* app_control = static_cast<flutter::AppControl*>(peer);
         flutter::AppControlManager::GetInstance().Remove(app_control->id());
       });
   flutter::AppControlManager::GetInstance().Insert(std::move(app_control));
@@ -34,7 +34,7 @@ bool NativeAttachAppControl(int32_t id, Dart_Handle handle) {
   }
   Dart_NewFinalizableHandle_DL(
       handle, app_control, 64, [](void* isolate_callback_data, void* peer) {
-        auto* app_control = reinterpret_cast<flutter::AppControl*>(peer);
+        auto* app_control = static_cast<flutter::AppControl*>(peer);
         flutter::AppControlManager::GetInstance().Remove(app_control->id());
       });
   return true;

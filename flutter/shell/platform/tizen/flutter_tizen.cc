@@ -236,9 +236,7 @@ FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindow(
 
 void* FlutterDesktopViewGetNativeHandle(FlutterDesktopViewRef view_ref) {
   flutter::FlutterTizenView* view = ViewFromHandle(view_ref);
-  auto* tizen_view =
-      reinterpret_cast<flutter::TizenViewBase*>(view->tizen_view());
-  return tizen_view->GetNativeHandle();
+  return view->tizen_view()->GetNativeHandle();
 }
 
 void FlutterDesktopViewResize(FlutterDesktopViewRef view,

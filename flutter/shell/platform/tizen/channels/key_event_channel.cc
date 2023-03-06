@@ -250,8 +250,7 @@ void KeyEventChannel::SendEmbedderEvent(const char* key,
   send_event_(
       event,
       [](bool handled, void* user_data) {
-        auto* callback =
-            reinterpret_cast<std::function<void(bool)>*>(user_data);
+        auto* callback = static_cast<std::function<void(bool)>*>(user_data);
         (*callback)(handled);
         delete callback;
       },
