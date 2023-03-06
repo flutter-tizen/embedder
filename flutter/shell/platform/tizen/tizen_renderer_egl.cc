@@ -1,4 +1,5 @@
 // Copyright 2020 Samsung Electronics Co., Ltd. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -18,6 +19,23 @@
 #include "flutter/shell/platform/tizen/logger.h"
 
 namespace flutter {
+
+namespace {
+
+// Maximum damage history - for triple buffering we need to store damage for
+// last two frames.
+const int32_t kMaxHistorySize = 10;
+
+// Auxiliary function to union the damage regions comprised by two FlutterRect
+// element. It saves the result of this join in the rect variable.
+static void JoinFlutterRect(FlutterRect* rect, FlutterRect additional_rect) {
+  rect->left = std::min(rect->left, additional_rect.left);
+  rect->top = std::min(rect->top, additional_rect.top);
+  rect->right = std::max(rect->right, additional_rect.right);
+  rect->bottom = std::max(rect->bottom, additional_rect.bottom);
+}
+
+}  // namespace
 
 TizenRendererEgl::TizenRendererEgl() {}
 
@@ -107,6 +125,16 @@ bool TizenRendererEgl::CreateSurface(void* render_target,
       FT_LOG(Error) << "Could not create an offscreen window surface.";
       return false;
     }
+  }
+
+  if (IsSupportedExtension("EGL_KHR_partial_update")) {
+    egl_set_damage_region_ = reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
+        eglGetProcAddress("eglSetDamageRegionKHR"));
+  }
+  if (IsSupportedExtension("EGL_KHR_swap_buffers_with_damage")) {
+    egl_swap_buffers_with_damage_ =
+        reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEKHRPROC>(
+            eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
   }
 
   is_valid_ = true;
@@ -244,17 +272,92 @@ bool TizenRendererEgl::OnMakeResourceCurrent() {
   return true;
 }
 
-bool TizenRendererEgl::OnPresent() {
+bool TizenRendererEgl::OnPresent(const FlutterPresentInfo* info) {
   if (!IsValid()) {
     return false;
   }
 
-  if (eglSwapBuffers(egl_display_, egl_surface_) != EGL_TRUE) {
+  // If the required extensions for partial repaint were not provided or
+  // no damage region was provided, do full repaint.
+  if (!egl_set_damage_region_ || !egl_swap_buffers_with_damage_ ||
+      info->buffer_damage.num_rects <= 0) {
+    if (eglSwapBuffers(egl_display_, egl_surface_) != EGL_TRUE) {
+      PrintEGLError();
+      FT_LOG(Error) << "Could not swap EGL buffers.";
+      return false;
+    }
+    return true;
+  }
+
+  // Free the existing damage that was allocated to this frame.
+  if (existing_damage_map_[info->fbo_id] != nullptr) {
+    free(existing_damage_map_[info->fbo_id]);
+    existing_damage_map_[info->fbo_id] = nullptr;
+  }
+
+  // Set the buffer damage as the damage region.
+  auto buffer_rects = RectToInts(info->buffer_damage.damage[0]);
+  if (egl_set_damage_region_(egl_display_, egl_surface_, buffer_rects.data(),
+                             1) != EGL_TRUE) {
     PrintEGLError();
-    FT_LOG(Error) << "Could not swap EGL buffers.";
+    FT_LOG(Error) << "Could not set damage region.";
+    return false;
+  }
+
+  // Add frame damage to damage history.
+  damage_history_.push_back(info->frame_damage.damage[0]);
+  if (damage_history_.size() > kMaxHistorySize) {
+    damage_history_.pop_front();
+  }
+
+  // Swap buffers with frame damage.
+  auto frame_rects = RectToInts(info->frame_damage.damage[0]);
+  if (egl_swap_buffers_with_damage_(egl_display_, egl_surface_,
+                                    frame_rects.data(), 1) != EGL_TRUE) {
+    PrintEGLError();
+    FT_LOG(Error) << "Could not swap EGL buffers with damage.";
     return false;
   }
   return true;
+}
+
+void TizenRendererEgl::PopulateExistingDamage(const intptr_t fbo_id,
+                                              FlutterDamage* existing_damage) {
+  // Given the FBO age, create existing damage region by joining all frame
+  // damages since FBO was last used.
+  EGLint age = 0;
+  if (eglQuerySurface(egl_display_, egl_surface_, EGL_BUFFER_AGE_KHR, &age) !=
+      EGL_TRUE) {
+    age = 4;  // Virtually no driver should have a swapchain length > 4.
+  }
+
+  existing_damage->num_rects = 1;
+
+  // Allocate the array of rectangles for the existing damage.
+  existing_damage_map_[fbo_id] = static_cast<FlutterRect*>(
+      malloc(sizeof(FlutterRect) * existing_damage->num_rects));
+
+  EGLint width, height;
+  eglQuerySurface(egl_display_, egl_surface_, EGL_WIDTH, &width);
+  eglQuerySurface(egl_display_, egl_surface_, EGL_HEIGHT, &height);
+  existing_damage_map_[fbo_id][0] = FlutterRect{
+      0, 0, static_cast<double>(width), static_cast<double>(height)};
+  existing_damage->damage = existing_damage_map_[fbo_id];
+
+  if (age > 1) {
+    --age;
+    // Join up to (age - 1) last rects from damage history.
+    for (auto i = damage_history_.rbegin();
+         i != damage_history_.rend() && age > 0; ++i, --age) {
+      if (i == damage_history_.rbegin()) {
+        if (i != damage_history_.rend()) {
+          existing_damage->damage[0] = {i->left, i->top, i->right, i->bottom};
+        }
+      } else {
+        JoinFlutterRect(&(existing_damage->damage[0]), *i);
+      }
+    }
+  }
 }
 
 uint32_t TizenRendererEgl::OnGetFBO() {
@@ -423,4 +526,18 @@ void* TizenRendererEgl::OnProcResolver(const char* name) {
   FT_LOG(Warn) << "Could not resolve: " << name;
   return nullptr;
 }
+
+std::array<EGLint, 4> TizenRendererEgl::RectToInts(const FlutterRect rect) {
+  EGLint height;
+  eglQuerySurface(egl_display_, egl_surface_, EGL_HEIGHT, &height);
+
+  std::array<EGLint, 4> res{
+      static_cast<int>(rect.left),
+      height - static_cast<int>(rect.bottom),
+      static_cast<int>(rect.right) - static_cast<int>(rect.left),
+      static_cast<int>(rect.bottom) - static_cast<int>(rect.top),
+  };
+  return res;
+}
+
 }  // namespace flutter

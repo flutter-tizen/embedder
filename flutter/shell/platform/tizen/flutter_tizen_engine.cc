@@ -450,12 +450,22 @@ FlutterRendererConfig FlutterTizenEngine::GetRendererConfig() {
       }
       return engine->view()->OnClearCurrent();
     };
-    config.open_gl.present = [](void* user_data) -> bool {
+    config.open_gl.fbo_reset_after_present = true;
+    config.open_gl.present_with_info =
+        [](void* user_data, const FlutterPresentInfo* info) -> bool {
       auto* engine = static_cast<FlutterTizenEngine*>(user_data);
       if (!engine->view()) {
         return false;
       }
-      return engine->view()->OnPresent();
+      return engine->view()->OnPresent(info);
+    };
+    config.open_gl.populate_existing_damage =
+        [](void* user_data, const intptr_t fbo_id,
+           FlutterDamage* existing_damage) -> void {
+      auto* engine = static_cast<FlutterTizenEngine*>(user_data);
+      if (engine->view()) {
+        engine->view()->OnPopulateExistingDamage(fbo_id, existing_damage);
+      }
     };
     config.open_gl.fbo_callback = [](void* user_data) -> uint32_t {
       auto* engine = static_cast<FlutterTizenEngine*>(user_data);

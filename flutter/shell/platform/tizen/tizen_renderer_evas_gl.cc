@@ -76,7 +76,6 @@ bool TizenRendererEvasGL::CreateSurface(void* render_target,
   OnMakeCurrent();
   glClearColor(0, 0, 0, 0);
   glClear(GL_COLOR_BUFFER_BIT);
-  OnPresent();
 
   return true;
 }
@@ -130,11 +129,10 @@ bool TizenRendererEvasGL::OnMakeResourceCurrent() {
   return true;
 }
 
-bool TizenRendererEvasGL::OnPresent() {
+bool TizenRendererEvasGL::OnPresent(const FlutterPresentInfo* info) {
   if (!IsValid()) {
     return false;
   }
-
   return true;
 }
 

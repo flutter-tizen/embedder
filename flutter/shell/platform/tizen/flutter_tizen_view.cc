@@ -131,8 +131,8 @@ bool FlutterTizenView::OnMakeResourceCurrent() {
   return engine_->renderer()->OnMakeResourceCurrent();
 }
 
-bool FlutterTizenView::OnPresent() {
-  bool result = engine_->renderer()->OnPresent();
+bool FlutterTizenView::OnPresent(const FlutterPresentInfo* info) {
+  bool result = engine_->renderer()->OnPresent(info);
 #ifdef NUI_SUPPORT
   if (auto* nui_view =
           dynamic_cast<flutter::TizenViewNui*>(tizen_view_.get())) {
@@ -140,6 +140,21 @@ bool FlutterTizenView::OnPresent() {
   }
 #endif
   return result;
+}
+
+void FlutterTizenView::OnPopulateExistingDamage(
+    const intptr_t fbo_id,
+    FlutterDamage* existing_damage) {
+#ifndef WEARABLE_PROFILE
+  if (auto* renderer = dynamic_cast<TizenRendererEgl*>(engine_->renderer())) {
+    // TODO(swift-kim): Disable partial repaint if the input panel is shown?
+    // if (!tizen_view_->input_method_context()->IsInputPanelShown()) {
+    renderer->PopulateExistingDamage(fbo_id, existing_damage);
+    // }
+  }
+#endif
+  // Otherwise do full repaint.
+  existing_damage->num_rects = 0;
 }
 
 uint32_t FlutterTizenView::OnGetFBO() {

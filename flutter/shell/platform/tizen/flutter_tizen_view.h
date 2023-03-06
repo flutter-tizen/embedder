@@ -48,8 +48,10 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   bool OnMakeCurrent();
   bool OnClearCurrent();
   bool OnMakeResourceCurrent();
-  bool OnPresent();
+  bool OnPresent(const FlutterPresentInfo* info);
 
+  void OnPopulateExistingDamage(const intptr_t fbo_id,
+                                FlutterDamage* existing_damage);
   uint32_t OnGetFBO();
 
   void* OnProcResolver(const char* name);

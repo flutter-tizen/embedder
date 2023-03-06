@@ -9,6 +9,7 @@
 
 #include <Elementary.h>
 
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/tizen/tizen_renderer.h"
 
 namespace flutter {
@@ -34,7 +35,7 @@ class TizenRendererEvasGL : public TizenRenderer {
 
   bool OnMakeResourceCurrent() override;
 
-  bool OnPresent() override;
+  bool OnPresent(const FlutterPresentInfo* info) override;
 
   uint32_t OnGetFBO() override;
 

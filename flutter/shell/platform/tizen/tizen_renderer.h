@@ -7,6 +7,8 @@
 
 #include <cstdint>
 
+#include "flutter/shell/platform/embedder/embedder.h"
+
 namespace flutter {
 
 class TizenRenderer {
@@ -30,7 +32,7 @@ class TizenRenderer {
 
   virtual bool OnMakeResourceCurrent() = 0;
 
-  virtual bool OnPresent() = 0;
+  virtual bool OnPresent(const FlutterPresentInfo* info) = 0;
 
   virtual uint32_t OnGetFBO() = 0;
 
