@@ -13,15 +13,23 @@
 #include <string>
 #include <unordered_map>
 
+#include "flutter/shell/platform/tizen/tizen_autofill.h"
+
 namespace flutter {
 
-using OnCommit = std::function<void(std::string str)>;
-using OnPreeditChanged = std::function<void(std::string str, int cursor_pos)>;
+using OnCommit = std::function<void(const std::string& str)>;
+using OnPreeditChanged =
+    std::function<void(const std::string& str, int cursor_pos)>;
 using OnPreeditStart = std::function<void()>;
 using OnPreeditEnd = std::function<void()>;
+using OnPopupAutofillContext = std::function<void()>;
 
 struct InputPanelGeometry {
   int32_t x = 0, y = 0, w = 0, h = 0;
+};
+
+struct InputFieldGeometry {
+  double_t x = 0, y = 0;
 };
 
 class TizenInputMethodContext {
@@ -47,6 +55,10 @@ class TizenInputMethodContext {
                          bool is_down);
 #endif
 
+  void SetInputFieldGeometry(InputFieldGeometry);
+
+  InputFieldGeometry GetInputFieldGeometry();
+
   InputPanelGeometry GetInputPanelGeometry();
 
   void ResetInputMethodContext();
@@ -56,6 +68,10 @@ class TizenInputMethodContext {
   void HideInputPanel();
 
   bool IsInputPanelShown();
+
+  void SetEnableSuggestions(bool enable);
+
+  void SetInputAction(const std::string& input_action);
 
   void SetInputPanelLayout(const std::string& layout);
 
@@ -79,7 +95,6 @@ class TizenInputMethodContext {
   void RegisterEventCallbacks();
   void UnregisterEventCallbacks();
 
-  void SetContextOptions();
   void SetInputPanelOptions();
 
 #ifdef NUI_SUPPORT
@@ -92,6 +107,8 @@ class TizenInputMethodContext {
   OnPreeditEnd on_preedit_end_;
   std::unordered_map<Ecore_IMF_Callback_Type, Ecore_IMF_Event_Cb>
       event_callbacks_;
+
+  InputFieldGeometry input_field_geometry_;
 };
 
 }  // namespace flutter

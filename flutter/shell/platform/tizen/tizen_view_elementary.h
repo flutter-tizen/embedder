@@ -46,11 +46,18 @@ class TizenViewElementary : public TizenView {
 
   void UnregisterEventHandlers();
 
+#ifndef WEARABLE_PROFILE
+  void PrepareAutofill();
+#endif
+
   void PrepareInputMethod();
 
   Evas_Object* parent_ = nullptr;
   Evas_Object* container_ = nullptr;
   Evas_Object* image_ = nullptr;
+#ifndef WEARABLE_PROFILE
+  Evas_Object* ctxpopup_ = nullptr;
+#endif
 
   std::unordered_map<Evas_Callback_Type, Evas_Object_Event_Cb>
       evas_object_callbacks_;

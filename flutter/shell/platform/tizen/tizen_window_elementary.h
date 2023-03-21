@@ -68,10 +68,17 @@ class TizenWindowElementary : public TizenWindow {
 
   void UnregisterEventHandlers();
 
+#ifndef WEARABLE_PROFILE
+  void PrepareAutofill();
+#endif
+
   void PrepareInputMethod();
 
   Evas_Object* elm_win_ = nullptr;
   Evas_Object* image_ = nullptr;
+#ifndef WEARABLE_PROFILE
+  Evas_Object* ctxpopup_ = nullptr;
+#endif
 
   Evas_Smart_Cb rotation_changed_callback_ = nullptr;
   std::unordered_map<Evas_Callback_Type, Evas_Object_Event_Cb>

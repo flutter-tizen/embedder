@@ -143,12 +143,15 @@ template("embedder") {
         "external_texture_pixel_egl.cc",
         "external_texture_surface_egl.cc",
         "flutter_platform_node_delegate_tizen.cc",
+        "tizen_autofill.cc",
         "tizen_renderer_egl.cc",
         "tizen_vsync_waiter.cc",
         "tizen_window_ecore_wl2.cc",
       ]
 
       libs += [
+        "capi-ui-autofill",
+        "capi-ui-autofill-common",
         "ecore_wl2",
         "tdm-client",
         "tizen-extension-client",
@@ -177,12 +180,14 @@ template("embedder") {
     if (api_version == "6.5" && target_name != "flutter_tizen_wearable") {
       sources += [
         "flutter_tizen_nui.cc",
+        "nui_autofill_popup.cc",
         "tizen_view_nui.cc",
       ]
 
       libs += [
         "dali2-adaptor",
         "dali2-core",
+        "dali2-toolkit",
       ]
 
       defines += [ "NUI_SUPPORT" ]

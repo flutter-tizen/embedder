@@ -138,7 +138,6 @@ TizenInputMethodContext::TizenInputMethodContext(uintptr_t window_id) {
 
   ecore_imf_context_client_window_set(imf_context_,
                                       reinterpret_cast<void*>(window_id));
-  SetContextOptions();
   SetInputPanelOptions();
   RegisterEventCallbacks();
 }
@@ -237,6 +236,15 @@ bool TizenInputMethodContext::HandleNuiKeyEvent(const char* device_name,
 }
 #endif
 
+void TizenInputMethodContext::SetInputFieldGeometry(
+    InputFieldGeometry geometry) {
+  input_field_geometry_ = geometry;
+}
+
+InputFieldGeometry TizenInputMethodContext::GetInputFieldGeometry() {
+  return input_field_geometry_;
+}
+
 InputPanelGeometry TizenInputMethodContext::GetInputPanelGeometry() {
   FT_ASSERT(imf_context_);
   InputPanelGeometry geometry;
@@ -266,6 +274,39 @@ bool TizenInputMethodContext::IsInputPanelShown() {
   Ecore_IMF_Input_Panel_State state =
       ecore_imf_context_input_panel_state_get(imf_context_);
   return state == ECORE_IMF_INPUT_PANEL_STATE_SHOW;
+}
+
+void TizenInputMethodContext::SetEnableSuggestions(bool enable) {
+  FT_ASSERT(imf_context_);
+  ecore_imf_context_prediction_allow_set(imf_context_,
+                                         enable ? EINA_TRUE : EINA_FALSE);
+}
+
+void TizenInputMethodContext::SetInputAction(const std::string& input_action) {
+  FT_ASSERT(imf_context_);
+  Ecore_IMF_Input_Panel_Return_Key_Type return_key_type =
+      ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_DEFAULT;
+
+  // Not supported : none, previous, continueAction, route, emergencyCall,
+  // newline
+  if (input_action == "TextInputAction.unspecified") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_DEFAULT;
+  } else if (input_action == "TextInputAction.done") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_DONE;
+  } else if (input_action == "TextInputAction.go") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_GO;
+  } else if (input_action == "TextInputAction.join") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_JOIN;
+  } else if (input_action == "TextInputAction.next") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_NEXT;
+  } else if (input_action == "TextInputAction.search") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_SEARCH;
+  } else if (input_action == "TextInputAction.send") {
+    return_key_type = ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_SEND;
+  }
+
+  ecore_imf_context_input_panel_return_key_type_set(imf_context_,
+                                                    return_key_type);
 }
 
 void TizenInputMethodContext::SetInputPanelLayout(
@@ -382,19 +423,8 @@ void TizenInputMethodContext::UnregisterEventCallbacks() {
       event_callbacks_[ECORE_IMF_CALLBACK_PREEDIT_END]);
 }
 
-void TizenInputMethodContext::SetContextOptions() {
-  FT_ASSERT(imf_context_);
-  ecore_imf_context_autocapital_type_set(imf_context_,
-                                         ECORE_IMF_AUTOCAPITAL_TYPE_NONE);
-  ecore_imf_context_prediction_allow_set(imf_context_, EINA_FALSE);
-}
-
 void TizenInputMethodContext::SetInputPanelOptions() {
   FT_ASSERT(imf_context_);
-  ecore_imf_context_input_panel_layout_set(imf_context_,
-                                           ECORE_IMF_INPUT_PANEL_LAYOUT_NORMAL);
-  ecore_imf_context_input_panel_return_key_type_set(
-      imf_context_, ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_DEFAULT);
   ecore_imf_context_input_panel_language_set(
       imf_context_, ECORE_IMF_INPUT_PANEL_LANG_AUTOMATIC);
 }

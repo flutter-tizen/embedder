@@ -7,6 +7,9 @@
 #include "flutter/shell/platform/common/json_method_codec.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/logger.h"
+#ifndef WEARABLE_PROFILE
+#include "flutter/shell/platform/tizen/tizen_autofill.h"
+#endif
 
 namespace flutter {
 
@@ -23,8 +26,15 @@ constexpr char kMultilineInputType[] = "TextInputType.multiline";
 constexpr char kUpdateEditingStateMethod[] =
     "TextInputClient.updateEditingState";
 constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
-constexpr char kSetPlatformViewClient[] = "TextInput.setPlatformViewClient";
+#ifndef WEARABLE_PROFILE
+constexpr char kRequestAutofillMethod[] = "TextInput.requestAutofill";
+#endif
+constexpr char kSetPlatformViewClientMethod[] =
+    "TextInput.setPlatformViewClient";
+constexpr char kSetEditableSizeAndTransformMethod[] =
+    "TextInput.setEditableSizeAndTransform";
 constexpr char kTextCapitalization[] = "textCapitalization";
+constexpr char kTextEnableSuggestions[] = "enableSuggestions";
 constexpr char kTextInputAction[] = "inputAction";
 constexpr char kTextInputType[] = "inputType";
 constexpr char kTextInputTypeName[] = "name";
@@ -38,8 +48,12 @@ constexpr char kSelectionBaseKey[] = "selectionBase";
 constexpr char kSelectionExtentKey[] = "selectionExtent";
 constexpr char kSelectionIsDirectionalKey[] = "selectionIsDirectional";
 constexpr char kTextKey[] = "text";
+constexpr char kTransformKey[] = "transform";
 constexpr char kBadArgumentError[] = "Bad Arguments";
 constexpr char kInternalConsistencyError[] = "Internal Consistency Error";
+constexpr char kAutofill[] = "autofill";
+constexpr char kUniqueIdentifier[] = "uniqueIdentifier";
+constexpr char kHints[] = "hints";
 
 bool IsAsciiPrintableKey(char ch) {
   return ch >= 32 && ch <= 126;
@@ -60,6 +74,11 @@ TextInputChannel::TextInputChannel(
              std::unique_ptr<MethodResult<rapidjson::Document>> result) {
         HandleMethodCall(call, std::move(result));
       });
+
+#ifndef WEARABLE_PROFILE
+  TizenAutofill& autofill = TizenAutofill::GetInstance();
+  autofill.SetOnCommit([this](std::string value) { OnCommit(value); });
+#endif
 }
 
 TextInputChannel::~TextInputChannel() {}
@@ -136,7 +155,7 @@ void TextInputChannel::HandleMethodCall(
   } else if (method.compare(kHideMethod) == 0) {
     input_method_context_->HideInputPanel();
     input_method_context_->ResetInputMethodContext();
-  } else if (method.compare(kSetPlatformViewClient) == 0) {
+  } else if (method.compare(kSetPlatformViewClientMethod) == 0) {
     result->NotImplemented();
     return;
   } else if (method.compare(kClearClientMethod) == 0) {
@@ -162,11 +181,21 @@ void TextInputChannel::HandleMethodCall(
     }
 
     client_id_ = client_id_json.GetInt();
+
+    auto enable_suggestions_iter =
+        client_config.FindMember(kTextEnableSuggestions);
+    if (enable_suggestions_iter != client_config.MemberEnd() &&
+        enable_suggestions_iter->value.IsBool()) {
+      bool enable = enable_suggestions_iter->value.GetBool();
+      input_method_context_->SetEnableSuggestions(enable);
+    }
+
     input_action_ = "";
     auto input_action_iter = client_config.FindMember(kTextInputAction);
     if (input_action_iter != client_config.MemberEnd() &&
         input_action_iter->value.IsString()) {
       input_action_ = input_action_iter->value.GetString();
+      input_method_context_->SetInputAction(input_action_);
     }
 
     text_capitalization_ = "";
@@ -208,6 +237,27 @@ void TextInputChannel::HandleMethodCall(
         // change. See https://github.com/flutter-tizen/engine/pull/194.
         input_method_context_->HideInputPanel();
         input_method_context_->ShowInputPanel();
+      }
+    }
+
+    auto autofill_iter = client_config.FindMember(kAutofill);
+    if (autofill_iter != client_config.MemberEnd() &&
+        autofill_iter->value.IsObject()) {
+      auto unique_identifier_iter =
+          autofill_iter->value.FindMember(kUniqueIdentifier);
+      if (unique_identifier_iter != autofill_iter->value.MemberEnd() &&
+          unique_identifier_iter->value.IsString()) {
+        autofill_id_ = unique_identifier_iter->value.GetString();
+      }
+
+      auto hints_iter = autofill_iter->value.FindMember(kHints);
+      if (hints_iter != autofill_iter->value.MemberEnd() &&
+          hints_iter->value.IsArray()) {
+        autofill_hints_.clear();
+        for (auto hint = hints_iter->value.GetArray().Begin();
+             hint != hints_iter->value.GetArray().End(); hint++) {
+          autofill_hints_.push_back(hint->GetString());
+        }
       }
     }
 
@@ -273,6 +323,28 @@ void TextInputChannel::HandleMethodCall(
           cursor_offset);
     }
     SendStateUpdate();
+#ifndef WEARABLE_PROFILE
+  } else if (method.compare(kRequestAutofillMethod) == 0) {
+    TizenAutofill::GetInstance().RequestAutofill(autofill_id_, autofill_hints_);
+#endif
+  } else if (method.compare(kSetEditableSizeAndTransformMethod) == 0) {
+    if (!method_call.arguments() || method_call.arguments()->IsNull()) {
+      result->Error(kBadArgumentError, "Method invoked without args.");
+      return;
+    }
+    const rapidjson::Document& args = *method_call.arguments();
+    auto transform_iter = args.FindMember(kTransformKey);
+    if (transform_iter != args.MemberEnd() && transform_iter->value.IsArray()) {
+      // The 12th and 13th values of the array stores x and y values,
+      // respectively.
+      auto x_iter = transform_iter->value.GetArray().Begin() + 12;
+      auto y_iter = transform_iter->value.GetArray().Begin() + 13;
+
+      InputFieldGeometry geometry;
+      geometry.x = x_iter->GetDouble();
+      geometry.y = y_iter->GetDouble();
+      input_method_context_->SetInputFieldGeometry(geometry);
+    }
   } else {
     result->NotImplemented();
     return;

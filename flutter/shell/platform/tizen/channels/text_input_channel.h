@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/method_channel.h"
@@ -79,6 +80,13 @@ class TextInputChannel {
   // Automatic text capitalization type. See available options:
   // https://api.flutter.dev/flutter/services/TextCapitalization.html
   std::string text_capitalization_ = "";
+
+  // The active autofill client id.
+  std::string autofill_id_;
+
+  // A list of autofill hint strings. See available options:
+  // https://api.flutter.dev/flutter/services/AutofillHints-class.html
+  std::vector<std::string> autofill_hints_;
 };
 
 }  // namespace flutter

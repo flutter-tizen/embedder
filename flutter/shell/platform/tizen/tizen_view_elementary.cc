@@ -8,7 +8,18 @@
 #include <string>
 
 #include "flutter/shell/platform/tizen/logger.h"
+#ifndef WEARABLE_PROFILE
+#include "flutter/shell/platform/tizen/tizen_autofill.h"
+#endif
 #include "flutter/shell/platform/tizen/tizen_view_event_handler_delegate.h"
+
+#if defined(MOBILE_PROFILE)
+constexpr double kProfileFactor = 0.7;
+#elif defined(TV_PROFILE)
+constexpr double kProfileFactor = 2.0;
+#elif not defined(WEARABLE_PROFILE)
+constexpr double kProfileFactor = 1.0;
+#endif
 
 namespace flutter {
 
@@ -52,6 +63,9 @@ TizenViewElementary::TizenViewElementary(int32_t width,
   }
 
   RegisterEventHandlers();
+#ifndef WEARABLE_PROFILE
+  PrepareAutofill();
+#endif
   PrepareInputMethod();
   Show();
 }
@@ -94,6 +108,14 @@ bool TizenViewElementary::CreateView() {
   evas_object_image_size_set(image_, initial_width_, initial_height_);
   evas_object_image_alpha_set(image_, EINA_TRUE);
   elm_object_part_content_set(container_, "overlay", image_);
+
+#ifndef WEARABLE_PROFILE
+  ctxpopup_ = elm_ctxpopup_add(container_);
+  elm_ctxpopup_direction_priority_set(
+      ctxpopup_, ELM_CTXPOPUP_DIRECTION_DOWN, ELM_CTXPOPUP_DIRECTION_RIGHT,
+      ELM_CTXPOPUP_DIRECTION_LEFT, ELM_CTXPOPUP_DIRECTION_UP);
+#endif
+
   return true;
 }
 
@@ -283,6 +305,16 @@ void TizenViewElementary::RegisterEventHandlers() {
   };
   evas_object_smart_callback_add(container_, "focused", focused_callback_,
                                  this);
+
+#ifndef WEARABLE_PROFILE
+  evas_object_callbacks_[EVAS_CALLBACK_HIDE] =
+      [](void* data, Evas* e, Evas_Object* obj, void* event_info) {
+        elm_ctxpopup_clear(obj);
+      };
+  evas_object_event_callback_add(ctxpopup_, EVAS_CALLBACK_HIDE,
+                                 evas_object_callbacks_[EVAS_CALLBACK_HIDE],
+                                 nullptr);
+#endif
 }
 
 void TizenViewElementary::UnregisterEventHandlers() {
@@ -306,6 +338,11 @@ void TizenViewElementary::UnregisterEventHandlers() {
   evas_object_event_callback_del(container_, EVAS_CALLBACK_KEY_UP,
                                  evas_object_callbacks_[EVAS_CALLBACK_KEY_UP]);
   evas_object_smart_callback_del(container_, "focused", focused_callback_);
+
+#ifndef WEARABLE_PROFILE
+  evas_object_event_callback_del(ctxpopup_, EVAS_CALLBACK_HIDE,
+                                 evas_object_callbacks_[EVAS_CALLBACK_HIDE]);
+#endif
 }
 
 TizenGeometry TizenViewElementary::GetGeometry() {
@@ -338,6 +375,41 @@ void TizenViewElementary::Show() {
   evas_object_show(container_);
   evas_object_show(image_);
 }
+
+#ifndef WEARABLE_PROFILE
+void TizenViewElementary::PrepareAutofill() {
+  TizenAutofill& autofill = TizenAutofill::GetInstance();
+  autofill.SetOnPopup([this]() {
+    const std::vector<std::unique_ptr<AutofillItem>>& items =
+        TizenAutofill::GetInstance().GetResponseItems();
+    if (items.empty()) {
+      return;
+    }
+    for (const auto& item : items) {
+      elm_ctxpopup_item_append(
+          ctxpopup_, item->label.c_str(), nullptr,
+          [](void* data, Evas_Object* obj, void* event_info) {
+            AutofillItem* item = static_cast<AutofillItem*>(data);
+            TizenAutofill::GetInstance().OnCommit(item->value);
+            evas_object_hide(obj);
+          },
+          item.get());
+    }
+// TODO(Swanseo0): Change ctxpopup's position to focused input field.
+#ifdef TV_PROFILE
+    double_t dpi = 72.0;
+#else
+    double_t dpi = static_cast<double>(GetDpi());
+#endif
+    double_t scale_factor = dpi / 90.0 * kProfileFactor;
+    InputFieldGeometry geometry =
+        input_method_context_->GetInputFieldGeometry();
+    evas_object_move(ctxpopup_, geometry.x * scale_factor,
+                     geometry.y * scale_factor);
+    evas_object_show(ctxpopup_);
+  });
+}
+#endif
 
 void TizenViewElementary::PrepareInputMethod() {
   input_method_context_ =
