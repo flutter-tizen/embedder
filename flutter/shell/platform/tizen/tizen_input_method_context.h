@@ -28,6 +28,10 @@ struct InputPanelGeometry {
   int32_t x = 0, y = 0, w = 0, h = 0;
 };
 
+struct InputFieldGeometry {
+  double_t x = 0, y = 0;
+};
+
 class TizenInputMethodContext {
  public:
   TizenInputMethodContext(uintptr_t window_id);
@@ -50,6 +54,10 @@ class TizenInputMethodContext {
                          size_t timestamp,
                          bool is_down);
 #endif
+
+  void SetInputFieldGeometry(InputFieldGeometry);
+
+  InputFieldGeometry GetInputFieldGeometry();
 
   InputPanelGeometry GetInputPanelGeometry();
 
@@ -87,7 +95,6 @@ class TizenInputMethodContext {
   void RegisterEventCallbacks();
   void UnregisterEventCallbacks();
 
-  void SetContextOptions();
   void SetInputPanelOptions();
 
 #ifdef NUI_SUPPORT
@@ -98,9 +105,10 @@ class TizenInputMethodContext {
   OnPreeditChanged on_preedit_changed_;
   OnPreeditStart on_preedit_start_;
   OnPreeditEnd on_preedit_end_;
-  OnPopupAutofillContext on_popup_autofill_context_;
   std::unordered_map<Ecore_IMF_Callback_Type, Ecore_IMF_Event_Cb>
       event_callbacks_;
+
+  InputFieldGeometry input_field_geometry_;
 };
 
 }  // namespace flutter

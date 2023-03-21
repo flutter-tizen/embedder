@@ -29,7 +29,10 @@ constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
 #ifndef WEARABLE_PROFILE
 constexpr char kRequestAutofillMethod[] = "TextInput.requestAutofill";
 #endif
-constexpr char kSetPlatformViewClient[] = "TextInput.setPlatformViewClient";
+constexpr char kSetPlatformViewClientMethod[] =
+    "TextInput.setPlatformViewClient";
+constexpr char kSetEditableSizeAndTransformMethod[] =
+    "TextInput.setEditableSizeAndTransform";
 constexpr char kTextCapitalization[] = "textCapitalization";
 constexpr char kTextEnableSuggestions[] = "enableSuggestions";
 constexpr char kTextInputAction[] = "inputAction";
@@ -45,6 +48,7 @@ constexpr char kSelectionBaseKey[] = "selectionBase";
 constexpr char kSelectionExtentKey[] = "selectionExtent";
 constexpr char kSelectionIsDirectionalKey[] = "selectionIsDirectional";
 constexpr char kTextKey[] = "text";
+constexpr char kTransformKey[] = "transform";
 constexpr char kBadArgumentError[] = "Bad Arguments";
 constexpr char kInternalConsistencyError[] = "Internal Consistency Error";
 constexpr char kAutofill[] = "autofill";
@@ -151,7 +155,7 @@ void TextInputChannel::HandleMethodCall(
   } else if (method.compare(kHideMethod) == 0) {
     input_method_context_->HideInputPanel();
     input_method_context_->ResetInputMethodContext();
-  } else if (method.compare(kSetPlatformViewClient) == 0) {
+  } else if (method.compare(kSetPlatformViewClientMethod) == 0) {
     result->NotImplemented();
     return;
   } else if (method.compare(kClearClientMethod) == 0) {
@@ -323,6 +327,24 @@ void TextInputChannel::HandleMethodCall(
   } else if (method.compare(kRequestAutofillMethod) == 0) {
     TizenAutofill::GetInstance().RequestAutofill(autofill_id_, autofill_hints_);
 #endif
+  } else if (method.compare(kSetEditableSizeAndTransformMethod) == 0) {
+    if (!method_call.arguments() || method_call.arguments()->IsNull()) {
+      result->Error(kBadArgumentError, "Method invoked without args.");
+      return;
+    }
+    const rapidjson::Document& args = *method_call.arguments();
+    auto transform_iter = args.FindMember(kTransformKey);
+    if (transform_iter != args.MemberEnd() && transform_iter->value.IsArray()) {
+      // The 12th and 13th values of the array stores x and y values,
+      // respectively.
+      auto x_iter = transform_iter->value.GetArray().Begin() + 12;
+      auto y_iter = transform_iter->value.GetArray().Begin() + 13;
+
+      InputFieldGeometry geometry;
+      geometry.x = x_iter->GetDouble();
+      geometry.y = y_iter->GetDouble();
+      input_method_context_->SetInputFieldGeometry(geometry);
+    }
   } else {
     result->NotImplemented();
     return;

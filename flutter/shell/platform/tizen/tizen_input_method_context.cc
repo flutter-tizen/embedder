@@ -138,7 +138,6 @@ TizenInputMethodContext::TizenInputMethodContext(uintptr_t window_id) {
 
   ecore_imf_context_client_window_set(imf_context_,
                                       reinterpret_cast<void*>(window_id));
-  SetContextOptions();
   SetInputPanelOptions();
   RegisterEventCallbacks();
 }
@@ -241,6 +240,15 @@ bool TizenInputMethodContext::HandleNuiKeyEvent(const char* device_name,
   }
 }
 #endif
+
+void TizenInputMethodContext::SetInputFieldGeometry(
+    InputFieldGeometry geometry) {
+  input_field_geometry_ = geometry;
+}
+
+InputFieldGeometry TizenInputMethodContext::GetInputFieldGeometry() {
+  return input_field_geometry_;
+}
 
 InputPanelGeometry TizenInputMethodContext::GetInputPanelGeometry() {
   FT_ASSERT(imf_context_);
@@ -420,16 +428,8 @@ void TizenInputMethodContext::UnregisterEventCallbacks() {
       event_callbacks_[ECORE_IMF_CALLBACK_PREEDIT_END]);
 }
 
-void TizenInputMethodContext::SetContextOptions() {
-  FT_ASSERT(imf_context_);
-  ecore_imf_context_autocapital_type_set(imf_context_,
-                                         ECORE_IMF_AUTOCAPITAL_TYPE_NONE);
-}
-
 void TizenInputMethodContext::SetInputPanelOptions() {
   FT_ASSERT(imf_context_);
-  ecore_imf_context_input_panel_layout_set(imf_context_,
-                                           ECORE_IMF_INPUT_PANEL_LAYOUT_NORMAL);
   ecore_imf_context_input_panel_language_set(
       imf_context_, ECORE_IMF_INPUT_PANEL_LANG_AUTOMATIC);
 }

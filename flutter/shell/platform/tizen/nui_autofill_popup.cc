@@ -78,7 +78,7 @@ void NuiAutofillPopup::Prepare(
   popup_.SetContent(content);
 }
 
-void NuiAutofillPopup::Show(Dali::Actor* actor) {
+void NuiAutofillPopup::Show(Dali::Actor* actor, double_t x, double_t y) {
   const std::vector<std::unique_ptr<AutofillItem>>& items =
       TizenAutofill::GetInstance().GetResponseItems();
   if (items.empty()) {
@@ -87,6 +87,8 @@ void NuiAutofillPopup::Show(Dali::Actor* actor) {
 
   Prepare(items);
 
+  popup_.SetProperty(Dali::Actor::Property::POSITION,
+                     Dali::Vector3(x, y, 0.5f));
   popup_.SetDisplayState(Dali::Toolkit::Popup::SHOWN);
   actor->Add(popup_);
 }

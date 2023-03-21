@@ -18,7 +18,7 @@ namespace flutter {
 
 class NuiAutofillPopup : public Dali::ConnectionTracker {
  public:
-  void Show(Dali::Actor* actor);
+  void Show(Dali::Actor* actor, double_t x, double_t y);
 
   void SetOnCommit(OnCommit callback) { on_commit_ = callback; }
 

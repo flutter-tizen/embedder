@@ -11,6 +11,14 @@
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/tizen_view_event_handler_delegate.h"
 
+#if defined(MOBILE_PROFILE)
+constexpr double kProfileFactor = 0.7;
+#elif defined(TV_PROFILE)
+constexpr double kProfileFactor = 2.0;
+#elif not defined(WEARABLE_PROFILE)
+constexpr double kProfileFactor = 1.0;
+#endif
+
 namespace flutter {
 
 TizenViewNui::TizenViewNui(int32_t width,
@@ -100,7 +108,18 @@ void TizenViewNui::OnKey(const char* device_name,
 
 void TizenViewNui::PrepareAutofill() {
   TizenAutofill& autofill = TizenAutofill::GetInstance();
-  autofill.SetOnPopup([this]() { autofill_.Show(image_view_); });
+  autofill.SetOnPopup([this]() {
+#ifdef TV_PROFILE
+    double_t dpi = 72.0;
+#else
+    double_t dpi = static_cast<double>(GetDpi());
+#endif
+    double_t scale_factor = dpi / 90.0 * kProfileFactor;
+    InputFieldGeometry geometry =
+        input_method_context_->GetInputFieldGeometry();
+    autofill_.Show(image_view_, geometry.x * scale_factor,
+                   geometry.y * scale_factor);
+  });
 
   autofill_.SetOnCommit(
       [this](std::string str) { view_delegate_->OnCommit(str); });

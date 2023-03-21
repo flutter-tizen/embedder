@@ -47,13 +47,28 @@ std::optional<autofill_hint_e> ConvertAutofillHint(std::string hint) {
 
 bool StoreFillResponseItem(autofill_fill_response_item_h item,
                            void* user_data) {
+  int ret = AUTOFILL_ERROR_NONE;
   char* id = nullptr;
-  char* value = nullptr;
-  char* label = nullptr;
+  ret = autofill_fill_response_item_get_id(item, &id);
+  if (ret != AUTOFILL_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to get response item's id.";
+    return false;
+  }
 
-  autofill_fill_response_item_get_id(item, &id);
-  autofill_fill_response_item_get_presentation_text(item, &label);
-  autofill_fill_response_item_get_value(item, &value);
+  char* label = nullptr;
+  ret = autofill_fill_response_item_get_presentation_text(item, &label);
+  if (ret != AUTOFILL_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to get response item's presentation text.";
+    return false;
+  }
+
+  char* value = nullptr;
+  ret = autofill_fill_response_item_get_value(item, &value);
+  if (ret != AUTOFILL_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to get response item's value.";
+    return false;
+  }
+
   std::unique_ptr<AutofillItem> response_item =
       std::make_unique<AutofillItem>();
   response_item->id = std::string(id);
@@ -116,10 +131,14 @@ autofill_save_view_info_h CreateSaveViewInfo(const std::string& view_id,
   }
 
   char* app_id = nullptr;
-  app_get_id(&app_id);
+  int ret = app_get_id(&app_id);
+  if (ret != APP_ERROR_NONE) {
+    FT_LOG(Error) << "Faild to get app id.";
+    return nullptr;
+  }
 
   autofill_save_view_info_h save_view_info = nullptr;
-  int ret = autofill_save_view_info_create(&save_view_info);
+  ret = autofill_save_view_info_create(&save_view_info);
   if (ret != AUTOFILL_ERROR_NONE) {
     FT_LOG(Error) << "Failed to create autofill save view info.";
     return nullptr;
@@ -159,10 +178,14 @@ void AddItemsToViewInfo(autofill_view_info_h view_info,
 autofill_view_info_h CreateViewInfo(const std::string& id,
                                     const std::vector<std::string>& hints) {
   char* app_id = nullptr;
-  app_get_id(&app_id);
+  int ret = app_get_id(&app_id);
+  if (ret != APP_ERROR_NONE) {
+    FT_LOG(Error) << "Faild to get app id.";
+    return nullptr;
+  }
 
   autofill_view_info_h view_info = nullptr;
-  int ret = autofill_view_info_create(&view_info);
+  ret = autofill_view_info_create(&view_info);
   if (ret != AUTOFILL_ERROR_NONE) {
     FT_LOG(Error) << "Failed to create autofill view info.";
     return nullptr;
@@ -192,12 +215,10 @@ TizenAutofill::~TizenAutofill() {
 
 void TizenAutofill::Initialize() {
   int ret = AUTOFILL_ERROR_NONE;
-  if (!autofill_) {
-    ret = autofill_create(&autofill_);
-    if (ret != AUTOFILL_ERROR_NONE) {
-      FT_LOG(Error) << "Failed to create autofill handle.";
-      return;
-    }
+  ret = autofill_create(&autofill_);
+  if (ret != AUTOFILL_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to create autofill handle.";
+    return;
   }
 
   ret = autofill_connect(
@@ -228,7 +249,6 @@ void TizenAutofill::Initialize() {
 void TizenAutofill::RequestAutofill(const std::string& id,
                                     const std::vector<std::string>& hints) {
   if (!is_initialized_) {
-    Initialize();
     return;
   }
 
@@ -253,7 +273,6 @@ void TizenAutofill::RequestAutofill(const std::string& id,
 void TizenAutofill::RegisterItem(const std::string& view_id,
                                  const AutofillItem& item) {
   if (!is_initialized_) {
-    Initialize();
     return;
   }
 
