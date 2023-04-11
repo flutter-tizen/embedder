@@ -16,7 +16,16 @@ namespace {
 
 constexpr int kScrollDirectionVertical = 0;
 constexpr int kScrollDirectionHorizontal = 1;
-constexpr int kScrollOffsetMultiplier = 20;
+
+FlutterPointerMouseButtons ToFlutterPointerButton(int32_t button) {
+  if (button == 2) {
+    return kFlutterPointerButtonMouseMiddle;
+  } else if (button == 3) {
+    return kFlutterPointerButtonMouseSecondary;
+  } else {
+    return kFlutterPointerButtonMousePrimary;
+  }
+}
 
 uint32_t EvasModifierToEcoreEventModifiers(const Evas_Modifier* evas_modifier) {
   uint32_t modifiers = 0;
@@ -125,21 +134,23 @@ void TizenViewElementary::RegisterEventHandlers() {
                                  evas_object_callbacks_[EVAS_CALLBACK_RESIZE],
                                  this);
 
-  evas_object_callbacks_[EVAS_CALLBACK_MOUSE_DOWN] =
-      [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
-        auto* self = static_cast<TizenViewElementary*>(data);
-        if (self->view_delegate_) {
-          if (self->container_ == object) {
-            auto* mouse_event =
-                reinterpret_cast<Evas_Event_Mouse_Down*>(event_info);
-            TizenGeometry geometry = self->GetGeometry();
-            self->view_delegate_->OnPointerDown(
-                mouse_event->canvas.x - geometry.left,
-                mouse_event->canvas.y - geometry.top, mouse_event->timestamp,
-                kFlutterPointerDeviceKindTouch, mouse_event->button);
-          }
-        }
-      };
+  evas_object_callbacks_[EVAS_CALLBACK_MOUSE_DOWN] = [](void* data, Evas* evas,
+                                                        Evas_Object* object,
+                                                        void* event_info) {
+    auto* self = static_cast<TizenViewElementary*>(data);
+    if (self->view_delegate_) {
+      if (self->container_ == object) {
+        auto* mouse_event =
+            reinterpret_cast<Evas_Event_Mouse_Down*>(event_info);
+        TizenGeometry geometry = self->GetGeometry();
+        self->view_delegate_->OnPointerDown(
+            mouse_event->canvas.x - geometry.left,
+            mouse_event->canvas.y - geometry.top,
+            ToFlutterPointerButton(mouse_event->button), mouse_event->timestamp,
+            reinterpret_cast<intptr_t>(mouse_event->dev));
+      }
+    }
+  };
   evas_object_event_callback_add(
       container_, EVAS_CALLBACK_MOUSE_DOWN,
       evas_object_callbacks_[EVAS_CALLBACK_MOUSE_DOWN], this);
@@ -158,8 +169,9 @@ void TizenViewElementary::RegisterEventHandlers() {
         TizenGeometry geometry = self->GetGeometry();
         self->view_delegate_->OnPointerUp(
             mouse_event->canvas.x - geometry.left,
-            mouse_event->canvas.y - geometry.top, mouse_event->timestamp,
-            kFlutterPointerDeviceKindTouch, mouse_event->button);
+            mouse_event->canvas.y - geometry.top,
+            ToFlutterPointerButton(mouse_event->button), mouse_event->timestamp,
+            reinterpret_cast<intptr_t>(mouse_event->dev));
       }
     }
   };
@@ -181,11 +193,12 @@ void TizenViewElementary::RegisterEventHandlers() {
           elm_object_scroll_hold_push(self->container_);
           self->scroll_hold_ = true;
         }
+
         TizenGeometry geometry = self->GetGeometry();
         self->view_delegate_->OnPointerMove(
             mouse_event->cur.canvas.x - geometry.left,
             mouse_event->cur.canvas.y - geometry.top, mouse_event->timestamp,
-            kFlutterPointerDeviceKindTouch, mouse_event->buttons);
+            reinterpret_cast<intptr_t>(mouse_event->dev));
       }
     }
   };
@@ -208,11 +221,12 @@ void TizenViewElementary::RegisterEventHandlers() {
             } else if (wheel_event->direction == kScrollDirectionHorizontal) {
               delta_x += wheel_event->z;
             }
+
             TizenGeometry geometry = self->GetGeometry();
             self->view_delegate_->OnScroll(
                 wheel_event->x - geometry.left, wheel_event->y - geometry.top,
-                delta_x, delta_y, kScrollOffsetMultiplier,
-                wheel_event->timestamp, kFlutterPointerDeviceKindTouch, 0);
+                delta_x, delta_y, wheel_event->timestamp,
+                reinterpret_cast<intptr_t>(wheel_event->dev));
           }
         }
       };

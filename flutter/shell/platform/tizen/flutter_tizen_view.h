@@ -64,28 +64,25 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   void OnPointerMove(double x,
                      double y,
                      size_t timestamp,
-                     FlutterPointerDeviceKind device_kind,
                      int32_t device_id) override;
 
   void OnPointerDown(double x,
                      double y,
+                     FlutterPointerMouseButtons button,
                      size_t timestamp,
-                     FlutterPointerDeviceKind device_kind,
                      int32_t device_id) override;
 
   void OnPointerUp(double x,
                    double y,
+                   FlutterPointerMouseButtons button,
                    size_t timestamp,
-                   FlutterPointerDeviceKind device_kind,
                    int32_t device_id) override;
 
   void OnScroll(double x,
                 double y,
                 double delta_x,
                 double delta_y,
-                int scroll_offset_multiplier,
                 size_t timestamp,
-                FlutterPointerDeviceKind device_kind,
                 int32_t device_id) override;
 
   void OnKey(const char* key,
@@ -112,6 +109,34 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   TextInputChannel* text_input_channel() { return text_input_channel_.get(); }
 
  private:
+  // Struct holding the state of an individual pointer. The engine doesn't keep
+  // track of which buttons have been pressed, so it's the embedder's
+  // responsibility.
+  struct PointerState {
+    // The device kind.
+    FlutterPointerDeviceKind device_kind = kFlutterPointerDeviceKindMouse;
+
+    // The device ID.
+    int32_t device_id = 0;
+
+    // True if the last event sent to Flutter had at least one button pressed.
+    bool flutter_state_is_down = false;
+
+    // True if kAdd has been sent to Flutter. Used to determine whether
+    // to send a kAdd event before sending an incoming pointer event, since
+    // Flutter expects pointers to be added before events are sent for them.
+    bool flutter_state_is_added = false;
+
+    // The currently pressed buttons, as represented in FlutterPointerEvent.
+    uint64_t buttons = 0;
+  };
+
+  // Creates a PointerState object unless it already exists.
+  PointerState* GetOrCreatePointerState(int32_t device_id);
+
+  // Returns a FlutterPointerPhase corresponding to the current pointer state.
+  FlutterPointerPhase GetPointerPhaseFromState(const PointerState* state) const;
+
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical.
   void SendWindowMetrics(int32_t left,
@@ -127,14 +152,16 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
                                double delta_x,
                                double delta_y,
                                size_t timestamp,
-                               FlutterPointerDeviceKind device_kind,
-                               int device_id);
+                               PointerState* state);
 
   // The engine associated with this view.
   std::unique_ptr<FlutterTizenEngine> engine_;
 
   // The platform view associated with this Flutter view.
   std::unique_ptr<TizenViewBase> tizen_view_;
+
+  // Keeps track of pointer states.
+  std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;
 
   // The plugin registrar managing internal plugins.
   std::unique_ptr<PluginRegistrar> internal_plugin_registrar_;
@@ -150,9 +177,6 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   // The current view rotation degree.
   int32_t rotation_degree_ = 0;
-
-  // The current pointer state to distinguish move or hover event.
-  bool pointer_state_ = false;
 
   // The current view transformation.
   FlutterTransformation flutter_transformation_ = {1.0, 0.0, 0.0, 0.0, 1.0,
