@@ -8,6 +8,7 @@
 #include <dlfcn.h>
 #endif
 
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/tizen_view_event_handler_delegate.h"
 
@@ -30,9 +31,9 @@ FlutterPointerMouseButtons ToFlutterPointerButton(int32_t button) {
 
 FlutterPointerDeviceKind ToFlutterDeviceKind(const Ecore_Device* dev) {
   Ecore_Device_Class device_class = ecore_device_class_get(dev);
-  if (device_class == ECORE_INPUT_DEVICE_TYPE_MOUSE) {
+  if (device_class == ECORE_DEVICE_CLASS_MOUSE) {
     return kFlutterPointerDeviceKindMouse;
-  } else if (device_class == ECORE_INPUT_DEVICE_TYPE_PEN) {
+  } else if (device_class == ECORE_DEVICE_CLASS_PEN) {
     return kFlutterPointerDeviceKindStylus;
   } else {
     return kFlutterPointerDeviceKindTouch;
