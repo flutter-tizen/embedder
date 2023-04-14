@@ -45,7 +45,9 @@ const std::vector<std::string> kBindableSystemKeys = {
     "XF86Exit",
 };
 
-constexpr int32_t kScrollOffsetMultiplier = 20;
+// The multiplier is taken from the Chromium source
+// (ui/events/x/events_x_utils.cc).
+constexpr int32_t kScrollOffsetMultiplier = 53;
 
 }  // namespace
 
