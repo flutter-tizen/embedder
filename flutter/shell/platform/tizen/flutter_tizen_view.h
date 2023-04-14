@@ -113,9 +113,6 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   // track of which buttons have been pressed, so it's the embedder's
   // responsibility.
   struct PointerState {
-    // The device kind.
-    FlutterPointerDeviceKind device_kind = kFlutterPointerDeviceKindMouse;
-
     // The device ID.
     int32_t device_id = 0;
 

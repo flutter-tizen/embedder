@@ -409,8 +409,7 @@ void FlutterTizenView::SendFlutterPointerEvent(FlutterPointerPhase phase,
     event.buttons = 0;
     event.timestamp = timestamp * 1000;
     event.device = state->device_id;
-    event.device_kind = state->device_kind;
-    event.buttons = state->buttons;
+    event.device_kind = kFlutterPointerDeviceKindTouch;
     engine_->SendPointerEvent(event);
 
     state->flutter_state_is_added = true;
@@ -428,9 +427,17 @@ void FlutterTizenView::SendFlutterPointerEvent(FlutterPointerPhase phase,
   event.scroll_delta_y = delta_y * kScrollOffsetMultiplier;
   event.timestamp = timestamp * 1000;
   event.device = state->device_id;
-  event.device_kind = state->device_kind;
-  event.buttons = state->buttons;
-
+  // Assume the "touch" device type if only the left button is pressed.
+  // This assumption is made because the platform doesn't provide exact device
+  // type information.
+  // Note that touch and mouse have different scroll behaviors:
+  // https://docs.flutter.dev/release/breaking-changes/default-scroll-behavior-drag
+  if (state->buttons == kFlutterPointerButtonMousePrimary) {
+    event.device_kind = kFlutterPointerDeviceKindTouch;
+  } else {
+    event.device_kind = kFlutterPointerDeviceKindMouse;
+    event.buttons = state->buttons;
+  }
   engine_->SendPointerEvent(event);
 }
 
