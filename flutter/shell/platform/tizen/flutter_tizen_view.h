@@ -64,18 +64,21 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   void OnPointerMove(double x,
                      double y,
                      size_t timestamp,
+                     FlutterPointerDeviceKind device_kind,
                      int32_t device_id) override;
 
   void OnPointerDown(double x,
                      double y,
                      FlutterPointerMouseButtons button,
                      size_t timestamp,
+                     FlutterPointerDeviceKind device_kind,
                      int32_t device_id) override;
 
   void OnPointerUp(double x,
                    double y,
                    FlutterPointerMouseButtons button,
                    size_t timestamp,
+                   FlutterPointerDeviceKind device_kind,
                    int32_t device_id) override;
 
   void OnScroll(double x,
@@ -83,6 +86,7 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
                 double delta_x,
                 double delta_y,
                 size_t timestamp,
+                FlutterPointerDeviceKind device_kind,
                 int32_t device_id) override;
 
   void OnKey(const char* key,
@@ -113,8 +117,11 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   // track of which buttons have been pressed, so it's the embedder's
   // responsibility.
   struct PointerState {
-    // The device ID.
-    int32_t device_id = 0;
+    // The device kind.
+    FlutterPointerDeviceKind device_kind = kFlutterPointerDeviceKindTouch;
+
+    // A virtual pointer ID that is unique across all device kinds.
+    int32_t pointer_id = 0;
 
     // True if the last event sent to Flutter had at least one button pressed.
     bool flutter_state_is_down = false;
@@ -129,7 +136,8 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   };
 
   // Creates a PointerState object unless it already exists.
-  PointerState* GetOrCreatePointerState(int32_t device_id);
+  PointerState* GetOrCreatePointerState(FlutterPointerDeviceKind device_kind,
+                                        int32_t device_id);
 
   // Returns a FlutterPointerPhase corresponding to the current pointer state.
   FlutterPointerPhase GetPointerPhaseFromState(const PointerState* state) const;

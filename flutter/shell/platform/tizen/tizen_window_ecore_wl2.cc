@@ -28,6 +28,17 @@ FlutterPointerMouseButtons ToFlutterPointerButton(int32_t button) {
   }
 }
 
+FlutterPointerDeviceKind ToFlutterDeviceKind(const Ecore_Device* dev) {
+  Ecore_Device_Class device_class = ecore_device_class_get(dev);
+  if (device_class == ECORE_INPUT_DEVICE_TYPE_MOUSE) {
+    return kFlutterPointerDeviceKindMouse;
+  } else if (device_class == ECORE_INPUT_DEVICE_TYPE_PEN) {
+    return kFlutterPointerDeviceKindStylus;
+  } else {
+    return kFlutterPointerDeviceKindTouch;
+  }
+}
+
 }  // namespace
 
 TizenWindowEcoreWl2::TizenWindowEcoreWl2(TizenGeometry geometry,
@@ -251,7 +262,8 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
             self->view_delegate_->OnPointerDown(
                 button_event->x, button_event->y,
                 ToFlutterPointerButton(button_event->buttons),
-                button_event->timestamp, button_event->multi.device);
+                button_event->timestamp, ToFlutterDeviceKind(button_event->dev),
+                button_event->multi.device);
             return ECORE_CALLBACK_DONE;
           }
         }
@@ -270,7 +282,8 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
             self->view_delegate_->OnPointerUp(
                 button_event->x, button_event->y,
                 ToFlutterPointerButton(button_event->buttons),
-                button_event->timestamp, button_event->multi.device);
+                button_event->timestamp, ToFlutterDeviceKind(button_event->dev),
+                button_event->multi.device);
             return ECORE_CALLBACK_DONE;
           }
         }
@@ -285,9 +298,9 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
         if (self->view_delegate_) {
           auto* move_event = reinterpret_cast<Ecore_Event_Mouse_Move*>(event);
           if (move_event->window == self->GetWindowId()) {
-            self->view_delegate_->OnPointerMove(move_event->x, move_event->y,
-                                                move_event->timestamp,
-                                                move_event->multi.device);
+            self->view_delegate_->OnPointerMove(
+                move_event->x, move_event->y, move_event->timestamp,
+                ToFlutterDeviceKind(move_event->dev), move_event->multi.device);
             return ECORE_CALLBACK_DONE;
           }
         }
@@ -311,9 +324,10 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
               delta_x += wheel_event->z;
             }
 
-            self->view_delegate_->OnScroll(wheel_event->x, wheel_event->y,
-                                           delta_x, delta_y,
-                                           wheel_event->timestamp, 0);
+            self->view_delegate_->OnScroll(
+                wheel_event->x, wheel_event->y, delta_x, delta_y,
+                wheel_event->timestamp, ToFlutterDeviceKind(wheel_event->dev),
+                0);
             return ECORE_CALLBACK_DONE;
           }
         }

@@ -203,11 +203,18 @@ void FlutterTizenView::OnRotate(int32_t degree) {
 }
 
 FlutterTizenView::PointerState* FlutterTizenView::GetOrCreatePointerState(
+    FlutterPointerDeviceKind device_kind,
     int32_t device_id) {
-  auto [iter, added] = pointer_states_.try_emplace(device_id, nullptr);
+  // Create a virtual pointer ID that is unique across all device types
+  // to prevent pointers from clashing in the engine's converter
+  // (lib/ui/window/pointer_data_packet_converter.cc)
+  int32_t pointer_id = (static_cast<int32_t>(device_kind) << 28) | device_id;
+
+  auto [iter, added] = pointer_states_.try_emplace(pointer_id, nullptr);
   if (added) {
     auto state = std::make_unique<PointerState>();
-    state->device_id = device_id;
+    state->device_kind = device_kind;
+    state->pointer_id = pointer_id;
     iter->second = std::move(state);
   }
   return iter->second.get();
@@ -229,8 +236,9 @@ FlutterPointerPhase FlutterTizenView::GetPointerPhaseFromState(
 void FlutterTizenView::OnPointerMove(double x,
                                      double y,
                                      size_t timestamp,
+                                     FlutterPointerDeviceKind device_kind,
                                      int32_t device_id) {
-  PointerState* state = GetOrCreatePointerState(device_id);
+  PointerState* state = GetOrCreatePointerState(device_kind, device_id);
   FlutterPointerPhase phase = GetPointerPhaseFromState(state);
   SendFlutterPointerEvent(phase, x, y, 0, 0, timestamp, state);
 }
@@ -239,9 +247,10 @@ void FlutterTizenView::OnPointerDown(double x,
                                      double y,
                                      FlutterPointerMouseButtons button,
                                      size_t timestamp,
+                                     FlutterPointerDeviceKind device_kind,
                                      int32_t device_id) {
   if (button != 0) {
-    PointerState* state = GetOrCreatePointerState(device_id);
+    PointerState* state = GetOrCreatePointerState(device_kind, device_id);
     state->buttons |= button;
     FlutterPointerPhase phase = GetPointerPhaseFromState(state);
     SendFlutterPointerEvent(phase, x, y, 0, 0, timestamp, state);
@@ -254,9 +263,10 @@ void FlutterTizenView::OnPointerUp(double x,
                                    double y,
                                    FlutterPointerMouseButtons button,
                                    size_t timestamp,
+                                   FlutterPointerDeviceKind device_kind,
                                    int32_t device_id) {
   if (button != 0) {
-    PointerState* state = GetOrCreatePointerState(device_id);
+    PointerState* state = GetOrCreatePointerState(device_kind, device_id);
     state->buttons &= ~button;
     FlutterPointerPhase phase = GetPointerPhaseFromState(state);
     SendFlutterPointerEvent(phase, x, y, 0, 0, timestamp, state);
@@ -272,8 +282,9 @@ void FlutterTizenView::OnScroll(double x,
                                 double delta_x,
                                 double delta_y,
                                 size_t timestamp,
+                                FlutterPointerDeviceKind device_kind,
                                 int32_t device_id) {
-  PointerState* state = GetOrCreatePointerState(device_id);
+  PointerState* state = GetOrCreatePointerState(device_kind, device_id);
   FlutterPointerPhase phase = GetPointerPhaseFromState(state);
   SendFlutterPointerEvent(phase, x, y, delta_x, delta_y, timestamp, state);
 }
@@ -408,8 +419,9 @@ void FlutterTizenView::SendFlutterPointerEvent(FlutterPointerPhase phase,
     event.y = new_y;
     event.buttons = 0;
     event.timestamp = timestamp * 1000;
-    event.device = state->device_id;
-    event.device_kind = kFlutterPointerDeviceKindTouch;
+    event.device = state->pointer_id;
+    event.device_kind = state->device_kind;
+    event.buttons = state->buttons;
     engine_->SendPointerEvent(event);
 
     state->flutter_state_is_added = true;
@@ -426,18 +438,9 @@ void FlutterTizenView::SendFlutterPointerEvent(FlutterPointerPhase phase,
   event.scroll_delta_x = delta_x * kScrollOffsetMultiplier;
   event.scroll_delta_y = delta_y * kScrollOffsetMultiplier;
   event.timestamp = timestamp * 1000;
-  event.device = state->device_id;
-  // Assume the "touch" device type if only the left button is pressed.
-  // This assumption is made because the platform doesn't provide exact device
-  // type information.
-  // Note that touch and mouse have different scroll behaviors:
-  // https://docs.flutter.dev/release/breaking-changes/default-scroll-behavior-drag
-  if (state->buttons == kFlutterPointerButtonMousePrimary) {
-    event.device_kind = kFlutterPointerDeviceKindTouch;
-  } else {
-    event.device_kind = kFlutterPointerDeviceKindMouse;
-    event.buttons = state->buttons;
-  }
+  event.device = state->pointer_id;
+  event.device_kind = state->device_kind;
+  event.buttons = state->buttons;
   engine_->SendPointerEvent(event);
 }
 

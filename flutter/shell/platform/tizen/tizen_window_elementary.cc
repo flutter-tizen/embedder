@@ -28,6 +28,17 @@ FlutterPointerMouseButtons ToFlutterPointerButton(int32_t button) {
   }
 }
 
+FlutterPointerDeviceKind ToFlutterDeviceKind(const Evas_Device* dev) {
+  Evas_Device_Class device_class = evas_device_class_get(dev);
+  if (device_class == EVAS_DEVICE_CLASS_MOUSE) {
+    return kFlutterPointerDeviceKindMouse;
+  } else if (device_class == EVAS_DEVICE_CLASS_PEN) {
+    return kFlutterPointerDeviceKindStylus;
+  } else {
+    return kFlutterPointerDeviceKindTouch;
+  }
+}
+
 uint32_t EvasModifierToEcoreEventModifiers(const Evas_Modifier* evas_modifier) {
   uint32_t modifiers = 0;
   if (evas_key_modifier_is_set(evas_modifier, "Control")) {
@@ -201,21 +212,21 @@ void TizenWindowElementary::RegisterEventHandlers() {
                                  evas_object_callbacks_[EVAS_CALLBACK_RESIZE],
                                  this);
 
-  evas_object_callbacks_[EVAS_CALLBACK_MOUSE_DOWN] = [](void* data, Evas* evas,
-                                                        Evas_Object* object,
-                                                        void* event_info) {
-    auto* self = static_cast<TizenWindowElementary*>(data);
-    if (self->view_delegate_) {
-      if (self->image_ == object) {
-        auto* mouse_event =
-            reinterpret_cast<Evas_Event_Mouse_Down*>(event_info);
-        self->view_delegate_->OnPointerDown(
-            mouse_event->canvas.x, mouse_event->canvas.y,
-            ToFlutterPointerButton(mouse_event->button), mouse_event->timestamp,
-            reinterpret_cast<intptr_t>(mouse_event->dev));
-      }
-    }
-  };
+  evas_object_callbacks_[EVAS_CALLBACK_MOUSE_DOWN] =
+      [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
+        auto* self = static_cast<TizenWindowElementary*>(data);
+        if (self->view_delegate_) {
+          if (self->image_ == object) {
+            auto* mouse_event =
+                reinterpret_cast<Evas_Event_Mouse_Down*>(event_info);
+            self->view_delegate_->OnPointerDown(
+                mouse_event->canvas.x, mouse_event->canvas.y,
+                ToFlutterPointerButton(mouse_event->button),
+                mouse_event->timestamp, ToFlutterDeviceKind(mouse_event->dev),
+                reinterpret_cast<intptr_t>(mouse_event->dev));
+          }
+        }
+      };
   evas_object_event_callback_add(
       image_, EVAS_CALLBACK_MOUSE_DOWN,
       evas_object_callbacks_[EVAS_CALLBACK_MOUSE_DOWN], this);
@@ -230,6 +241,7 @@ void TizenWindowElementary::RegisterEventHandlers() {
         self->view_delegate_->OnPointerUp(
             mouse_event->canvas.x, mouse_event->canvas.y,
             ToFlutterPointerButton(mouse_event->button), mouse_event->timestamp,
+            ToFlutterDeviceKind(mouse_event->dev),
             reinterpret_cast<intptr_t>(mouse_event->dev));
       }
     }
@@ -247,7 +259,7 @@ void TizenWindowElementary::RegisterEventHandlers() {
                 reinterpret_cast<Evas_Event_Mouse_Move*>(event_info);
             self->view_delegate_->OnPointerMove(
                 mouse_event->cur.canvas.x, mouse_event->cur.canvas.y,
-                mouse_event->timestamp,
+                mouse_event->timestamp, ToFlutterDeviceKind(mouse_event->dev),
                 reinterpret_cast<intptr_t>(mouse_event->dev));
           }
         }
@@ -274,7 +286,7 @@ void TizenWindowElementary::RegisterEventHandlers() {
 
             self->view_delegate_->OnScroll(
                 wheel_event->x, wheel_event->y, delta_x, delta_y,
-                wheel_event->timestamp,
+                wheel_event->timestamp, ToFlutterDeviceKind(wheel_event->dev),
                 reinterpret_cast<intptr_t>(wheel_event->dev));
           }
         }

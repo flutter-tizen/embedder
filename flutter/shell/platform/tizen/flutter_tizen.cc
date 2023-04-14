@@ -252,18 +252,23 @@ void FlutterDesktopViewOnPointerEvent(FlutterDesktopViewRef view,
                                       double y,
                                       size_t timestamp,
                                       int32_t device_id) {
-  // TODO(swift-kim): Support right and middle button clicks.
+  // TODO(swift-kim): Add support for mouse devices.
+  FlutterPointerDeviceKind device_kind = kFlutterPointerDeviceKindTouch;
   FlutterPointerMouseButtons button = kFlutterPointerButtonMousePrimary;
+
   switch (type) {
     case FlutterDesktopPointerEventType::kMouseDown:
     default:
-      ViewFromHandle(view)->OnPointerDown(x, y, button, timestamp, device_id);
+      ViewFromHandle(view)->OnPointerDown(x, y, button, timestamp, device_kind,
+                                          device_id);
       break;
     case FlutterDesktopPointerEventType::kMouseUp:
-      ViewFromHandle(view)->OnPointerUp(x, y, button, timestamp, device_id);
+      ViewFromHandle(view)->OnPointerUp(x, y, button, timestamp, device_kind,
+                                        device_id);
       break;
     case FlutterDesktopPointerEventType::kMouseMove:
-      ViewFromHandle(view)->OnPointerMove(x, y, timestamp, device_id);
+      ViewFromHandle(view)->OnPointerMove(x, y, timestamp, device_kind,
+                                          device_id);
       break;
   }
 }
