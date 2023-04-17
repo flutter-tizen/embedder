@@ -19,6 +19,19 @@ constexpr int kScrollDirectionVertical = 0;
 constexpr int kScrollDirectionHorizontal = 1;
 constexpr int kScrollOffsetMultiplier = 20;
 
+FlutterPointerDeviceKind EcoreDeviceClassToFlutterPointerDeviceKind(
+    int device_class) {
+  switch (device_class) {
+    case ECORE_DEVICE_CLASS_MOUSE:
+      return kFlutterPointerDeviceKindMouse;
+    case ECORE_DEVICE_CLASS_TOUCH:
+      return kFlutterPointerDeviceKindTouch;
+    default:
+      break;
+  }
+  return kFlutterPointerDeviceKindTouch;
+}
+
 }  // namespace
 
 TizenWindowEcoreWl2::TizenWindowEcoreWl2(TizenGeometry geometry,
@@ -239,9 +252,12 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
           auto* button_event =
               reinterpret_cast<Ecore_Event_Mouse_Button*>(event);
           if (button_event->window == self->GetWindowId()) {
+            FlutterPointerDeviceKind device_kind =
+                EcoreDeviceClassToFlutterPointerDeviceKind(
+                    ecore_device_class_get(button_event->dev));
             self->view_delegate_->OnPointerDown(
                 button_event->x, button_event->y, button_event->timestamp,
-                kFlutterPointerDeviceKindTouch, button_event->multi.device);
+                device_kind, button_event->multi.device);
             return ECORE_CALLBACK_DONE;
           }
         }
@@ -257,9 +273,12 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
           auto* button_event =
               reinterpret_cast<Ecore_Event_Mouse_Button*>(event);
           if (button_event->window == self->GetWindowId()) {
+            FlutterPointerDeviceKind device_kind =
+                EcoreDeviceClassToFlutterPointerDeviceKind(
+                    ecore_device_class_get(button_event->dev));
             self->view_delegate_->OnPointerUp(
                 button_event->x, button_event->y, button_event->timestamp,
-                kFlutterPointerDeviceKindTouch, button_event->multi.device);
+                device_kind, button_event->multi.device);
             return ECORE_CALLBACK_DONE;
           }
         }
@@ -274,9 +293,12 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
         if (self->view_delegate_) {
           auto* move_event = reinterpret_cast<Ecore_Event_Mouse_Move*>(event);
           if (move_event->window == self->GetWindowId()) {
+            FlutterPointerDeviceKind device_kind =
+                EcoreDeviceClassToFlutterPointerDeviceKind(
+                    ecore_device_class_get(move_event->dev));
             self->view_delegate_->OnPointerMove(
                 move_event->x, move_event->y, move_event->timestamp,
-                kFlutterPointerDeviceKindTouch, move_event->multi.device);
+                device_kind, move_event->multi.device);
             return ECORE_CALLBACK_DONE;
           }
         }
@@ -300,10 +322,13 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
               delta_x += wheel_event->z;
             }
 
+            FlutterPointerDeviceKind device_kind =
+                EcoreDeviceClassToFlutterPointerDeviceKind(
+                    ecore_device_class_get(wheel_event->dev));
             self->view_delegate_->OnScroll(
                 wheel_event->x, wheel_event->y, delta_x, delta_y,
-                kScrollOffsetMultiplier, wheel_event->timestamp,
-                kFlutterPointerDeviceKindTouch, 0);
+                kScrollOffsetMultiplier, wheel_event->timestamp, device_kind,
+                0);
             return ECORE_CALLBACK_DONE;
           }
         }

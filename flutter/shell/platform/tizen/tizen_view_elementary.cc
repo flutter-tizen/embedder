@@ -40,6 +40,19 @@ void EvasObjectResizeWithMinMaxHint(Evas_Object* object,
   evas_object_size_hint_max_set(object, width, height);
 }
 
+FlutterPointerDeviceKind EvasDeviceClassToFlutterPointerDeviceKind(
+    Evas_Device_Class device_class) {
+  switch (device_class) {
+    case EVAS_DEVICE_CLASS_MOUSE:
+      return kFlutterPointerDeviceKindMouse;
+    case EVAS_DEVICE_CLASS_TOUCH:
+      return kFlutterPointerDeviceKindTouch;
+    default:
+      break;
+  }
+  return kFlutterPointerDeviceKindTouch;
+}
+
 }  // namespace
 
 TizenViewElementary::TizenViewElementary(int32_t width,
@@ -133,10 +146,13 @@ void TizenViewElementary::RegisterEventHandlers() {
             auto* mouse_event =
                 reinterpret_cast<Evas_Event_Mouse_Down*>(event_info);
             TizenGeometry geometry = self->GetGeometry();
+            FlutterPointerDeviceKind device_kind =
+                EvasDeviceClassToFlutterPointerDeviceKind(
+                    evas_device_class_get(mouse_event->dev));
             self->view_delegate_->OnPointerDown(
                 mouse_event->canvas.x - geometry.left,
                 mouse_event->canvas.y - geometry.top, mouse_event->timestamp,
-                kFlutterPointerDeviceKindTouch, mouse_event->button);
+                device_kind, mouse_event->button);
           }
         }
       };
@@ -155,11 +171,15 @@ void TizenViewElementary::RegisterEventHandlers() {
           elm_object_scroll_hold_pop(self->container_);
           self->scroll_hold_ = false;
         }
+
         TizenGeometry geometry = self->GetGeometry();
-        self->view_delegate_->OnPointerUp(
-            mouse_event->canvas.x - geometry.left,
-            mouse_event->canvas.y - geometry.top, mouse_event->timestamp,
-            kFlutterPointerDeviceKindTouch, mouse_event->button);
+        FlutterPointerDeviceKind device_kind =
+            EvasDeviceClassToFlutterPointerDeviceKind(
+                evas_device_class_get(mouse_event->dev));
+        self->view_delegate_->OnPointerUp(mouse_event->canvas.x - geometry.left,
+                                          mouse_event->canvas.y - geometry.top,
+                                          mouse_event->timestamp, device_kind,
+                                          mouse_event->button);
       }
     }
   };
@@ -167,28 +187,31 @@ void TizenViewElementary::RegisterEventHandlers() {
                                  evas_object_callbacks_[EVAS_CALLBACK_MOUSE_UP],
                                  this);
 
-  evas_object_callbacks_[EVAS_CALLBACK_MOUSE_MOVE] = [](void* data, Evas* evas,
-                                                        Evas_Object* object,
-                                                        void* event_info) {
-    auto* self = static_cast<TizenViewElementary*>(data);
-    if (self->view_delegate_) {
-      if (self->container_ == object) {
-        auto* mouse_event =
-            reinterpret_cast<Evas_Event_Mouse_Move*>(event_info);
-        mouse_event->event_flags = Evas_Event_Flags(mouse_event->event_flags |
-                                                    EVAS_EVENT_FLAG_ON_HOLD);
-        if (!self->scroll_hold_) {
-          elm_object_scroll_hold_push(self->container_);
-          self->scroll_hold_ = true;
+  evas_object_callbacks_[EVAS_CALLBACK_MOUSE_MOVE] =
+      [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
+        auto* self = static_cast<TizenViewElementary*>(data);
+        if (self->view_delegate_) {
+          if (self->container_ == object) {
+            auto* mouse_event =
+                reinterpret_cast<Evas_Event_Mouse_Move*>(event_info);
+            mouse_event->event_flags = Evas_Event_Flags(
+                mouse_event->event_flags | EVAS_EVENT_FLAG_ON_HOLD);
+            if (!self->scroll_hold_) {
+              elm_object_scroll_hold_push(self->container_);
+              self->scroll_hold_ = true;
+            }
+
+            TizenGeometry geometry = self->GetGeometry();
+            FlutterPointerDeviceKind device_kind =
+                EvasDeviceClassToFlutterPointerDeviceKind(
+                    evas_device_class_get(mouse_event->dev));
+            self->view_delegate_->OnPointerMove(
+                mouse_event->cur.canvas.x - geometry.left,
+                mouse_event->cur.canvas.y - geometry.top,
+                mouse_event->timestamp, device_kind, mouse_event->buttons);
+          }
         }
-        TizenGeometry geometry = self->GetGeometry();
-        self->view_delegate_->OnPointerMove(
-            mouse_event->cur.canvas.x - geometry.left,
-            mouse_event->cur.canvas.y - geometry.top, mouse_event->timestamp,
-            kFlutterPointerDeviceKindTouch, mouse_event->buttons);
-      }
-    }
-  };
+      };
   evas_object_event_callback_add(
       container_, EVAS_CALLBACK_MOUSE_MOVE,
       evas_object_callbacks_[EVAS_CALLBACK_MOUSE_MOVE], this);
@@ -202,17 +225,20 @@ void TizenViewElementary::RegisterEventHandlers() {
                 reinterpret_cast<Ecore_Event_Mouse_Wheel*>(event_info);
             double delta_x = 0.0;
             double delta_y = 0.0;
-
             if (wheel_event->direction == kScrollDirectionVertical) {
               delta_y += wheel_event->z;
             } else if (wheel_event->direction == kScrollDirectionHorizontal) {
               delta_x += wheel_event->z;
             }
+
             TizenGeometry geometry = self->GetGeometry();
+            FlutterPointerDeviceKind device_kind =
+                EvasDeviceClassToFlutterPointerDeviceKind(
+                    evas_device_class_get(wheel_event->dev));
             self->view_delegate_->OnScroll(
                 wheel_event->x - geometry.left, wheel_event->y - geometry.top,
                 delta_x, delta_y, kScrollOffsetMultiplier,
-                wheel_event->timestamp, kFlutterPointerDeviceKindTouch, 0);
+                wheel_event->timestamp, device_kind, 0);
           }
         }
       };

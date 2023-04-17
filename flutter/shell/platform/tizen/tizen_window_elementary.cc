@@ -33,6 +33,19 @@ uint32_t EvasModifierToEcoreEventModifiers(const Evas_Modifier* evas_modifier) {
   return modifiers;
 }
 
+FlutterPointerDeviceKind EvasDeviceClassToFlutterPointerDeviceKind(
+    Evas_Device_Class device_class) {
+  switch (device_class) {
+    case EVAS_DEVICE_CLASS_MOUSE:
+      return kFlutterPointerDeviceKindMouse;
+    case EVAS_DEVICE_CLASS_TOUCH:
+      return kFlutterPointerDeviceKindTouch;
+    default:
+      break;
+  }
+  return kFlutterPointerDeviceKindTouch;
+}
+
 }  // namespace
 
 TizenWindowElementary::TizenWindowElementary(
@@ -199,10 +212,12 @@ void TizenWindowElementary::RegisterEventHandlers() {
           if (self->image_ == object) {
             auto* mouse_event =
                 reinterpret_cast<Evas_Event_Mouse_Down*>(event_info);
+            FlutterPointerDeviceKind device_kind =
+                EvasDeviceClassToFlutterPointerDeviceKind(
+                    evas_device_class_get(mouse_event->dev));
             self->view_delegate_->OnPointerDown(
                 mouse_event->canvas.x, mouse_event->canvas.y,
-                mouse_event->timestamp, kFlutterPointerDeviceKindTouch,
-                mouse_event->button);
+                mouse_event->timestamp, device_kind, mouse_event->button);
           }
         }
       };
@@ -217,10 +232,12 @@ void TizenWindowElementary::RegisterEventHandlers() {
     if (self->view_delegate_) {
       if (self->image_ == object) {
         auto* mouse_event = reinterpret_cast<Evas_Event_Mouse_Up*>(event_info);
+        FlutterPointerDeviceKind device_kind =
+            EvasDeviceClassToFlutterPointerDeviceKind(
+                evas_device_class_get(mouse_event->dev));
         self->view_delegate_->OnPointerUp(
             mouse_event->canvas.x, mouse_event->canvas.y,
-            mouse_event->timestamp, kFlutterPointerDeviceKindTouch,
-            mouse_event->button);
+            mouse_event->timestamp, device_kind, mouse_event->button);
       }
     }
   };
@@ -235,10 +252,12 @@ void TizenWindowElementary::RegisterEventHandlers() {
           if (self->image_ == object) {
             auto* mouse_event =
                 reinterpret_cast<Evas_Event_Mouse_Move*>(event_info);
+            FlutterPointerDeviceKind device_kind =
+                EvasDeviceClassToFlutterPointerDeviceKind(
+                    evas_device_class_get(mouse_event->dev));
             self->view_delegate_->OnPointerMove(
                 mouse_event->cur.canvas.x, mouse_event->cur.canvas.y,
-                mouse_event->timestamp, kFlutterPointerDeviceKindTouch,
-                mouse_event->buttons);
+                mouse_event->timestamp, device_kind, mouse_event->buttons);
           }
         }
       };
@@ -246,29 +265,31 @@ void TizenWindowElementary::RegisterEventHandlers() {
       image_, EVAS_CALLBACK_MOUSE_MOVE,
       evas_object_callbacks_[EVAS_CALLBACK_MOUSE_MOVE], this);
 
-  evas_object_callbacks_[EVAS_CALLBACK_MOUSE_WHEEL] =
-      [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
-        auto* self = static_cast<TizenWindowElementary*>(data);
-        if (self->view_delegate_) {
-          if (self->image_ == object) {
-            auto* wheel_event =
-                reinterpret_cast<Ecore_Event_Mouse_Wheel*>(event_info);
-            double delta_x = 0.0;
-            double delta_y = 0.0;
+  evas_object_callbacks_[EVAS_CALLBACK_MOUSE_WHEEL] = [](void* data, Evas* evas,
+                                                         Evas_Object* object,
+                                                         void* event_info) {
+    auto* self = static_cast<TizenWindowElementary*>(data);
+    if (self->view_delegate_) {
+      if (self->image_ == object) {
+        auto* wheel_event =
+            reinterpret_cast<Ecore_Event_Mouse_Wheel*>(event_info);
+        double delta_x = 0.0;
+        double delta_y = 0.0;
 
-            if (wheel_event->direction == kScrollDirectionVertical) {
-              delta_y += wheel_event->z;
-            } else if (wheel_event->direction == kScrollDirectionHorizontal) {
-              delta_x += wheel_event->z;
-            }
-
-            self->view_delegate_->OnScroll(
-                wheel_event->x, wheel_event->y, delta_x, delta_y,
-                kScrollOffsetMultiplier, wheel_event->timestamp,
-                kFlutterPointerDeviceKindTouch, 0);
-          }
+        if (wheel_event->direction == kScrollDirectionVertical) {
+          delta_y += wheel_event->z;
+        } else if (wheel_event->direction == kScrollDirectionHorizontal) {
+          delta_x += wheel_event->z;
         }
-      };
+        FlutterPointerDeviceKind device_kind =
+            EvasDeviceClassToFlutterPointerDeviceKind(
+                evas_device_class_get(wheel_event->dev));
+        self->view_delegate_->OnScroll(wheel_event->x, wheel_event->y, delta_x,
+                                       delta_y, kScrollOffsetMultiplier,
+                                       wheel_event->timestamp, device_kind, 0);
+      }
+    }
+  };
   evas_object_event_callback_add(
       image_, EVAS_CALLBACK_MOUSE_WHEEL,
       evas_object_callbacks_[EVAS_CALLBACK_MOUSE_WHEEL], this);
