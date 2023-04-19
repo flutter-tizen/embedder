@@ -8,6 +8,7 @@
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h"
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/tizen/flutter_project_bundle.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_view.h"
@@ -251,19 +252,23 @@ void FlutterDesktopViewOnPointerEvent(FlutterDesktopViewRef view,
                                       double y,
                                       size_t timestamp,
                                       int32_t device_id) {
+  // TODO(swift-kim): Add support for mouse devices.
+  FlutterPointerDeviceKind device_kind = kFlutterPointerDeviceKindTouch;
+  FlutterPointerMouseButtons button = kFlutterPointerButtonMousePrimary;
+
   switch (type) {
     case FlutterDesktopPointerEventType::kMouseDown:
     default:
-      ViewFromHandle(view)->OnPointerDown(
-          x, y, timestamp, kFlutterPointerDeviceKindTouch, device_id);
+      ViewFromHandle(view)->OnPointerDown(x, y, button, timestamp, device_kind,
+                                          device_id);
       break;
     case FlutterDesktopPointerEventType::kMouseUp:
-      ViewFromHandle(view)->OnPointerUp(
-          x, y, timestamp, kFlutterPointerDeviceKindTouch, device_id);
+      ViewFromHandle(view)->OnPointerUp(x, y, button, timestamp, device_kind,
+                                        device_id);
       break;
     case FlutterDesktopPointerEventType::kMouseMove:
-      ViewFromHandle(view)->OnPointerMove(
-          x, y, timestamp, kFlutterPointerDeviceKindTouch, device_id);
+      ViewFromHandle(view)->OnPointerMove(x, y, timestamp, device_kind,
+                                          device_id);
       break;
   }
 }

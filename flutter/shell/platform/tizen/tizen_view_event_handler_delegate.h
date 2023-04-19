@@ -29,12 +29,14 @@ class TizenViewEventHandlerDelegate {
 
   virtual void OnPointerDown(double x,
                              double y,
+                             FlutterPointerMouseButtons button,
                              size_t timestamp,
                              FlutterPointerDeviceKind device_kind,
                              int32_t device_id) = 0;
 
   virtual void OnPointerUp(double x,
                            double y,
+                           FlutterPointerMouseButtons button,
                            size_t timestamp,
                            FlutterPointerDeviceKind device_kind,
                            int32_t device_id) = 0;
@@ -43,7 +45,6 @@ class TizenViewEventHandlerDelegate {
                         double y,
                         double delta_x,
                         double delta_y,
-                        int scroll_offset_multiplier,
                         size_t timestamp,
                         FlutterPointerDeviceKind device_kind,
                         int32_t device_id) = 0;

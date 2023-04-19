@@ -45,6 +45,10 @@ const std::vector<std::string> kBindableSystemKeys = {
     "XF86Exit",
 };
 
+// The multiplier is taken from the Chromium source
+// (ui/events/x/events_x_utils.cc).
+constexpr int32_t kScrollOffsetMultiplier = 53;
+
 }  // namespace
 
 namespace flutter {
@@ -200,46 +204,91 @@ void FlutterTizenView::OnRotate(int32_t degree) {
   SendWindowMetrics(geometry.left, geometry.top, width, height, 0.0);
 }
 
+FlutterTizenView::PointerState* FlutterTizenView::GetOrCreatePointerState(
+    FlutterPointerDeviceKind device_kind,
+    int32_t device_id) {
+  // Create a virtual pointer ID that is unique across all device types
+  // to prevent pointers from clashing in the engine's converter
+  // (lib/ui/window/pointer_data_packet_converter.cc)
+  int32_t pointer_id = (static_cast<int32_t>(device_kind) << 28) | device_id;
+
+  auto [iter, added] = pointer_states_.try_emplace(pointer_id, nullptr);
+  if (added) {
+    auto state = std::make_unique<PointerState>();
+    state->device_kind = device_kind;
+    state->pointer_id = pointer_id;
+    iter->second = std::move(state);
+  }
+  return iter->second.get();
+}
+
+FlutterPointerPhase FlutterTizenView::GetPointerPhaseFromState(
+    const PointerState* state) const {
+  // For details about this logic, see FlutterPointerPhase in the embedder.h
+  // file.
+  if (state->buttons == 0) {
+    return state->flutter_state_is_down ? FlutterPointerPhase::kUp
+                                        : FlutterPointerPhase::kHover;
+  } else {
+    return state->flutter_state_is_down ? FlutterPointerPhase::kMove
+                                        : FlutterPointerPhase::kDown;
+  }
+}
+
 void FlutterTizenView::OnPointerMove(double x,
                                      double y,
                                      size_t timestamp,
                                      FlutterPointerDeviceKind device_kind,
                                      int32_t device_id) {
-  if (pointer_state_) {
-    SendFlutterPointerEvent(kMove, x, y, 0, 0, timestamp, device_kind,
-                            device_id);
-  }
+  PointerState* state = GetOrCreatePointerState(device_kind, device_id);
+  FlutterPointerPhase phase = GetPointerPhaseFromState(state);
+  SendFlutterPointerEvent(phase, x, y, 0, 0, timestamp, state);
 }
 
 void FlutterTizenView::OnPointerDown(double x,
                                      double y,
+                                     FlutterPointerMouseButtons button,
                                      size_t timestamp,
                                      FlutterPointerDeviceKind device_kind,
                                      int32_t device_id) {
-  pointer_state_ = true;
-  SendFlutterPointerEvent(kDown, x, y, 0, 0, timestamp, device_kind, device_id);
+  if (button != 0) {
+    PointerState* state = GetOrCreatePointerState(device_kind, device_id);
+    state->buttons |= button;
+    FlutterPointerPhase phase = GetPointerPhaseFromState(state);
+    SendFlutterPointerEvent(phase, x, y, 0, 0, timestamp, state);
+
+    state->flutter_state_is_down = true;
+  }
 }
 
 void FlutterTizenView::OnPointerUp(double x,
                                    double y,
+                                   FlutterPointerMouseButtons button,
                                    size_t timestamp,
                                    FlutterPointerDeviceKind device_kind,
                                    int32_t device_id) {
-  pointer_state_ = false;
-  SendFlutterPointerEvent(kUp, x, y, 0, 0, timestamp, device_kind, device_id);
+  if (button != 0) {
+    PointerState* state = GetOrCreatePointerState(device_kind, device_id);
+    state->buttons &= ~button;
+    FlutterPointerPhase phase = GetPointerPhaseFromState(state);
+    SendFlutterPointerEvent(phase, x, y, 0, 0, timestamp, state);
+
+    if (phase == FlutterPointerPhase::kUp) {
+      state->flutter_state_is_down = false;
+    }
+  }
 }
 
 void FlutterTizenView::OnScroll(double x,
                                 double y,
                                 double delta_x,
                                 double delta_y,
-                                int scroll_offset_multiplier,
                                 size_t timestamp,
                                 FlutterPointerDeviceKind device_kind,
                                 int32_t device_id) {
-  SendFlutterPointerEvent(
-      pointer_state_ ? kMove : kHover, x, y, delta_x * scroll_offset_multiplier,
-      delta_y * scroll_offset_multiplier, timestamp, device_kind, device_id);
+  PointerState* state = GetOrCreatePointerState(device_kind, device_id);
+  FlutterPointerPhase phase = GetPointerPhaseFromState(state);
+  SendFlutterPointerEvent(phase, x, y, delta_x, delta_y, timestamp, state);
 }
 
 void FlutterTizenView::OnKey(const char* key,
@@ -341,15 +390,13 @@ void FlutterTizenView::SendWindowMetrics(int32_t left,
   engine_->SendWindowMetrics(left, top, width, height, computed_pixel_ratio);
 }
 
-void FlutterTizenView::SendFlutterPointerEvent(
-    FlutterPointerPhase phase,
-    double x,
-    double y,
-    double delta_x,
-    double delta_y,
-    size_t timestamp,
-    FlutterPointerDeviceKind device_kind,
-    int device_id) {
+void FlutterTizenView::SendFlutterPointerEvent(FlutterPointerPhase phase,
+                                               double x,
+                                               double y,
+                                               double delta_x,
+                                               double delta_y,
+                                               size_t timestamp,
+                                               PointerState* state) {
   TizenGeometry geometry = tizen_view_->GetGeometry();
   double new_x = x, new_y = y;
 
@@ -364,6 +411,24 @@ void FlutterTizenView::SendFlutterPointerEvent(
     new_y = geometry.width - x;
   }
 
+  // If the pointer isn't already added, synthesize an add to satisfy Flutter's
+  // expectations about events.
+  if (!state->flutter_state_is_added) {
+    FlutterPointerEvent event = {};
+    event.struct_size = sizeof(event);
+    event.phase = FlutterPointerPhase::kAdd;
+    event.x = new_x;
+    event.y = new_y;
+    event.buttons = 0;
+    event.timestamp = timestamp * 1000;
+    event.device = state->pointer_id;
+    event.device_kind = state->device_kind;
+    event.buttons = state->buttons;
+    engine_->SendPointerEvent(event);
+
+    state->flutter_state_is_added = true;
+  }
+
   FlutterPointerEvent event = {};
   event.struct_size = sizeof(event);
   event.phase = phase;
@@ -372,12 +437,12 @@ void FlutterTizenView::SendFlutterPointerEvent(
   if (delta_x != 0 || delta_y != 0) {
     event.signal_kind = kFlutterPointerSignalKindScroll;
   }
-  event.scroll_delta_x = delta_x;
-  event.scroll_delta_y = delta_y;
+  event.scroll_delta_x = delta_x * kScrollOffsetMultiplier;
+  event.scroll_delta_y = delta_y * kScrollOffsetMultiplier;
   event.timestamp = timestamp * 1000;
-  event.device = device_id;
-  event.device_kind = kFlutterPointerDeviceKindTouch;
-
+  event.device = state->pointer_id;
+  event.device_kind = state->device_kind;
+  event.buttons = state->buttons;
   engine_->SendPointerEvent(event);
 }
 

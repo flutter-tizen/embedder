@@ -8,6 +8,7 @@
 #include <eom.h>
 #include <ui/efl_util.h>
 
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/tizen_view_event_handler_delegate.h"
 
@@ -17,7 +18,27 @@ namespace {
 
 constexpr int kScrollDirectionVertical = 0;
 constexpr int kScrollDirectionHorizontal = 1;
-constexpr int kScrollOffsetMultiplier = 20;
+
+FlutterPointerMouseButtons ToFlutterPointerButton(int32_t button) {
+  if (button == 2) {
+    return kFlutterPointerButtonMouseMiddle;
+  } else if (button == 3) {
+    return kFlutterPointerButtonMouseSecondary;
+  } else {
+    return kFlutterPointerButtonMousePrimary;
+  }
+}
+
+FlutterPointerDeviceKind ToFlutterDeviceKind(const Evas_Device* dev) {
+  Evas_Device_Class device_class = evas_device_class_get(dev);
+  if (device_class == EVAS_DEVICE_CLASS_MOUSE) {
+    return kFlutterPointerDeviceKindMouse;
+  } else if (device_class == EVAS_DEVICE_CLASS_PEN) {
+    return kFlutterPointerDeviceKindStylus;
+  } else {
+    return kFlutterPointerDeviceKindTouch;
+  }
+}
 
 uint32_t EvasModifierToEcoreEventModifiers(const Evas_Modifier* evas_modifier) {
   uint32_t modifiers = 0;
@@ -201,8 +222,9 @@ void TizenWindowElementary::RegisterEventHandlers() {
                 reinterpret_cast<Evas_Event_Mouse_Down*>(event_info);
             self->view_delegate_->OnPointerDown(
                 mouse_event->canvas.x, mouse_event->canvas.y,
-                mouse_event->timestamp, kFlutterPointerDeviceKindTouch,
-                mouse_event->button);
+                ToFlutterPointerButton(mouse_event->button),
+                mouse_event->timestamp, ToFlutterDeviceKind(mouse_event->dev),
+                reinterpret_cast<intptr_t>(mouse_event->dev));
           }
         }
       };
@@ -219,8 +241,9 @@ void TizenWindowElementary::RegisterEventHandlers() {
         auto* mouse_event = reinterpret_cast<Evas_Event_Mouse_Up*>(event_info);
         self->view_delegate_->OnPointerUp(
             mouse_event->canvas.x, mouse_event->canvas.y,
-            mouse_event->timestamp, kFlutterPointerDeviceKindTouch,
-            mouse_event->button);
+            ToFlutterPointerButton(mouse_event->button), mouse_event->timestamp,
+            ToFlutterDeviceKind(mouse_event->dev),
+            reinterpret_cast<intptr_t>(mouse_event->dev));
       }
     }
   };
@@ -237,8 +260,8 @@ void TizenWindowElementary::RegisterEventHandlers() {
                 reinterpret_cast<Evas_Event_Mouse_Move*>(event_info);
             self->view_delegate_->OnPointerMove(
                 mouse_event->cur.canvas.x, mouse_event->cur.canvas.y,
-                mouse_event->timestamp, kFlutterPointerDeviceKindTouch,
-                mouse_event->buttons);
+                mouse_event->timestamp, ToFlutterDeviceKind(mouse_event->dev),
+                reinterpret_cast<intptr_t>(mouse_event->dev));
           }
         }
       };
@@ -264,8 +287,8 @@ void TizenWindowElementary::RegisterEventHandlers() {
 
             self->view_delegate_->OnScroll(
                 wheel_event->x, wheel_event->y, delta_x, delta_y,
-                kScrollOffsetMultiplier, wheel_event->timestamp,
-                kFlutterPointerDeviceKindTouch, 0);
+                wheel_event->timestamp, ToFlutterDeviceKind(wheel_event->dev),
+                reinterpret_cast<intptr_t>(wheel_event->dev));
           }
         }
       };
