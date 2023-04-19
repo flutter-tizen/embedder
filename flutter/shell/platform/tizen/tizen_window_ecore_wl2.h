@@ -50,6 +50,8 @@ class TizenWindowEcoreWl2 : public TizenWindow {
 
   void Show() override;
 
+  void UpdateFlutterCursor(const std::string& cursor_name) override;
+
  private:
   bool CreateWindow();
 

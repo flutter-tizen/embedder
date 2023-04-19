@@ -97,6 +97,10 @@ void TizenViewNui::OnKey(const char* device_name,
   }
 }
 
+void TizenViewNui::UpdateFlutterCursor(const std::string& cursor_name) {
+  FT_LOG(Error) << "UpdateFlutterCursor is not supported.";
+}
+
 void TizenViewNui::PrepareInputMethod() {
   input_method_context_ =
       std::make_unique<TizenInputMethodContext>(GetWindowId());
