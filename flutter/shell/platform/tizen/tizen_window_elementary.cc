@@ -433,8 +433,7 @@ void TizenWindowElementary::Show() {
   evas_object_show(elm_win_);
 }
 
-void TizenWindowElementary::UpdateFlutterCursor(
-    const std::string& cursor_name) {
+void TizenWindowElementary::UpdateFlutterCursor(const std::string& kind) {
   FT_LOG(Error) << "UpdateFlutterCursor is not supported.";
 }
 

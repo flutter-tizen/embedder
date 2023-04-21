@@ -367,7 +367,7 @@ void TizenViewElementary::Show() {
   evas_object_show(image_);
 }
 
-void TizenViewElementary::UpdateFlutterCursor(const std::string& cursor_name) {
+void TizenViewElementary::UpdateFlutterCursor(const std::string& kind) {
   FT_LOG(Error) << "UpdateFlutterCursor is not supported.";
 }
 

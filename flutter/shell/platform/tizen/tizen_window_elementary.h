@@ -51,7 +51,7 @@ class TizenWindowElementary : public TizenWindow {
 
   void Show() override;
 
-  void UpdateFlutterCursor(const std::string& cursor_name) override;
+  void UpdateFlutterCursor(const std::string& kind) override;
 
  private:
   bool InitializeExternalOutputManager();

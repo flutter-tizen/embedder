@@ -24,7 +24,7 @@ CursorChannel::CursorChannel(BinaryMessenger* messenger, TizenViewBase* view)
   channel_->SetMethodCallHandler(
       [this](const MethodCall<EncodableValue>& call,
              std::unique_ptr<MethodResult<EncodableValue>> result) {
-        this->HandleMethodCall(call, std::move(result));
+        HandleMethodCall(call, std::move(result));
       });
 }
 

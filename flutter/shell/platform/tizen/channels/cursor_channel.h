@@ -12,7 +12,7 @@
 
 namespace flutter {
 
-// Channel to get/set the system's cursor type.
+// Channel to set the system's cursor type.
 class CursorChannel {
  public:
   explicit CursorChannel(BinaryMessenger* messenger, TizenViewBase* view);

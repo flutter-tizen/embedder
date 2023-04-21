@@ -479,68 +479,54 @@ void TizenWindowEcoreWl2::Show() {
   ecore_wl2_window_show(ecore_wl2_window_);
 }
 
-void TizenWindowEcoreWl2::UpdateFlutterCursor(const std::string& cursor_name) {
+void TizenWindowEcoreWl2::UpdateFlutterCursor(const std::string& kind) {
 #ifdef TV_PROFILE
   int pointer_size = -1;
   if (vconf_get_int(kSysMouseCursorPointerSizeVConfKey, &pointer_size) < 0) {
-    FT_LOG(Error) << "Failed to load cursor size.";
+    FT_LOG(Info) << "Failed to load cursor size.";
   }
 
-  std::string input_cursor_name;
-  if (cursor_name == "basic") {
-    switch (pointer_size) {
-      case 0:  // Large.
-        input_cursor_name = "large_normal";
-        break;
-      case 1:  // Medium.
-        input_cursor_name = "medium_normal";
-        break;
-      case 2:  // small.
-        input_cursor_name = "small_normal";
-        break;
-      default:
-        input_cursor_name = "normal_default";
-        break;
+  std::string cursor_name;
+  if (kind == "basic") {
+    if (pointer_size == 0) {  // Large.
+      cursor_name = "large_normal";
+    } else if (pointer_size == 1) {  // Medium.
+      cursor_name = "medium_normal";
+    } else if (pointer_size == 2) {  // Large.
+      cursor_name = "small_normal";
+    } else {
+      cursor_name = "normal_default";
     }
-  } else if (cursor_name == "click") {
-    switch (pointer_size) {
-      case 0:  // Large.
-        input_cursor_name = "large_normal_pnh";
-        break;
-      case 1:  // Medium.
-        input_cursor_name = "medium_normal_pnh";
-        break;
-      case 2:  // small.
-        input_cursor_name = "small_normal_pnh";
-        break;
-      default:
-        input_cursor_name = "normal_pnh";
-        break;
+  } else if (kind == "click") {
+    if (pointer_size == 0) {  // Large.
+      cursor_name = "large_normal_pnh";
+    } else if (pointer_size == 1) {  // Medium.
+      cursor_name = "medium_normal_pnh";
+    } else if (pointer_size == 2) {  // Large.
+      cursor_name = "small_normal_pnh";
+    } else {
+      cursor_name = "normal_pnh";
     }
-  } else if (cursor_name == "text") {
-    switch (pointer_size) {
-      case 0:  // Large.
-        input_cursor_name = "large_normal_input_field";
-        break;
-      case 1:  // Medium.
-        input_cursor_name = "medium_normal_input_field";
-        break;
-      case 2:  // small.
-        input_cursor_name = "small_normal_input_field";
-        break;
-      default:
-        input_cursor_name = "normal_input_field";
-        break;
+  } else if (kind == "text") {
+    if (pointer_size == 0) {  // Large.
+      cursor_name = "large_normal_input_field";
+    } else if (pointer_size == 1) {  // Medium.
+      cursor_name = "medium_normal_input_field";
+    } else if (pointer_size == 2) {  // Large.
+      cursor_name = "small_normal_input_field";
+    } else {
+      cursor_name = "normal_input_field";
     }
-  } else if (cursor_name == "none") {
-    input_cursor_name = "normal_transparent";
+  } else if (kind == "none") {
+    cursor_name = "normal_transparent";
   } else {
-    FT_LOG(Error) << cursor_name << " cursor is not supported.";
+    FT_LOG(Error) << kind << " cursor is not supported.";
+    return;
   }
 
   ecore_wl2_input_cursor_from_name_set(
       ecore_wl2_input_default_input_get(ecore_wl2_display_),
-      input_cursor_name.c_str());
+      cursor_name.c_str());
 #else
   FT_LOG(Error) << "UpdateFlutterCursor is not supported.";
 #endif
