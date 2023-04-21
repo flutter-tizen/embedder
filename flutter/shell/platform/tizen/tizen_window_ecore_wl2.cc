@@ -486,7 +486,7 @@ void TizenWindowEcoreWl2::UpdateFlutterCursor(const std::string& kind) {
     FT_LOG(Info) << "Failed to load cursor size.";
   }
 
-  std::string cursor_name;
+  std::string cursor_name = "normal_default";
   if (kind == "basic") {
     if (pointer_size == 0) {  // Large.
       cursor_name = "large_normal";
@@ -521,7 +521,6 @@ void TizenWindowEcoreWl2::UpdateFlutterCursor(const std::string& kind) {
     cursor_name = "normal_transparent";
   } else {
     FT_LOG(Error) << kind << " cursor is not supported.";
-    return;
   }
 
   ecore_wl2_input_cursor_from_name_set(
