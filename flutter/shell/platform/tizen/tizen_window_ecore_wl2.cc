@@ -23,6 +23,7 @@ constexpr int kScrollDirectionHorizontal = 1;
 #ifdef TV_PROFILE
 constexpr char kSysMouseCursorPointerSizeVConfKey[] =
     "db/menu/system/mouse-pointer-size";
+constexpr char kEcoreWL2InputCursorThemeName[] = "vd-cursors";
 #endif
 
 FlutterPointerMouseButtons ToFlutterPointerButton(int32_t button) {
@@ -104,11 +105,6 @@ bool TizenWindowEcoreWl2::CreateWindow() {
 
   ecore_wl2_egl_window_ = ecore_wl2_egl_window_create(
       ecore_wl2_window_, initial_geometry_.width, initial_geometry_.height);
-
-#ifdef TV_PROFILE
-  ecore_wl2_input_cursor_theme_name_set(
-      ecore_wl2_input_default_input_get(ecore_wl2_display_), "vd-cursors");
-#endif
   return ecore_wl2_egl_window_ && wl2_display_;
 }
 
@@ -492,7 +488,7 @@ void TizenWindowEcoreWl2::UpdateFlutterCursor(const std::string& kind) {
       cursor_name = "large_normal";
     } else if (pointer_size == 1) {  // Medium.
       cursor_name = "medium_normal";
-    } else if (pointer_size == 2) {  // Large.
+    } else if (pointer_size == 2) {  // Small.
       cursor_name = "small_normal";
     } else {
       cursor_name = "normal_default";
@@ -502,7 +498,7 @@ void TizenWindowEcoreWl2::UpdateFlutterCursor(const std::string& kind) {
       cursor_name = "large_normal_pnh";
     } else if (pointer_size == 1) {  // Medium.
       cursor_name = "medium_normal_pnh";
-    } else if (pointer_size == 2) {  // Large.
+    } else if (pointer_size == 2) {  // Small.
       cursor_name = "small_normal_pnh";
     } else {
       cursor_name = "normal_pnh";
@@ -512,7 +508,7 @@ void TizenWindowEcoreWl2::UpdateFlutterCursor(const std::string& kind) {
       cursor_name = "large_normal_input_field";
     } else if (pointer_size == 1) {  // Medium.
       cursor_name = "medium_normal_input_field";
-    } else if (pointer_size == 2) {  // Large.
+    } else if (pointer_size == 2) {  // Small.
       cursor_name = "small_normal_input_field";
     } else {
       cursor_name = "normal_input_field";
@@ -520,14 +516,16 @@ void TizenWindowEcoreWl2::UpdateFlutterCursor(const std::string& kind) {
   } else if (kind == "none") {
     cursor_name = "normal_transparent";
   } else {
-    FT_LOG(Error) << kind << " cursor is not supported.";
+    FT_LOG(Info) << kind << " cursor is not supported.";
   }
-
+  ecore_wl2_input_cursor_theme_name_set(
+      ecore_wl2_input_default_input_get(ecore_wl2_display_),
+      kEcoreWL2InputCursorThemeName);
   ecore_wl2_input_cursor_from_name_set(
       ecore_wl2_input_default_input_get(ecore_wl2_display_),
       cursor_name.c_str());
 #else
-  FT_LOG(Error) << "UpdateFlutterCursor is not supported.";
+  FT_LOG(Info) << "UpdateFlutterCursor is not supported.";
 #endif
 }
 

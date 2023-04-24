@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef EMBEDDER_CURSOR_CHANNEL_H_
-#define EMBEDDER_CURSOR_CHANNEL_H_
+#ifndef EMBEDDER_MOUSE_CURSOR_CHANNEL_H_
+#define EMBEDDER_MOUSE_CURSOR_CHANNEL_H_
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/encodable_value.h"
@@ -13,10 +13,10 @@
 namespace flutter {
 
 // Channel to set the system's cursor type.
-class CursorChannel {
+class MouseCursorChannel {
  public:
-  explicit CursorChannel(BinaryMessenger* messenger, TizenViewBase* view);
-  virtual ~CursorChannel();
+  explicit MouseCursorChannel(BinaryMessenger* messenger, TizenViewBase* view);
+  virtual ~MouseCursorChannel();
 
  private:
   // Called when a method is called on |channel_|;
@@ -33,4 +33,4 @@ class CursorChannel {
 
 }  // namespace flutter
 
-#endif  // EMBEDDER_CURSOR_CHANNEL_H_
+#endif  // EMBEDDER_MOUSE_CURSOR_CHANNEL_H_

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "cursor_channel.h"
+#include "mouse_cursor_channel.h"
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
 #include "flutter/shell/platform/tizen/logger.h"
@@ -17,7 +17,8 @@ constexpr char kKindKey[] = "kind";
 
 }  // namespace
 
-CursorChannel::CursorChannel(BinaryMessenger* messenger, TizenViewBase* view)
+MouseCursorChannel::MouseCursorChannel(BinaryMessenger* messenger,
+                                       TizenViewBase* view)
     : view_(view) {
   channel_ = std::make_unique<MethodChannel<EncodableValue>>(
       messenger, kChannelName, &StandardMethodCodec::GetInstance());
@@ -28,9 +29,9 @@ CursorChannel::CursorChannel(BinaryMessenger* messenger, TizenViewBase* view)
       });
 }
 
-CursorChannel::~CursorChannel() {}
+MouseCursorChannel::~MouseCursorChannel() {}
 
-void CursorChannel::HandleMethodCall(
+void MouseCursorChannel::HandleMethodCall(
     const MethodCall<EncodableValue>& method_call,
     std::unique_ptr<MethodResult<EncodableValue>> result) {
   const std::string& method_name = method_call.method_name();

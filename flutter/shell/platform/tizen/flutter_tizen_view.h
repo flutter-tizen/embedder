@@ -11,7 +11,7 @@
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/tizen/channels/cursor_channel.h"
+#include "flutter/shell/platform/tizen/channels/mouse_cursor_channel.h"
 #include "flutter/shell/platform/tizen/channels/platform_channel.h"
 #include "flutter/shell/platform/tizen/channels/text_input_channel.h"
 #include "flutter/shell/platform/tizen/channels/window_channel.h"
@@ -179,7 +179,7 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   std::unique_ptr<PlatformChannel> platform_channel_;
 
   // A plugin that implements the Flutter cursor channel.
-  std::unique_ptr<CursorChannel> cursor_channel_;
+  std::unique_ptr<MouseCursorChannel> mouse_cursor_channel_;
 
   // A plugin that implements the Flutter textinput channel.
   std::unique_ptr<TextInputChannel> text_input_channel_;

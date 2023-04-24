@@ -84,8 +84,8 @@ void FlutterTizenView::SetEngine(std::unique_ptr<FlutterTizenEngine> engine) {
 
   platform_channel_ =
       std::make_unique<PlatformChannel>(messenger, tizen_view_.get());
-  cursor_channel_ =
-      std::make_unique<CursorChannel>(messenger, tizen_view_.get());
+  mouse_cursor_channel_ =
+      std::make_unique<MouseCursorChannel>(messenger, tizen_view_.get());
   text_input_channel_ = std::make_unique<TextInputChannel>(
       internal_plugin_registrar_->messenger(),
       tizen_view_->input_method_context());

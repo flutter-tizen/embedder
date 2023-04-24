@@ -368,7 +368,7 @@ void TizenViewElementary::Show() {
 }
 
 void TizenViewElementary::UpdateFlutterCursor(const std::string& kind) {
-  FT_LOG(Error) << "UpdateFlutterCursor is not supported.";
+  FT_LOG(Info) << "UpdateFlutterCursor is not supported.";
 }
 
 void TizenViewElementary::PrepareInputMethod() {
