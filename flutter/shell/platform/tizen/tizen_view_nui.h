@@ -53,6 +53,8 @@ class TizenViewNui : public TizenView {
              size_t timestamp,
              bool is_down);
 
+  void UpdateFlutterCursor(const std::string& kind) override;
+
  private:
   void RegisterEventHandlers();
 

@@ -6,6 +6,7 @@
 
 #ifdef TV_PROFILE
 #include <dlfcn.h>
+#include <vconf.h>
 #endif
 
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -18,6 +19,12 @@ namespace {
 
 constexpr int kScrollDirectionVertical = 0;
 constexpr int kScrollDirectionHorizontal = 1;
+
+#ifdef TV_PROFILE
+constexpr char kSysMouseCursorPointerSizeVConfKey[] =
+    "db/menu/system/mouse-pointer-size";
+constexpr char kEcoreWL2InputCursorThemeName[] = "vd-cursors";
+#endif
 
 FlutterPointerMouseButtons ToFlutterPointerButton(int32_t button) {
   if (button == 2) {
@@ -98,7 +105,6 @@ bool TizenWindowEcoreWl2::CreateWindow() {
 
   ecore_wl2_egl_window_ = ecore_wl2_egl_window_create(
       ecore_wl2_window_, initial_geometry_.width, initial_geometry_.height);
-
   return ecore_wl2_egl_window_ && wl2_display_;
 }
 
@@ -467,6 +473,60 @@ void TizenWindowEcoreWl2::BindKeys(const std::vector<std::string>& keys) {
 
 void TizenWindowEcoreWl2::Show() {
   ecore_wl2_window_show(ecore_wl2_window_);
+}
+
+void TizenWindowEcoreWl2::UpdateFlutterCursor(const std::string& kind) {
+#ifdef TV_PROFILE
+  int pointer_size = -1;
+  if (vconf_get_int(kSysMouseCursorPointerSizeVConfKey, &pointer_size) < 0) {
+    FT_LOG(Info) << "Failed to load cursor size.";
+  }
+
+  std::string cursor_name = "normal_default";
+  if (kind == "basic") {
+    if (pointer_size == 0) {  // Large.
+      cursor_name = "large_normal";
+    } else if (pointer_size == 1) {  // Medium.
+      cursor_name = "medium_normal";
+    } else if (pointer_size == 2) {  // Small.
+      cursor_name = "small_normal";
+    } else {
+      cursor_name = "normal_default";
+    }
+  } else if (kind == "click") {
+    if (pointer_size == 0) {  // Large.
+      cursor_name = "large_normal_pnh";
+    } else if (pointer_size == 1) {  // Medium.
+      cursor_name = "medium_normal_pnh";
+    } else if (pointer_size == 2) {  // Small.
+      cursor_name = "small_normal_pnh";
+    } else {
+      cursor_name = "normal_pnh";
+    }
+  } else if (kind == "text") {
+    if (pointer_size == 0) {  // Large.
+      cursor_name = "large_normal_input_field";
+    } else if (pointer_size == 1) {  // Medium.
+      cursor_name = "medium_normal_input_field";
+    } else if (pointer_size == 2) {  // Small.
+      cursor_name = "small_normal_input_field";
+    } else {
+      cursor_name = "normal_input_field";
+    }
+  } else if (kind == "none") {
+    cursor_name = "normal_transparent";
+  } else {
+    FT_LOG(Info) << kind << " cursor is not supported.";
+  }
+  ecore_wl2_input_cursor_theme_name_set(
+      ecore_wl2_input_default_input_get(ecore_wl2_display_),
+      kEcoreWL2InputCursorThemeName);
+  ecore_wl2_input_cursor_from_name_set(
+      ecore_wl2_input_default_input_get(ecore_wl2_display_),
+      cursor_name.c_str());
+#else
+  FT_LOG(Info) << "UpdateFlutterCursor is not supported.";
+#endif
 }
 
 void TizenWindowEcoreWl2::SetTizenPolicyNotificationLevel(int level) {

@@ -46,6 +46,7 @@ config("flutter_tizen_config") {
     "${sysroot_path}/usr/include/feedback",
     "${sysroot_path}/usr/include/system",
     "${sysroot_path}/usr/include/tzsh",
+    "${sysroot_path}/usr/include/vconf",
     "${sysroot_path}/usr/include/wayland-extension",
   ]
 
@@ -85,6 +86,7 @@ template("embedder") {
       "channels/key_event_channel.cc",
       "channels/key_mapping.cc",
       "channels/lifecycle_channel.cc",
+      "channels/mouse_cursor_channel.cc",
       "channels/navigation_channel.cc",
       "channels/platform_channel.cc",
       "channels/platform_view_channel.cc",
@@ -134,6 +136,7 @@ template("embedder") {
       "feedback",
       "flutter_engine",
       "tbm",
+      "vconf",
       "wayland-client",
     ]
 

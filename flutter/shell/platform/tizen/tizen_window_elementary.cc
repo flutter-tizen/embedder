@@ -433,6 +433,10 @@ void TizenWindowElementary::Show() {
   evas_object_show(elm_win_);
 }
 
+void TizenWindowElementary::UpdateFlutterCursor(const std::string& kind) {
+  FT_LOG(Info) << "UpdateFlutterCursor is not supported.";
+}
+
 void TizenWindowElementary::PrepareInputMethod() {
   input_method_context_ =
       std::make_unique<TizenInputMethodContext>(GetWindowId());
