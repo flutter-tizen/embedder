@@ -52,6 +52,8 @@ class PlatformViewChannel {
                     std::unique_ptr<MethodResult<EncodableValue>>&& result);
   void OnDispose(const EncodableValue* arguments,
                  std::unique_ptr<MethodResult<EncodableValue>>&& result);
+  void OnOffset(const EncodableValue* arguments,
+                std::unique_ptr<MethodResult<EncodableValue>>&& result);
   void OnResize(const EncodableValue* arguments,
                 std::unique_ptr<MethodResult<EncodableValue>>&& result);
   void OnTouch(const EncodableValue* arguments,

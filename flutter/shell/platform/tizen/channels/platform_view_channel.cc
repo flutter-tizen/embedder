@@ -108,6 +108,8 @@ void PlatformViewChannel::HandleMethodCall(
     OnResize(arguments, std::move(result));
   } else if (method == "touch") {
     OnTouch(arguments, std::move(result));
+  } else if (method == "offset") {
+    OnOffset(arguments, std::move(result));
   } else {
     FT_LOG(Warn) << "Unimplemented method: " << method;
     result->NotImplemented();
@@ -204,6 +206,33 @@ void PlatformViewChannel::OnDispose(
   RemoveViewIfExists(*view_id);
 
   result->Success();
+}
+
+void PlatformViewChannel::OnOffset(
+    const EncodableValue* arguments,
+    std::unique_ptr<MethodResult<EncodableValue>>&& result) {
+  auto* map = std::get_if<EncodableMap>(arguments);
+  if (!map) {
+    result->Error("Invalid arguments");
+    return;
+  }
+
+  EncodableValueHolder<int> view_id(map, "id");
+  EncodableValueHolder<double> left(map, "left");
+  EncodableValueHolder<double> top(map, "top");
+
+  if (!view_id || !left || !top) {
+    result->Error("Invalid arguments");
+    return;
+  }
+  PlatformView* view = FindViewById(*view_id);
+  if (!view) {
+    result->Error("Can't find view id");
+    return;
+  }
+  view->Offset(*left, *top);
+
+  result->Success(*arguments);
 }
 
 void PlatformViewChannel::OnResize(
