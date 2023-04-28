@@ -104,12 +104,12 @@ void PlatformViewChannel::HandleMethodCall(
     OnClearFocus(arguments, std::move(result));
   } else if (method == "dispose") {
     OnDispose(arguments, std::move(result));
+  } else if (method == "offset") {
+    OnOffset(arguments, std::move(result));
   } else if (method == "resize") {
     OnResize(arguments, std::move(result));
   } else if (method == "touch") {
     OnTouch(arguments, std::move(result));
-  } else if (method == "offset") {
-    OnOffset(arguments, std::move(result));
   } else {
     FT_LOG(Warn) << "Unimplemented method: " << method;
     result->NotImplemented();
@@ -232,7 +232,7 @@ void PlatformViewChannel::OnOffset(
   }
   view->Offset(*left, *top);
 
-  result->Success(*arguments);
+  result->Success();
 }
 
 void PlatformViewChannel::OnResize(
