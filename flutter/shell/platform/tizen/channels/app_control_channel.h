@@ -44,6 +44,9 @@ class AppControlChannel {
 
   void SendAppControlEvent(AppControl* app_control);
 
+  void SetAutoRestart(AppControl* app_control, const EncodableMap* arguments,
+                      std::unique_ptr<MethodResult<EncodableValue>> result);
+
   std::unique_ptr<MethodChannel<EncodableValue>> method_channel_;
   std::unique_ptr<EventChannel<EncodableValue>> event_channel_;
   std::unique_ptr<EventSink<EncodableValue>> event_sink_;

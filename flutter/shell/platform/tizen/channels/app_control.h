@@ -95,6 +95,7 @@ class AppControl {
   AppControlResult SendTerminateRequest();
 
   AppControlResult Reply(AppControl* reply, const std::string& result);
+  AppControlResult SetAutoRestart(bool enabled);
 
  private:
   AppControlResult GetString(std::string& string,

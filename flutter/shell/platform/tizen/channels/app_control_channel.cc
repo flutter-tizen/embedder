@@ -4,6 +4,10 @@
 
 #include "app_control_channel.h"
 
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/event_stream_handler_functions.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
 #include "flutter/shell/platform/tizen/channels/encodable_value_holder.h"
@@ -100,6 +104,8 @@ void AppControlChannel::HandleMethodCall(
     SendTerminateRequest(app_control, std::move(result));
   } else if (method_name == "setAppControlData") {
     SetAppControlData(app_control, arguments, std::move(result));
+  } else if (method_name == "setAutoRestart") {
+    SetAutoRestart(app_control, arguments, std::move(result));
   } else {
     result->NotImplemented();
   }
@@ -234,6 +240,18 @@ void AppControlChannel::SendAppControlEvent(AppControl* app_control) {
   EncodableValue map = app_control->SerializeToMap();
   if (!map.IsNull()) {
     event_sink_->Success(map);
+  }
+}
+
+void AppControlChannel::SetAutoRestart(
+    AppControl* app_control, const EncodableMap* arguments,
+    std::unique_ptr<MethodResult<EncodableValue>> result) {
+  EncodableValueHolder<bool> enabled(arguments, "enabled");
+  AppControlResult ret = app_control->SetAutoRestart(*enabled);
+  if (ret) {
+    result->Success();
+  } else {
+    result->Error(ret.code(), ret.message());
   }
 }
 

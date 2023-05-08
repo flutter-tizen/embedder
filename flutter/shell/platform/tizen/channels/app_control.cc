@@ -369,4 +369,12 @@ AppControlResult AppControl::Reply(AppControl* reply,
                                              result_e);
 }
 
+AppControlResult AppControl::SetAutoRestart(bool enabled) {
+  if (enabled) {
+    return app_control_set_auto_restart(handle_);
+  }
+
+  return app_control_unset_auto_restart();
+}
+
 }  // namespace flutter
