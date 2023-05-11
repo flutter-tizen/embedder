@@ -17,11 +17,13 @@ constexpr char kChannelName[] = "flutter/platform_views";
 
 }  // namespace
 
-PlatformViewChannel::PlatformViewChannel(BinaryMessenger* messenger)
+PlatformViewChannel::PlatformViewChannel(BinaryMessenger* messenger,
+                                         double pixel_ratio)
     : channel_(std::make_unique<MethodChannel<EncodableValue>>(
           messenger,
           kChannelName,
-          &StandardMethodCodec::GetInstance())) {
+          &StandardMethodCodec::GetInstance())),
+      pixel_ratio_(pixel_ratio) {
   channel_->SetMethodCallHandler(
       [this](const MethodCall<EncodableValue>& call,
              std::unique_ptr<MethodResult<EncodableValue>> result) {
@@ -149,8 +151,8 @@ void PlatformViewChannel::OnCreate(
     if (focused_view) {
       focused_view->SetFocus(false);
     }
-    PlatformView* view =
-        iter->second->Create(*view_id, *width, *height, byte_message);
+    PlatformView* view = iter->second->Create(
+        *view_id, *width * pixel_ratio_, *height * pixel_ratio_, byte_message);
     if (view) {
       views_[*view_id] = view;
       result->Success(EncodableValue(view->GetTextureId()));
@@ -230,7 +232,7 @@ void PlatformViewChannel::OnOffset(
     result->Error("Can't find view id");
     return;
   }
-  view->Offset(*left, *top);
+  view->Offset(*left * pixel_ratio_, *top * pixel_ratio_);
 
   result->Success();
 }
@@ -258,7 +260,7 @@ void PlatformViewChannel::OnResize(
     result->Error("Can't find view id");
     return;
   }
-  view->Resize(*width, *height);
+  view->Resize(*width * pixel_ratio_, *height * pixel_ratio_);
 
   result->Success(*arguments);
 }
@@ -285,10 +287,10 @@ void PlatformViewChannel::OnTouch(
 
   type = std::get<int>(event->at(0));
   button = std::get<int>(event->at(1));
-  x = std::get<double>(event->at(2));
-  y = std::get<double>(event->at(3));
-  dx = std::get<double>(event->at(4));
-  dy = std::get<double>(event->at(5));
+  x = std::get<double>(event->at(2)) * pixel_ratio_;
+  y = std::get<double>(event->at(3)) * pixel_ratio_;
+  dx = std::get<double>(event->at(4)) * pixel_ratio_;
+  dy = std::get<double>(event->at(5)) * pixel_ratio_;
 
   PlatformView* view = FindViewById(*view_id);
   if (!view) {
