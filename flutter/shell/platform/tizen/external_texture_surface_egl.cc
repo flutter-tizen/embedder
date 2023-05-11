@@ -38,7 +38,6 @@ ExternalTextureSurfaceEGL::~ExternalTextureSurfaceEGL() {
   if (state_->gl_texture != 0) {
     glDeleteTextures(1, static_cast<GLuint*>(&state_->gl_texture));
   }
-  state_.release();
 }
 
 bool ExternalTextureSurfaceEGL::PopulateTexture(
