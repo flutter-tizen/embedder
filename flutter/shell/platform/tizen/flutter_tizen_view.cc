@@ -59,8 +59,7 @@ double ComputePixelRatio(flutter::TizenViewBase* view) {
   double dpi = static_cast<double>(view->GetDpi());
 #endif
   double scale_factor = dpi / 90.0 * kProfileFactor;
-  double pixel_ratio = std::max(scale_factor, 1.0);
-  return pixel_ratio;
+  return std::max(scale_factor, 1.0);
 }
 
 }  // namespace
@@ -394,14 +393,11 @@ void FlutterTizenView::SendWindowMetrics(int32_t left,
                                          int32_t width,
                                          int32_t height,
                                          double pixel_ratio) {
-  double computed_pixel_ratio = pixel_ratio;
   if (pixel_ratio == 0.0) {
-    computed_pixel_ratio = ComputePixelRatio(tizen_view_.get());
-  } else {
-    computed_pixel_ratio = pixel_ratio;
+    pixel_ratio = ComputePixelRatio(tizen_view_.get());
   }
 
-  engine_->SendWindowMetrics(left, top, width, height, computed_pixel_ratio);
+  engine_->SendWindowMetrics(left, top, width, height, pixel_ratio);
 }
 
 void FlutterTizenView::SendFlutterPointerEvent(FlutterPointerPhase phase,
