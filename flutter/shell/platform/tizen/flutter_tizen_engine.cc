@@ -250,8 +250,6 @@ bool FlutterTizenEngine::RunEngine() {
                void* user_data) { SendKeyEvent(event, callback, user_data); });
     navigation_channel_ = std::make_unique<NavigationChannel>(
         internal_plugin_registrar_->messenger());
-    platform_view_channel_ = std::make_unique<PlatformViewChannel>(
-        internal_plugin_registrar_->messenger());
   }
 
   accessibility_settings_ = std::make_unique<AccessibilitySettings>(this);
@@ -263,9 +261,6 @@ bool FlutterTizenEngine::RunEngine() {
 
 bool FlutterTizenEngine::StopEngine() {
   if (engine_) {
-    if (platform_view_channel_) {
-      platform_view_channel_->Dispose();
-    }
     for (const auto& [callback, registrar] :
          plugin_registrar_destruction_callbacks_) {
       callback(registrar);

@@ -107,10 +107,6 @@ class FlutterTizenEngine {
 
   NavigationChannel* navigation_channel() { return navigation_channel_.get(); }
 
-  PlatformViewChannel* platform_view_channel() {
-    return platform_view_channel_.get();
-  }
-
 #ifndef WEARABLE_PROFILE
   std::weak_ptr<flutter::AccessibilityBridge> accessibility_bridge() {
     return accessibility_bridge_;
@@ -263,9 +259,6 @@ class FlutterTizenEngine {
 
   // A plugin that implements the Flutter navigation channel.
   std::unique_ptr<NavigationChannel> navigation_channel_;
-
-  // A plugin that implements the Flutter platform_views channel.
-  std::unique_ptr<PlatformViewChannel> platform_view_channel_;
 
   // A plugin that implements the Flutter settings channel.
   std::unique_ptr<SettingsChannel> settings_channel_;

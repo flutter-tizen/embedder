@@ -49,6 +49,19 @@ const std::vector<std::string> kBindableSystemKeys = {
 // (ui/events/x/events_x_utils.cc).
 constexpr int32_t kScrollOffsetMultiplier = 53;
 
+double ComputePixelRatio(flutter::TizenViewBase* view) {
+  // The scale factor is computed based on the display DPI and the current
+  // profile. A fixed DPI value (72) is used on TVs. See:
+  // https://docs.tizen.org/application/native/guides/ui/efl/multiple-screens
+#ifdef TV_PROFILE
+  double dpi = 72.0;
+#else
+  double dpi = static_cast<double>(view->GetDpi());
+#endif
+  double scale_factor = dpi / 90.0 * kProfileFactor;
+  return std::max(scale_factor, 1.0);
+}
+
 }  // namespace
 
 namespace flutter {
@@ -64,6 +77,9 @@ FlutterTizenView::FlutterTizenView(std::unique_ptr<TizenViewBase> tizen_view)
 
 FlutterTizenView::~FlutterTizenView() {
   if (engine_) {
+    if (platform_view_channel_) {
+      platform_view_channel_->Dispose();
+    }
     engine_->StopEngine();
   }
   DestroyRenderSurface();
@@ -84,6 +100,10 @@ void FlutterTizenView::SetEngine(std::unique_ptr<FlutterTizenEngine> engine) {
 
   platform_channel_ =
       std::make_unique<PlatformChannel>(messenger, tizen_view_.get());
+
+  double pixel_ratio = ComputePixelRatio(tizen_view_.get());
+  platform_view_channel_ =
+      std::make_unique<PlatformViewChannel>(messenger, pixel_ratio);
   mouse_cursor_channel_ =
       std::make_unique<MouseCursorChannel>(messenger, tizen_view_.get());
   text_input_channel_ = std::make_unique<TextInputChannel>(
@@ -316,9 +336,9 @@ void FlutterTizenView::OnKey(const char* key,
     }
   }
 
-  if (engine_->platform_view_channel()) {
-    if (engine_->platform_view_channel()->SendKey(
-            key, string, compose, modifiers, scan_code, is_down)) {
+  if (platform_view_channel_) {
+    if (platform_view_channel_->SendKey(key, string, compose, modifiers,
+                                        scan_code, is_down)) {
       return;
     }
   }
@@ -373,23 +393,11 @@ void FlutterTizenView::SendWindowMetrics(int32_t left,
                                          int32_t width,
                                          int32_t height,
                                          double pixel_ratio) {
-  double computed_pixel_ratio = pixel_ratio;
   if (pixel_ratio == 0.0) {
-    // The scale factor is computed based on the display DPI and the current
-    // profile. A fixed DPI value (72) is used on TVs. See:
-    // https://docs.tizen.org/application/native/guides/ui/efl/multiple-screens
-#ifdef TV_PROFILE
-    double dpi = 72.0;
-#else
-    double dpi = static_cast<double>(tizen_view_->GetDpi());
-#endif
-    double scale_factor = dpi / 90.0 * kProfileFactor;
-    computed_pixel_ratio = std::max(scale_factor, 1.0);
-  } else {
-    computed_pixel_ratio = pixel_ratio;
+    pixel_ratio = ComputePixelRatio(tizen_view_.get());
   }
 
-  engine_->SendWindowMetrics(left, top, width, height, computed_pixel_ratio);
+  engine_->SendWindowMetrics(left, top, width, height, pixel_ratio);
 }
 
 void FlutterTizenView::SendFlutterPointerEvent(FlutterPointerPhase phase,

@@ -30,6 +30,7 @@ class PlatformView {
 
   virtual void Dispose() = 0;
 
+  virtual void Offset(double left, double top) {}
   virtual void Resize(double width, double height) = 0;
   virtual void Touch(int type,
                      int button,

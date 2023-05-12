@@ -111,6 +111,10 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   void SendInitialGeometry();
 
+  PlatformViewChannel* platform_view_channel() {
+    return platform_view_channel_.get();
+  }
+
   TextInputChannel* text_input_channel() { return text_input_channel_.get(); }
 
  private:
@@ -177,6 +181,9 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   // A plugin that implements the Flutter platform channel.
   std::unique_ptr<PlatformChannel> platform_channel_;
+
+  // A plugin that implements the Flutter platform_views channel.
+  std::unique_ptr<PlatformViewChannel> platform_view_channel_;
 
   // A plugin that implements the Flutter cursor channel.
   std::unique_ptr<MouseCursorChannel> mouse_cursor_channel_;
