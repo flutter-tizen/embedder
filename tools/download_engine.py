@@ -3,7 +3,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import requests
 import shutil
 import sys
 import urllib.request
@@ -22,11 +21,13 @@ def main():
   if stamp_file.is_file():
     stamp = stamp_file.read_text().strip()
 
-  version = ''
   # The GitHub REST API cannot be used in the company network due to an
   # "API rate limit exceeded" error. The following is a workaround.
-  request = requests.get('{}/latest'.format(github_url))
-  redirected_url = request.url
+  redirected_url = ''
+  with urllib.request.urlopen('{}/latest'.format(github_url)) as response:
+    redirected_url = response.geturl()
+
+  version = ''
   if '/tag/' in redirected_url:
     version = redirected_url.split('/tag/')[-1]
 
