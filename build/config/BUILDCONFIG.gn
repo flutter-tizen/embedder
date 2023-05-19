@@ -41,7 +41,11 @@ _default_configs = [
 if (use_system_cxx) {
   _default_configs += [ "//build/config:system_cxx" ]
 } else {
-  _default_configs += [ "//build/config:no_system_cxx" ]
+  _default_configs += [
+    "//build/config:no_system_cxx",
+    "//third_party/libcxxabi:libcxxabi_config",
+    "//third_party/libcxx:libcxx_config",
+  ]
 }
 
 if (is_unopt) {
