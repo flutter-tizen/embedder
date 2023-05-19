@@ -199,7 +199,7 @@ class FlutterTizenEngine {
 
 #ifndef WEARABLE_PROFILE
   // Called when semantics nodes updates are received from the engine.
-  void OnUpdateSemantics(const FlutterSemanticsUpdate* update);
+  void OnUpdateSemantics(const FlutterSemanticsUpdate2* update);
 #endif
 
   // The Flutter engine instance.

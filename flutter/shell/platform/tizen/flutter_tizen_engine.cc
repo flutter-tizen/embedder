@@ -206,8 +206,8 @@ bool FlutterTizenEngine::RunEngine() {
     args.custom_dart_entrypoint = project_->custom_dart_entrypoint().c_str();
   }
 #ifndef WEARABLE_PROFILE
-  args.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
-                                      void* user_data) {
+  args.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
+                                       void* user_data) {
     auto* engine = static_cast<FlutterTizenEngine*>(user_data);
     engine->OnUpdateSemantics(update);
   };
@@ -518,20 +518,20 @@ void FlutterTizenEngine::SetSemanticsEnabled(bool enabled) {
 }
 
 void FlutterTizenEngine::OnUpdateSemantics(
-    const FlutterSemanticsUpdate* update) {
+    const FlutterSemanticsUpdate2* update) {
   if (!accessibility_bridge_) {
     FT_LOG(Error) << "The accessibility bridge must be initialized.";
     return;
   }
 
-  for (size_t i = 0; i < update->nodes_count; i++) {
-    const FlutterSemanticsNode* node = &update->nodes[i];
-    accessibility_bridge_->AddFlutterSemanticsNodeUpdate(node);
+  for (size_t i = 0; i < update->node_count; i++) {
+    const FlutterSemanticsNode2* node = update->nodes[i];
+    accessibility_bridge_->AddFlutterSemanticsNodeUpdate(*node);
   }
 
-  for (size_t i = 0; i < update->custom_actions_count; i++) {
-    const FlutterSemanticsCustomAction* action = &update->custom_actions[i];
-    accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(action);
+  for (size_t i = 0; i < update->custom_action_count; i++) {
+    const FlutterSemanticsCustomAction2* action = update->custom_actions[i];
+    accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(*action);
   }
 
   accessibility_bridge_->CommitUpdates();
