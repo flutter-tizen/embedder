@@ -2,6 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+config("libcxx_config") {
+  defines = [ "_LIBCPP_DISABLE_AVAILABILITY=1" ]
+  include_dirs = [ "//build/secondary/third_party/libcxx/config" ]
+}
+
+config("src_include") {
+  include_dirs = [ "src" ]
+}
+
 source_set("libcxx") {
   sources = [
     "src/algorithm.cpp",
@@ -21,6 +30,7 @@ source_set("libcxx") {
     "src/future.cpp",
     "src/hash.cpp",
     "src/ios.cpp",
+    "src/ios.instantiations.cpp",
     "src/iostream.cpp",
     "src/locale.cpp",
     "src/memory.cpp",
@@ -30,6 +40,9 @@ source_set("libcxx") {
     "src/optional.cpp",
     "src/random.cpp",
     "src/regex.cpp",
+    "src/ryu/d2fixed.cpp",
+    "src/ryu/d2s.cpp",
+    "src/ryu/f2s.cpp",
     "src/shared_mutex.cpp",
     "src/stdexcept.cpp",
     "src/string.cpp",
@@ -45,7 +58,10 @@ source_set("libcxx") {
 
   deps = [ "//third_party/libcxxabi" ]
 
-  public_configs = [ "//third_party/libcxxabi:libcxxabi_config" ]
+  public_configs = [
+    ":libcxx_config",
+    "//third_party/libcxxabi:libcxxabi_config",
+  ]
 
   defines = [
     "_LIBCPP_NO_EXCEPTIONS",
@@ -53,6 +69,12 @@ source_set("libcxx") {
     "_LIBCPP_BUILDING_LIBRARY",
     "LIBCXX_BUILDING_LIBCXXABI",
   ]
+
+  # libcxx requires C++20.
+  configs -= [ "//build/config:cxx_version_default" ]
+  configs += [ "//build/config:cxx_version_20" ]
+
+  configs += [ ":src_include" ]
 
   # shared_mutex.cpp and debug.cpp are purposefully in violation.
   cflags_cc = [ "-Wno-thread-safety-analysis" ]

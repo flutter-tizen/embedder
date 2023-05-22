@@ -125,9 +125,14 @@ class AX_EXPORT AXEventGenerator : public AXTreeObserver {
     const EventParams& event_params;
   };
 
-  class AX_EXPORT Iterator
-      : public std::iterator<std::input_iterator_tag, TargetedEvent> {
+  class AX_EXPORT Iterator {
    public:
+    using iterator_category = std::input_iterator_tag;
+    using value_type = TargetedEvent;
+    using difference_type = std::ptrdiff_t;
+    using pointer = TargetedEvent*;
+    using reference = TargetedEvent&;
+
     Iterator(
         const std::map<AXNode*, std::set<EventParams>>& map,
         const std::map<AXNode*, std::set<EventParams>>::const_iterator& head);

@@ -36,7 +36,10 @@ constexpr char kLinuxKeyMap[] = "linux";
 constexpr size_t kMaxPendingEvents = 1000;
 
 uint32_t Utf8ToUtf32CodePoint(const char* utf8) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+#pragma clang diagnostic pop
   for (wchar_t wchar : converter.from_bytes(utf8)) {
     return wchar;
   }

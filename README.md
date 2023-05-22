@@ -34,8 +34,6 @@ The Flutter embedder for Tizen.
 
 `cd` into the generated `src` directory and run the following commands.
 
-Note: The toolchain path (`/usr/lib/llvm-12`) can be replaced as you want. For example, you can use `~/tizen-studio/tools/llvm-10` if you have [Tizen Studio](https://developer.tizen.org/development/tizen-studio/download) and the `NativeToolchain-Gcc-9.2` package installed.
-
 - **For arm**
 
   ```sh

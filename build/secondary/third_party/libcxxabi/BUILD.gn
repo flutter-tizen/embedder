@@ -16,20 +16,18 @@ source_set("libcxxabi") {
   public_configs = [ ":libcxxabi_config" ]
 
   defines = [
-    "_LIBCXXABI_NO_EXCEPTIONS",
+    "_LIBCPP_BUILDING_LIBRARY",
     "_LIBCXXABI_BUILDING_LIBRARY",
     "LIBCXXABI_SILENT_TERMINATE",
     "_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS",
   ]
 
-  sources = [ "src/cxa_noexception.cpp" ]
-
-  # Compile libcxx ABI using C++11. This replicates the rule in the
-  # CMakeLists on the "cxx_abiobjects" target.
   configs -= [ "//build/config:cxx_version_default" ]
-  configs += [ "//build/config:cxx_version_11" ]
+  configs += [ "//build/config:cxx_version_20" ]
 
-  sources += [
+  configs += [ "//third_party/libcxx:src_include" ]
+
+  sources = [
     "src/abort_message.cpp",
     "src/cxa_aux_runtime.cpp",
     "src/cxa_default_handlers.cpp",
@@ -37,7 +35,7 @@ source_set("libcxxabi") {
     "src/cxa_exception_storage.cpp",
     "src/cxa_guard.cpp",
     "src/cxa_handlers.cpp",
-    "src/cxa_unexpected.cpp",
+    "src/cxa_noexception.cpp",
     "src/cxa_vector.cpp",
     "src/cxa_virtual.cpp",
     "src/fallback_malloc.cpp",
