@@ -7,6 +7,8 @@
 
 #include <app.h>
 
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <unordered_map>
 

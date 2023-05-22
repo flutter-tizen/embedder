@@ -5,6 +5,9 @@
 #ifndef EMBEDDER_ENCODABLE_VALUE_HOLDER_H_
 #define EMBEDDER_ENCODABLE_VALUE_HOLDER_H_
 
+#include <string>
+#include <variant>
+
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/encodable_value.h"
 
 namespace flutter {

@@ -4,6 +4,11 @@
 
 #include "app_control_channel.h"
 
+#include <cstdint>
+#include <string>
+#include <variant>
+#include <vector>
+
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/event_stream_handler_functions.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
 #include "flutter/shell/platform/tizen/channels/encodable_value_holder.h"
@@ -100,6 +105,9 @@ void AppControlChannel::HandleMethodCall(
     SendTerminateRequest(app_control, std::move(result));
   } else if (method_name == "setAppControlData") {
     SetAppControlData(app_control, arguments, std::move(result));
+  } else if (method_name == "getHandle") {
+    result->Success(
+        EncodableValue(reinterpret_cast<int64_t>(app_control->handle())));
   } else {
     result->NotImplemented();
   }
