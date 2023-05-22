@@ -13,9 +13,8 @@ The Flutter embedder for Tizen.
 - [LLVM](https://apt.llvm.org) (10 or later)
   - `sudo apt install clang-12`
 - Additional dependencies
-  - `sudo apt install git python3 python3-pip rpm2cpio cpio`
+  - `sudo apt install git python3 rpm2cpio cpio`
   - `sudo apt install binutils-arm-linux-gnueabi binutils-aarch64-linux-gnu binutils-i686-linux-gnu`
-  - `pip3 install requests`
 
 ### Environment setup
 

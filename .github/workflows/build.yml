@@ -32,7 +32,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y rpm2cpio cpio binutils-${{ matrix.triple }}
-          pip3 install requests
 
       - name: Install depot_tools
         run: |

@@ -17,7 +17,6 @@ jobs:
 
       - name: Run gclient sync
         run: |
-          pip3 install requests
           gclient config --name=src --unmanaged https://github.com/${{ github.repository }}
           gclient sync -v --no-history --shallow --nohooks
 
