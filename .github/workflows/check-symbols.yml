@@ -32,7 +32,7 @@ jobs:
       - name: Check symbols
         run: |
           python3 tools/check_symbols.py \
-            --allowlist=tizen_allowlist/4.0.0_native_whitelist_wearable_v12.txt \
+            --allowlist=tizen_allowlist/5.5.0_native_whitelist_wearable_v7.txt \
             artifacts/libflutter_tizen_wearable.so
 
       - name: Commit success status

@@ -98,10 +98,7 @@ bool TizenWindowElementary::CreateWindow() {
     FT_LOG(Error) << "Could not create an Evas window.";
     return false;
   }
-
-#ifndef WEARABLE_PROFILE
   elm_win_aux_hint_add(elm_win_, "wm.policy.win.user.geometry", "1");
-#endif
 
   int32_t width = 0, height = 0;
   if (external_output_type_ != FlutterDesktopExternalOutputType::kNone) {
