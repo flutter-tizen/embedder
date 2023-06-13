@@ -99,6 +99,7 @@ template("embedder") {
       "flutter_tizen.cc",
       "flutter_tizen_elementary.cc",
       "flutter_tizen_engine.cc",
+      "flutter_tizen_engine_group.cc",
       "flutter_tizen_texture_registrar.cc",
       "flutter_tizen_view.cc",
       "logger.cc",

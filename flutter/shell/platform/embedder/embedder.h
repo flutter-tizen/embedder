@@ -2169,6 +2169,32 @@ FlutterEngineResult FlutterEngineRun(size_t version,
                                          engine_out);
 
 //------------------------------------------------------------------------------
+/// @brief      Spawn a Flutter engine instance. It is implemented by modifying
+///             `FlutterInitiaize`. Unlike `FlutterEngineInitialize`,
+///             `FlutterEngineSpawn` uses the shell of given spawner engine to
+///             spawn a engine instance.
+///
+/// @param[in]  version    The Flutter embedder API version. Must be
+///                        FLUTTER_ENGINE_VERSION.
+/// @param[in]  config     The renderer configuration.
+/// @param[in]  args       The Flutter project arguments.
+/// @param      user_data  A user data baton passed back to embedders in
+///                        callbacks.
+/// @param[in]  spawner    The spawner engine handle.
+/// @param[out] engine_out The engine handle on successful engine creation.
+///
+/// @return     The result of the call to run the Flutter engine.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineSpawn(size_t version,
+                                       const FlutterRendererConfig* config,
+                                       const FlutterProjectArgs* args,
+                                       void* user_data,
+                                       FLUTTER_API_SYMBOL(FlutterEngine)
+                                           spawner,
+                                       FLUTTER_API_SYMBOL(FlutterEngine) *
+                                           engine_out);
+//------------------------------------------------------------------------------
 /// @brief      Shuts down a Flutter engine instance. The engine handle is no
 ///             longer valid for any calls in the embedder API after this point.
 ///             Making additional calls with this handle is undefined behavior.
@@ -2805,6 +2831,13 @@ typedef FlutterEngineResult (*FlutterEngineRunFnPtr)(
     const FlutterProjectArgs* args,
     void* user_data,
     FLUTTER_API_SYMBOL(FlutterEngine) * engine_out);
+typedef FlutterEngineResult (*FlutterEngineSpawnFnPtr)(
+    size_t version,
+    const FlutterRendererConfig* config,
+    const FlutterProjectArgs* args,
+    void* user_data,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine_spawner,
+    FLUTTER_API_SYMBOL(FlutterEngine) * engine_out);
 typedef FlutterEngineResult (*FlutterEngineShutdownFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
 typedef FlutterEngineResult (*FlutterEngineInitializeFnPtr)(
@@ -2922,6 +2955,7 @@ typedef struct {
   FlutterEngineCreateAOTDataFnPtr CreateAOTData;
   FlutterEngineCollectAOTDataFnPtr CollectAOTData;
   FlutterEngineRunFnPtr Run;
+  FlutterEngineSpawnFnPtr Spawn;
   FlutterEngineShutdownFnPtr Shutdown;
   FlutterEngineInitializeFnPtr Initialize;
   FlutterEngineDeinitializeFnPtr Deinitialize;
