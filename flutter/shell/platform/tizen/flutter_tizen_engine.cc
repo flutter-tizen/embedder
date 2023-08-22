@@ -216,6 +216,7 @@ bool FlutterTizenEngine::RunEngine() {
     vsync_waiter_ = std::make_unique<TizenVsyncWaiter>(this);
     args.vsync_callback = [](void* user_data, intptr_t baton) -> void {
       auto* engine = static_cast<FlutterTizenEngine*>(user_data);
+      std::lock_guard<std::mutex> lock(engine->vsync_mutex_);
       if (engine->vsync_waiter_) {
         engine->vsync_waiter_->AsyncWaitForVsync(baton);
       }
@@ -268,6 +269,7 @@ bool FlutterTizenEngine::StopEngine() {
       callback(registrar);
     }
 #ifndef WEARABLE_PROFILE
+    std::lock_guard<std::mutex> lock(vsync_mutex_);
     if (vsync_waiter_) {
       vsync_waiter_.reset();
     }
