@@ -216,7 +216,9 @@ bool FlutterTizenEngine::RunEngine() {
     vsync_waiter_ = std::make_unique<TizenVsyncWaiter>(this);
     args.vsync_callback = [](void* user_data, intptr_t baton) -> void {
       auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-      engine->vsync_waiter_->AsyncWaitForVsync(baton);
+      if (engine->vsync_waiter_) {
+        engine->vsync_waiter_->AsyncWaitForVsync(baton);
+      }
     };
   }
 #endif
