@@ -269,9 +269,11 @@ bool FlutterTizenEngine::StopEngine() {
       callback(registrar);
     }
 #ifndef WEARABLE_PROFILE
-    std::lock_guard<std::mutex> lock(vsync_mutex_);
-    if (vsync_waiter_) {
-      vsync_waiter_.reset();
+    {
+      std::lock_guard<std::mutex> lock(vsync_mutex_);
+      if (vsync_waiter_) {
+        vsync_waiter_.reset();
+      }
     }
 #endif
     FlutterEngineResult result = embedder_api_.Shutdown(engine_);
