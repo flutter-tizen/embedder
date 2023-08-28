@@ -39,6 +39,8 @@ constexpr char kSetPreferredOrientationsMethod[] =
     "SystemChrome.setPreferredOrientations";
 constexpr char kSetSystemUIOverlayStyleMethod[] =
     "SystemChrome.setSystemUIOverlayStyle";
+constexpr char kIsLiveTextInputAvailable[] =
+    "LiveText.isLiveTextInputAvailable";
 
 constexpr char kTextKey[] = "text";
 constexpr char kValueKey[] = "value";
@@ -158,7 +160,8 @@ void PlatformChannel::HandleMethodCall(
     SetPreferredOrientations(orientations);
     result->Success();
   } else if (method == kSetApplicationSwitcherDescriptionMethod ||
-             method == kSetSystemUIOverlayStyleMethod) {
+             method == kSetSystemUIOverlayStyleMethod ||
+             method == kIsLiveTextInputAvailable) {
     // Not supported on Tizen. Ignore.
     result->Success();
   } else {
