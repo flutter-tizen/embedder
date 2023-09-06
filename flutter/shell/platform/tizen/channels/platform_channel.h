@@ -42,6 +42,8 @@ class PlatformChannel {
   void RestoreSystemUiOverlays();
   void SetEnabledSystemUiOverlays(const std::vector<std::string>& overlays);
   void SetPreferredOrientations(const std::vector<std::string>& orientations);
+  void RequestAppExit(std::string exit_type, int exit_code);
+  void RequestAppExitSuccess(const rapidjson::Document* result, int exit_code);
 
   std::unique_ptr<MethodChannel<rapidjson::Document>> channel_;
 
