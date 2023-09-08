@@ -48,3 +48,7 @@ core_cpp_client_wrapper_sources = get_path_info([
                                                   "standard_codec.cc",
                                                 ],
                                                 "abspath")
+
+# Temporary shim, published for backwards compatibility.
+# See comment in the file for more detail.
+temporary_shim_files = get_path_info([ "engine_method_result.cc" ], "abspath")
