@@ -44,6 +44,8 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   void Resize(int32_t width, int32_t height);
 
+  void ExitApplication();
+
   // Callbacks for clearing context, settings context and swapping buffers,
   // these are typically called on an engine-controlled (non-platform) thread.
   bool OnMakeCurrent();
@@ -117,6 +119,10 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   TextInputChannel* text_input_channel() { return text_input_channel_.get(); }
 
+  void SetInitializationComplete(bool initialization_complete) {
+    initialization_complete_ = initialization_complete;
+  }
+
  private:
   // Struct holding the state of an individual pointer. The engine doesn't keep
   // track of which buttons have been pressed, so it's the embedder's
@@ -175,6 +181,9 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   // The plugin registrar managing internal plugins.
   std::unique_ptr<PluginRegistrar> internal_plugin_registrar_;
+
+  // Whether or not initialization is complete from the platform.
+  bool initialization_complete_ = false;
 
   // A plugin that implements the Tizen window channel.
   std::unique_ptr<WindowChannel> window_channel_;
