@@ -49,8 +49,6 @@ class TizenViewBase {
     view_delegate_ = view_delegate;
   }
 
-  TizenViewEventHandlerDelegate* GetView() { return view_delegate_; }
-
   virtual void Show() = 0;
 
   TizenInputMethodContext* input_method_context() {

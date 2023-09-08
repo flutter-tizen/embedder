@@ -145,12 +145,6 @@ void FlutterTizenView::Resize(int32_t width, int32_t height) {
   tizen_view_->SetGeometry(geometry);
 }
 
-void FlutterTizenView::ExitApplication() {
-  if (initialization_complete_) {
-    ui_app_exit();
-  }
-}
-
 bool FlutterTizenView::OnMakeCurrent() {
   return engine_->renderer()->OnMakeCurrent();
 }
@@ -362,7 +356,7 @@ void FlutterTizenView::OnKey(const char* key,
               engine->navigation_channel()->PopRoute();
             }
           } else if (symbol == kExitKey && !is_down) {
-            engine->view()->ExitApplication();
+            ui_app_exit();
           }
         });
   }

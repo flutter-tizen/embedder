@@ -14,7 +14,6 @@
 #ifdef COMMON_PROFILE
 #include "flutter/shell/platform/tizen/channels/tizen_shell.h"
 #endif
-#include "flutter/shell/platform/tizen/flutter_tizen_view.h"
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/tizen_view.h"
 #include "flutter/shell/platform/tizen/tizen_window.h"
@@ -55,8 +54,6 @@ constexpr char kExitRequestError[] = "ExitApplication error";
 constexpr char kExitResponseKey[] = "response";
 constexpr char kExitResponseCancel[] = "cancel";
 constexpr char kExitResponseExit[] = "exit";
-constexpr char kInvalidExitRequestMessage[] =
-    "Invalid application exit request.";
 
 constexpr char kTextKey[] = "text";
 constexpr char kValueKey[] = "value";
@@ -157,22 +154,22 @@ void PlatformChannel::HandleMethodCall(
                        rapidjson::Value(ClipboardHasStrings()), allocator);
     result->Success(document);
   } else if (method == kExitApplicationMethod) {
-    const rapidjson::Value& document = *arguments;
     rapidjson::Value::ConstMemberIterator iter =
-        document.FindMember(kExitTypeKey);
-    if (iter == document.MemberEnd()) {
-      result->Error(kExitRequestError, kInvalidExitRequestMessage);
+        arguments->FindMember(kExitTypeKey);
+    if (iter == arguments->MemberEnd()) {
+      result->Error(kExitRequestError, "Invalid application exit request.");
       return;
     }
 
     const std::string& exit_type = iter->value.GetString();
-    if (exit_type == kExitTypeRequired) {
-      if (auto* view = dynamic_cast<FlutterTizenView*>(view_->GetView())) {
-        view->ExitApplication();
-      }
+    rapidjson::Document document;
+    document.SetObject();
+    if (!initialization_complete_ || exit_type == kExitTypeRequired) {
+      ui_app_exit();
+      document.AddMember(kExitResponseKey, kExitResponseExit,
+                         document.GetAllocator());
+      result->Success(document);
     } else if (exit_type == kExitTypeCancelable) {
-      rapidjson::Document document;
-      document.SetObject();
       RequestAppExit(exit_type);
       document.AddMember(kExitResponseKey, kExitResponseCancel,
                          document.GetAllocator());
@@ -181,9 +178,7 @@ void PlatformChannel::HandleMethodCall(
       result->Error(kExitRequestError, "Invalid type.");
     }
   } else if (method == kInitializationCompleteMethod) {
-    if (auto* view = dynamic_cast<FlutterTizenView*>(view_->GetView())) {
-      view->SetInitializationComplete(true);
-    }
+    initialization_complete_ = true;
     result->Success();
   } else if (method == kRestoreSystemUiOverlaysMethod) {
     RestoreSystemUiOverlays();
@@ -216,12 +211,10 @@ void PlatformChannel::HandleMethodCall(
 }
 
 void PlatformChannel::SystemNavigatorPop() {
-  if (auto* tizen_view = dynamic_cast<TizenView*>(view_)) {
-    tizen_view->SetFocus(false);
+  if (auto* view = dynamic_cast<TizenView*>(view_)) {
+    view->SetFocus(false);
   } else {
-    if (auto* view = dynamic_cast<FlutterTizenView*>(view_->GetView())) {
-      view->ExitApplication();
-    }
+    ui_app_exit();
   }
 }
 
@@ -306,6 +299,10 @@ void PlatformChannel::RestoreSystemUiOverlays() {
 }
 
 void PlatformChannel::RequestAppExit(const std::string exit_type) {
+  if (!initialization_complete_) {
+    ui_app_exit();
+    return;
+  }
   auto callback = std::make_unique<MethodResultFunctions<rapidjson::Document>>(
       [this](const rapidjson::Document* response) {
         RequestAppExitSuccess(response);
@@ -328,9 +325,7 @@ void PlatformChannel::RequestAppExitSuccess(const rapidjson::Document* result) {
   }
   const std::string& exit_type = itr->value.GetString();
   if (exit_type == kExitResponseExit) {
-    if (auto* view = dynamic_cast<FlutterTizenView*>(view_->GetView())) {
-      view->ExitApplication();
-    }
+    ui_app_exit();
   }
 }
 
