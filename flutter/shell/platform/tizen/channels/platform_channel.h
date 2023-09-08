@@ -47,7 +47,7 @@ class PlatformChannel {
 
   std::unique_ptr<MethodChannel<rapidjson::Document>> channel_;
 
-  // Whether or not initialization is complete from the platform.
+  // Whether or not initialization is complete from the framework.
   bool initialization_complete_ = false;
 
   // A reference to the native view managed by FlutterTizenView.
