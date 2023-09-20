@@ -6,9 +6,12 @@
 #ifndef EMBEDDER_FLUTTER_TIZEN_VIEW_H_
 #define EMBEDDER_FLUTTER_TIZEN_VIEW_H_
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/encodable_value.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/method_channel.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/tizen/channels/mouse_cursor_channel.h"
@@ -95,6 +98,7 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
              const char* compose,
              uint32_t modifiers,
              uint32_t scan_code,
+             const char* device_name,
              bool is_down) override;
 
   void OnComposeBegin() override;
@@ -182,7 +186,7 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   // A plugin that implements the Flutter platform channel.
   std::unique_ptr<PlatformChannel> platform_channel_;
 
-  // A plugin that implements the Flutter platform_views channel.
+  // A plugin that implements the Flutter platform view channel.
   std::unique_ptr<PlatformViewChannel> platform_view_channel_;
 
   // A plugin that implements the Flutter cursor channel.
@@ -197,6 +201,12 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   // The current view transformation.
   FlutterTransformation flutter_transformation_ = {1.0, 0.0, 0.0, 0.0, 1.0,
                                                    0.0, 0.0, 0.0, 1.0};
+
+  // A channel for reporting input device information.
+  std::unique_ptr<MethodChannel<EncodableValue>> input_device_channel_;
+
+  // The name of the last keyboard device used.
+  std::string last_keyboard_name_;
 };
 
 }  // namespace flutter

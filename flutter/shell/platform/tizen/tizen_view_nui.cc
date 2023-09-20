@@ -93,7 +93,8 @@ void TizenViewNui::OnKey(const char* device_name,
   }
 
   if (!handled) {
-    view_delegate_->OnKey(key, string, compose, modifiers, scan_code, is_down);
+    view_delegate_->OnKey(key, string, compose, modifiers, scan_code,
+                          device_name, is_down);
   }
 }
 

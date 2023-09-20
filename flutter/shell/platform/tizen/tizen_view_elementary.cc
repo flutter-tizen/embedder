@@ -266,7 +266,7 @@ void TizenViewElementary::RegisterEventHandlers() {
           self->view_delegate_->OnKey(
               key_event->key, key_event->string, key_event->compose,
               EvasModifierToEcoreEventModifiers(key_event->modifiers),
-              key_event->keycode, true);
+              key_event->keycode, evas_device_name_get(key_event->dev), true);
         }
       }
     }
@@ -275,28 +275,29 @@ void TizenViewElementary::RegisterEventHandlers() {
                                  evas_object_callbacks_[EVAS_CALLBACK_KEY_DOWN],
                                  this);
 
-  evas_object_callbacks_[EVAS_CALLBACK_KEY_UP] =
-      [](void* data, Evas* evas, Evas_Object* object, void* event_info) {
-        auto* self = static_cast<TizenViewElementary*>(data);
-        if (self->view_delegate_) {
-          if (self->container_ == object && self->focused_) {
-            auto* key_event = reinterpret_cast<Evas_Event_Key_Up*>(event_info);
-            bool handled = false;
-            key_event->event_flags = Evas_Event_Flags(key_event->event_flags |
-                                                      EVAS_EVENT_FLAG_ON_HOLD);
-            if (self->input_method_context_->IsInputPanelShown()) {
-              handled =
-                  self->input_method_context_->HandleEvasEventKeyUp(key_event);
-            }
-            if (!handled) {
-              self->view_delegate_->OnKey(
-                  key_event->key, key_event->string, key_event->compose,
-                  EvasModifierToEcoreEventModifiers(key_event->modifiers),
-                  key_event->keycode, false);
-            }
-          }
+  evas_object_callbacks_[EVAS_CALLBACK_KEY_UP] = [](void* data, Evas* evas,
+                                                    Evas_Object* object,
+                                                    void* event_info) {
+    auto* self = static_cast<TizenViewElementary*>(data);
+    if (self->view_delegate_) {
+      if (self->container_ == object && self->focused_) {
+        auto* key_event = reinterpret_cast<Evas_Event_Key_Up*>(event_info);
+        bool handled = false;
+        key_event->event_flags =
+            Evas_Event_Flags(key_event->event_flags | EVAS_EVENT_FLAG_ON_HOLD);
+        if (self->input_method_context_->IsInputPanelShown()) {
+          handled =
+              self->input_method_context_->HandleEvasEventKeyUp(key_event);
         }
-      };
+        if (!handled) {
+          self->view_delegate_->OnKey(
+              key_event->key, key_event->string, key_event->compose,
+              EvasModifierToEcoreEventModifiers(key_event->modifiers),
+              key_event->keycode, evas_device_name_get(key_event->dev), false);
+        }
+      }
+    }
+  };
   evas_object_event_callback_add(container_, EVAS_CALLBACK_KEY_UP,
                                  evas_object_callbacks_[EVAS_CALLBACK_KEY_UP],
                                  this);
