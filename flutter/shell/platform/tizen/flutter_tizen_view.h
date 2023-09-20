@@ -10,10 +10,9 @@
 #include <memory>
 #include <string>
 
-#include "flutter/shell/platform/common/client_wrapper/include/flutter/encodable_value.h"
-#include "flutter/shell/platform/common/client_wrapper/include/flutter/method_channel.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/tizen/channels/input_device_channel.h"
 #include "flutter/shell/platform/tizen/channels/mouse_cursor_channel.h"
 #include "flutter/shell/platform/tizen/channels/platform_channel.h"
 #include "flutter/shell/platform/tizen/channels/text_input_channel.h"
@@ -195,18 +194,15 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   // A plugin that implements the Flutter textinput channel.
   std::unique_ptr<TextInputChannel> text_input_channel_;
 
+  // A plugin to report input device information.
+  std::unique_ptr<InputDeviceChannel> input_device_channel_;
+
   // The current view rotation degree.
   int32_t rotation_degree_ = 0;
 
   // The current view transformation.
   FlutterTransformation flutter_transformation_ = {1.0, 0.0, 0.0, 0.0, 1.0,
                                                    0.0, 0.0, 0.0, 1.0};
-
-  // A channel for reporting input device information.
-  std::unique_ptr<MethodChannel<EncodableValue>> input_device_channel_;
-
-  // The name of the last keyboard device used.
-  std::string last_keyboard_name_;
 };
 
 }  // namespace flutter

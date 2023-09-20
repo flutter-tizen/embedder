@@ -5,7 +5,6 @@
 
 #include "flutter_tizen_view.h"
 
-#include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/tizen_view.h"
 #ifdef NUI_SUPPORT
@@ -27,8 +26,6 @@ constexpr double kProfileFactor = 2.0;
 #else
 constexpr double kProfileFactor = 1.0;
 #endif
-
-constexpr char kInputDeviceChannelName[] = "tizen/internal/input_device";
 
 constexpr char kSysMenuKey[] = "XF86SysMenu";
 constexpr char kBackKey[] = "XF86Back";
@@ -113,20 +110,7 @@ void FlutterTizenView::SetEngine(std::unique_ptr<FlutterTizenEngine> engine) {
       internal_plugin_registrar_->messenger(),
       tizen_view_->input_method_context());
 
-  input_device_channel_ = std::make_unique<MethodChannel<EncodableValue>>(
-      messenger, kInputDeviceChannelName, &StandardMethodCodec::GetInstance());
-  input_device_channel_->SetMethodCallHandler(
-      [this](const MethodCall<EncodableValue>& call,
-             std::unique_ptr<MethodResult<EncodableValue>> result) {
-        const std::string& method_name = call.method_name();
-        if (method_name == "getLastUsedKeyboard") {
-          EncodableMap map;
-          map[EncodableValue("name")] = EncodableValue(last_keyboard_name_);
-          result->Success(EncodableValue(map));
-        } else {
-          result->NotImplemented();
-        }
-      });
+  input_device_channel_ = std::make_unique<InputDeviceChannel>(messenger);
 }
 
 void FlutterTizenView::CreateRenderSurface(
@@ -348,7 +332,10 @@ void FlutterTizenView::OnKey(const char* key,
     return;
   }
 
-  last_keyboard_name_ = device_name ? std::string(device_name) : std::string();
+  if (input_device_channel_) {
+    input_device_channel_->SetLastKeyboardInfo(
+        device_name ? std::string(device_name) : std::string());
+  }
 
   if (text_input_channel_) {
     if (text_input_channel_->SendKey(key, string, compose, modifiers, scan_code,
