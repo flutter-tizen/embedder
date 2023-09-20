@@ -382,8 +382,7 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
             if (!handled) {
               self->view_delegate_->OnKey(
                   key_event->key, key_event->string, key_event->compose,
-                  key_event->modifiers, key_event->keycode,
-                  ecore_device_name_get(key_event->dev), false);
+                  key_event->modifiers, key_event->keycode, nullptr, false);
             }
             return ECORE_CALLBACK_DONE;
           }

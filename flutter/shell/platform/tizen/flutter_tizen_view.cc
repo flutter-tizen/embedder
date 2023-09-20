@@ -332,7 +332,7 @@ void FlutterTizenView::OnKey(const char* key,
     return;
   }
 
-  if (input_device_channel_) {
+  if (input_device_channel_ && is_down) {
     input_device_channel_->SetLastKeyboardInfo(
         device_name ? std::string(device_name) : std::string());
   }

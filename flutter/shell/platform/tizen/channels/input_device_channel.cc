@@ -10,7 +10,7 @@ namespace flutter {
 
 namespace {
 
-constexpr char kChannelName[] = "tizen/internal/input_device";
+constexpr char kChannelName[] = "tizen/internal/inputdevice";
 
 }  // namespace
 
