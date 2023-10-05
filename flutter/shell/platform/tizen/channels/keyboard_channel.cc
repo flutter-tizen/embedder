@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "key_event_channel.h"
+#include "keyboard_channel.h"
 
 #include <chrono>
 #include <codecvt>
 #include <locale>
 #include <string>
 
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
 #include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/tizen/channels/key_mapping.h"
 #include "flutter/shell/platform/tizen/logger.h"
@@ -17,8 +18,10 @@ namespace flutter {
 
 namespace {
 
-constexpr char kChannelName[] = "flutter/keyevent";
+constexpr char kKeyboardChannelName[] = "flutter/keyboard";
+constexpr char kKeyEventChannelName[] = "flutter/keyevent";
 
+constexpr char kGetKeyboardStateMethod[] = "getKeyboardState";
 constexpr char kKeyMapKey[] = "keymap";
 constexpr char kKeyCodeKey[] = "keyCode";
 constexpr char kScanCodeKey[] = "scanCode";
@@ -88,17 +91,28 @@ uint32_t GetFallbackScanCodeFromKey(const std::string& key) {
 
 }  // namespace
 
-KeyEventChannel::KeyEventChannel(BinaryMessenger* messenger,
+KeyboardChannel::KeyboardChannel(BinaryMessenger* messenger,
                                  SendEventHandler send_event)
-    : channel_(std::make_unique<BasicMessageChannel<rapidjson::Document>>(
+    : keyboard_channel_(std::make_unique<MethodChannel<EncodableValue>>(
           messenger,
-          kChannelName,
-          &JsonMessageCodec::GetInstance())),
-      send_event_(send_event) {}
+          kKeyboardChannelName,
+          &StandardMethodCodec::GetInstance())),
+      key_event_channel_(
+          std::make_unique<BasicMessageChannel<rapidjson::Document>>(
+              messenger,
+              kKeyEventChannelName,
+              &JsonMessageCodec::GetInstance())),
+      send_event_(send_event) {
+  keyboard_channel_->SetMethodCallHandler(
+      [this](const MethodCall<EncodableValue>& call,
+             std::unique_ptr<MethodResult<EncodableValue>> result) {
+        HandleMethodCall(call, std::move(result));
+      });
+}
 
-KeyEventChannel::~KeyEventChannel() {}
+KeyboardChannel::~KeyboardChannel() {}
 
-void KeyEventChannel::SendKey(const char* key,
+void KeyboardChannel::SendKey(const char* key,
                               const char* string,
                               const char* compose,
                               uint32_t modifiers,
@@ -130,13 +144,13 @@ void KeyEventChannel::SendKey(const char* key,
   SendEmbedderEvent(key, string, compose, modifiers, scan_code, is_down,
                     sequence_id);
   // The channel-based API (RawKeyEvent) is deprecated and |SendChannelEvent|
-  // will be removed in the future. This class (KeyEventChannel) itself will
+  // will be removed in the future. This class (KeyboardChannel) itself will
   // also be renamed and refactored then.
   SendChannelEvent(key, string, compose, modifiers, scan_code, is_down,
                    sequence_id);
 }
 
-void KeyEventChannel::SendChannelEvent(const char* key,
+void KeyboardChannel::SendChannelEvent(const char* key,
                                        const char* string,
                                        const char* compose,
                                        uint32_t modifiers,
@@ -174,7 +188,7 @@ void KeyEventChannel::SendChannelEvent(const char* key,
   } else {
     event.AddMember(kTypeKey, kKeyUp, allocator);
   }
-  channel_->Send(
+  key_event_channel_->Send(
       event, [this, sequence_id](const uint8_t* reply, size_t reply_size) {
         if (reply != nullptr) {
           std::unique_ptr<rapidjson::Document> decoded =
@@ -185,7 +199,7 @@ void KeyEventChannel::SendChannelEvent(const char* key,
       });
 }
 
-void KeyEventChannel::SendEmbedderEvent(const char* key,
+void KeyboardChannel::SendEmbedderEvent(const char* key,
                                         const char* string,
                                         const char* compose,
                                         uint32_t modifiers,
@@ -262,7 +276,7 @@ void KeyEventChannel::SendEmbedderEvent(const char* key,
       }));
 }
 
-void KeyEventChannel::ResolvePendingEvent(uint64_t sequence_id, bool handled) {
+void KeyboardChannel::ResolvePendingEvent(uint64_t sequence_id, bool handled) {
   auto iter = pending_events_.find(sequence_id);
   if (iter != pending_events_.end()) {
     PendingEvent* event = iter->second.get();
@@ -277,6 +291,24 @@ void KeyEventChannel::ResolvePendingEvent(uint64_t sequence_id, bool handled) {
   }
   // The pending event should always be found.
   FT_ASSERT_NOT_REACHED();
+}
+
+void KeyboardChannel::HandleMethodCall(
+    const MethodCall<EncodableValue>& method_call,
+    std::unique_ptr<MethodResult<EncodableValue>> result) {
+  const std::string& method_name = method_call.method_name();
+  if (method_name == kGetKeyboardStateMethod) {
+    EncodableMap map;
+    for (const auto& key : pressing_records_) {
+      EncodableValue physical_value(static_cast<int64_t>(key.first));
+      EncodableValue logical_value(static_cast<int64_t>(key.second));
+      map[physical_value] = logical_value;
+    }
+
+    result->Success(EncodableValue(map));
+  } else {
+    result->NotImplemented();
+  }
 }
 
 }  // namespace flutter

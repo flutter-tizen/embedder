@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef EMBEDDER_KEY_EVENT_CHANNEL_H_
-#define EMBEDDER_KEY_EVENT_CHANNEL_H_
+#ifndef EMBEDDER_KEYBOARD_CHANNEL_H_
+#define EMBEDDER_KEYBOARD_CHANNEL_H_
 
 #include <functional>
 #include <map>
@@ -11,20 +11,23 @@
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/encodable_value.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/method_channel.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+
 #include "rapidjson/document.h"
 
 namespace flutter {
 
-class KeyEventChannel {
+class KeyboardChannel {
  public:
   using SendEventHandler = std::function<void(const FlutterKeyEvent& event,
                                               FlutterKeyEventCallback callback,
                                               void* user_data)>;
 
-  explicit KeyEventChannel(BinaryMessenger* messenger,
+  explicit KeyboardChannel(BinaryMessenger* messenger,
                            SendEventHandler send_event);
-  virtual ~KeyEventChannel();
+  virtual ~KeyboardChannel();
 
   void SendKey(const char* key,
                const char* string,
@@ -35,7 +38,8 @@ class KeyEventChannel {
                std::function<void(bool)> callback);
 
  private:
-  std::unique_ptr<BasicMessageChannel<rapidjson::Document>> channel_;
+  std::unique_ptr<flutter::MethodChannel<EncodableValue>> keyboard_channel_;
+  std::unique_ptr<BasicMessageChannel<rapidjson::Document>> key_event_channel_;
   SendEventHandler send_event_;
 
   struct PendingEvent {
@@ -76,8 +80,12 @@ class KeyEventChannel {
                         uint64_t sequence_id);
 
   void ResolvePendingEvent(uint64_t sequence_id, bool handled);
+
+  void HandleMethodCall(
+      const flutter::MethodCall<EncodableValue>& method_call,
+      std::unique_ptr<flutter::MethodResult<EncodableValue>> result);
 };
 
 }  // namespace flutter
 
-#endif  //  EMBEDDER_KEY_EVENT_CHANNEL_H_
+#endif  //  EMBEDDER_KEYBOARD_CHANNEL_H_

@@ -17,7 +17,7 @@
 #include "flutter/shell/platform/tizen/accessibility_settings.h"
 #include "flutter/shell/platform/tizen/channels/accessibility_channel.h"
 #include "flutter/shell/platform/tizen/channels/app_control_channel.h"
-#include "flutter/shell/platform/tizen/channels/key_event_channel.h"
+#include "flutter/shell/platform/tizen/channels/keyboard_channel.h"
 #include "flutter/shell/platform/tizen/channels/lifecycle_channel.h"
 #include "flutter/shell/platform/tizen/channels/navigation_channel.h"
 #include "flutter/shell/platform/tizen/channels/platform_view_channel.h"
@@ -101,7 +101,7 @@ class FlutterTizenEngine {
     return app_control_channel_.get();
   }
 
-  KeyEventChannel* key_event_channel() { return key_event_channel_.get(); }
+  KeyboardChannel* keyboard_channel() { return keyboard_channel_.get(); }
 
   LifecycleChannel* lifecycle_channel() { return lifecycle_channel_.get(); }
 
@@ -251,8 +251,8 @@ class FlutterTizenEngine {
   // A plugin that implements the Tizen app_control channel.
   std::unique_ptr<AppControlChannel> app_control_channel_;
 
-  // A plugin that implements the Flutter keyevent channel.
-  std::unique_ptr<KeyEventChannel> key_event_channel_;
+  // A plugin that implements the Flutter keyboard channel.
+  std::unique_ptr<KeyboardChannel> keyboard_channel_;
 
   // A plugin that implements the Flutter lifecycle channel.
   std::unique_ptr<LifecycleChannel> lifecycle_channel_;
