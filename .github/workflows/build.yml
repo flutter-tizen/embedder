@@ -52,7 +52,7 @@ jobs:
         run: |
           src/tools/gn \
             --target-cpu ${{ matrix.arch }} \
-            --target-toolchain /usr/lib/llvm-12 \
+            --target-toolchain /usr/lib/llvm-15 \
             --target-dir build
           ninja -C src/out/build
 
@@ -61,7 +61,7 @@ jobs:
         run: |
           src/tools/gn \
             --target-cpu ${{ matrix.arch }} \
-            --target-toolchain /usr/lib/llvm-12 \
+            --target-toolchain /usr/lib/llvm-15 \
             --target-sysroot src/sysroot-6.5/${{ matrix.arch }} \
             --api-version 6.5 --system-cxx \
             --target-dir build
