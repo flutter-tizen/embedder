@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm2cpio cpio binutils-${{ matrix.triple }}
+          sudo apt-get install -y clang-12 rpm2cpio cpio binutils-${{ matrix.triple }}
 
       - name: Install depot_tools
         run: |
