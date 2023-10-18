@@ -291,7 +291,7 @@ void FlutterDesktopViewOnKeyEvent(FlutterDesktopViewRef view,
   }
 #else
   ViewFromHandle(view)->OnKey(key, string, nullptr, modifiers, scan_code,
-                              is_down);
+                              device_name, is_down);
 #endif
 }
 

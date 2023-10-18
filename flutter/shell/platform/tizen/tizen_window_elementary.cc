@@ -309,7 +309,7 @@ void TizenWindowElementary::RegisterEventHandlers() {
           self->view_delegate_->OnKey(
               key_event->key, key_event->string, key_event->compose,
               EvasModifierToEcoreEventModifiers(key_event->modifiers),
-              key_event->keycode, true);
+              key_event->keycode, evas_device_name_get(key_event->dev), true);
         }
       }
     }
@@ -333,7 +333,7 @@ void TizenWindowElementary::RegisterEventHandlers() {
               self->view_delegate_->OnKey(
                   key_event->key, key_event->string, key_event->compose,
                   EvasModifierToEcoreEventModifiers(key_event->modifiers),
-                  key_event->keycode, false);
+                  key_event->keycode, nullptr, false);
             }
           }
         }

@@ -109,6 +109,8 @@ void FlutterTizenView::SetEngine(std::unique_ptr<FlutterTizenEngine> engine) {
   text_input_channel_ = std::make_unique<TextInputChannel>(
       internal_plugin_registrar_->messenger(),
       tizen_view_->input_method_context());
+
+  input_device_channel_ = std::make_unique<InputDeviceChannel>(messenger);
 }
 
 void FlutterTizenView::CreateRenderSurface(
@@ -318,6 +320,7 @@ void FlutterTizenView::OnKey(const char* key,
                              const char* compose,
                              uint32_t modifiers,
                              uint32_t scan_code,
+                             const char* device_name,
                              bool is_down) {
   if (is_down) {
     FT_LOG(Info) << "Key symbol: " << key << ", code: 0x" << std::setw(8)
@@ -327,6 +330,11 @@ void FlutterTizenView::OnKey(const char* key,
   // Do not handle the TV system menu key.
   if (strcmp(key, kSysMenuKey) == 0) {
     return;
+  }
+
+  if (input_device_channel_ && is_down) {
+    input_device_channel_->SetLastKeyboardInfo(
+        device_name ? std::string(device_name) : std::string());
   }
 
   if (text_input_channel_) {

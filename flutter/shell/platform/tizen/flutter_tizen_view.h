@@ -6,11 +6,13 @@
 #ifndef EMBEDDER_FLUTTER_TIZEN_VIEW_H_
 #define EMBEDDER_FLUTTER_TIZEN_VIEW_H_
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/tizen/channels/input_device_channel.h"
 #include "flutter/shell/platform/tizen/channels/mouse_cursor_channel.h"
 #include "flutter/shell/platform/tizen/channels/platform_channel.h"
 #include "flutter/shell/platform/tizen/channels/text_input_channel.h"
@@ -95,6 +97,7 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
              const char* compose,
              uint32_t modifiers,
              uint32_t scan_code,
+             const char* device_name,
              bool is_down) override;
 
   void OnComposeBegin() override;
@@ -182,7 +185,7 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   // A plugin that implements the Flutter platform channel.
   std::unique_ptr<PlatformChannel> platform_channel_;
 
-  // A plugin that implements the Flutter platform_views channel.
+  // A plugin that implements the Flutter platform view channel.
   std::unique_ptr<PlatformViewChannel> platform_view_channel_;
 
   // A plugin that implements the Flutter cursor channel.
@@ -190,6 +193,9 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   // A plugin that implements the Flutter textinput channel.
   std::unique_ptr<TextInputChannel> text_input_channel_;
+
+  // A plugin to report input device information.
+  std::unique_ptr<InputDeviceChannel> input_device_channel_;
 
   // The current view rotation degree.
   int32_t rotation_degree_ = 0;

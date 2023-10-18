@@ -54,6 +54,7 @@ class TizenViewEventHandlerDelegate {
                      const char* compose,
                      uint32_t modifiers,
                      uint32_t scan_code,
+                     const char* device_name,
                      bool is_down) = 0;
 
   virtual void OnComposeBegin() = 0;

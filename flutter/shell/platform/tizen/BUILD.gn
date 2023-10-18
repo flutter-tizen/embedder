@@ -83,6 +83,7 @@ template("embedder") {
       "channels/app_control.cc",
       "channels/app_control_channel.cc",
       "channels/feedback_manager.cc",
+      "channels/input_device_channel.cc",
       "channels/key_event_channel.cc",
       "channels/key_mapping.cc",
       "channels/lifecycle_channel.cc",
