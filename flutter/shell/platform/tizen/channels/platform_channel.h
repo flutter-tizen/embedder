@@ -40,10 +40,15 @@ class PlatformChannel {
   void SetClipboardData(const std::string& data);
   bool ClipboardHasStrings();
   void RestoreSystemUiOverlays();
+  void RequestAppExit(const std::string exit_type);
+  void RequestAppExitSuccess(const rapidjson::Document* result);
   void SetEnabledSystemUiOverlays(const std::vector<std::string>& overlays);
   void SetPreferredOrientations(const std::vector<std::string>& orientations);
 
   std::unique_ptr<MethodChannel<rapidjson::Document>> channel_;
+
+  // Whether or not initialization is complete from the framework.
+  bool initialization_complete_ = false;
 
   // A reference to the native view managed by FlutterTizenView.
   TizenViewBase* view_ = nullptr;

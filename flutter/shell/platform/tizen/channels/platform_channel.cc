@@ -8,6 +8,7 @@
 
 #include <map>
 
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/method_result_functions.h"
 #include "flutter/shell/platform/common/json_method_codec.h"
 #include "flutter/shell/platform/tizen/channels/feedback_manager.h"
 #ifdef COMMON_PROFILE
@@ -26,6 +27,10 @@ constexpr char kChannelName[] = "flutter/platform";
 constexpr char kGetClipboardDataMethod[] = "Clipboard.getData";
 constexpr char kSetClipboardDataMethod[] = "Clipboard.setData";
 constexpr char kClipboardHasStringsMethod[] = "Clipboard.hasStrings";
+constexpr char kExitApplicationMethod[] = "System.exitApplication";
+constexpr char kRequestAppExitMethod[] = "System.requestAppExit";
+constexpr char kInitializationCompleteMethod[] =
+    "System.initializationComplete";
 constexpr char kPlaySoundMethod[] = "SystemSound.play";
 constexpr char kHapticFeedbackVibrateMethod[] = "HapticFeedback.vibrate";
 constexpr char kSystemNavigatorPopMethod[] = "SystemNavigator.pop";
@@ -41,6 +46,14 @@ constexpr char kSetSystemUIOverlayStyleMethod[] =
     "SystemChrome.setSystemUIOverlayStyle";
 constexpr char kIsLiveTextInputAvailable[] =
     "LiveText.isLiveTextInputAvailable";
+
+constexpr char kExitTypeKey[] = "type";
+constexpr char kExitTypeCancelable[] = "cancelable";
+constexpr char kExitTypeRequired[] = "required";
+constexpr char kExitRequestError[] = "ExitApplication error";
+constexpr char kExitResponseKey[] = "response";
+constexpr char kExitResponseCancel[] = "cancel";
+constexpr char kExitResponseExit[] = "exit";
 
 constexpr char kTextKey[] = "text";
 constexpr char kValueKey[] = "value";
@@ -140,6 +153,33 @@ void PlatformChannel::HandleMethodCall(
     document.AddMember(rapidjson::Value(kValueKey, allocator),
                        rapidjson::Value(ClipboardHasStrings()), allocator);
     result->Success(document);
+  } else if (method == kExitApplicationMethod) {
+    rapidjson::Value::ConstMemberIterator iter =
+        arguments->FindMember(kExitTypeKey);
+    if (iter == arguments->MemberEnd()) {
+      result->Error(kExitRequestError, "Invalid application exit request.");
+      return;
+    }
+
+    const std::string& exit_type = iter->value.GetString();
+    rapidjson::Document document;
+    document.SetObject();
+    if (!initialization_complete_ || exit_type == kExitTypeRequired) {
+      ui_app_exit();
+      document.AddMember(kExitResponseKey, kExitResponseExit,
+                         document.GetAllocator());
+      result->Success(document);
+    } else if (exit_type == kExitTypeCancelable) {
+      RequestAppExit(exit_type);
+      document.AddMember(kExitResponseKey, kExitResponseCancel,
+                         document.GetAllocator());
+      result->Success(document);
+    } else {
+      result->Error(kExitRequestError, "Invalid type.");
+    }
+  } else if (method == kInitializationCompleteMethod) {
+    initialization_complete_ = true;
+    result->Success();
   } else if (method == kRestoreSystemUiOverlaysMethod) {
     RestoreSystemUiOverlays();
     result->Success();
@@ -255,6 +295,37 @@ void PlatformChannel::RestoreSystemUiOverlays() {
       shell.HideSoftkey();
     }
 #endif
+  }
+}
+
+void PlatformChannel::RequestAppExit(const std::string exit_type) {
+  if (!initialization_complete_) {
+    ui_app_exit();
+    return;
+  }
+  auto callback = std::make_unique<MethodResultFunctions<rapidjson::Document>>(
+      [this](const rapidjson::Document* response) {
+        RequestAppExitSuccess(response);
+      },
+      nullptr, nullptr);
+  auto args = std::make_unique<rapidjson::Document>();
+  args->SetObject();
+  args->AddMember(kExitTypeKey, exit_type, args->GetAllocator());
+  channel_->InvokeMethod(kRequestAppExitMethod, std::move(args),
+                         std::move(callback));
+}
+
+void PlatformChannel::RequestAppExitSuccess(const rapidjson::Document* result) {
+  rapidjson::Value::ConstMemberIterator itr =
+      result->FindMember(kExitResponseKey);
+  if (itr == result->MemberEnd() || !itr->value.IsString()) {
+    FT_LOG(Error) << "Application request response did not contain a valid "
+                     "response value";
+    return;
+  }
+  const std::string& exit_type = itr->value.GetString();
+  if (exit_type == kExitResponseExit) {
+    ui_app_exit();
   }
 }
 
