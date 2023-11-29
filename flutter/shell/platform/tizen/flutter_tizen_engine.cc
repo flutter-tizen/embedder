@@ -247,7 +247,7 @@ bool FlutterTizenEngine::RunEngine() {
 
   if (IsHeaded()) {
     texture_registrar_ = std::make_unique<FlutterTizenTextureRegistrar>(this);
-    key_event_channel_ = std::make_unique<KeyEventChannel>(
+    keyboard_channel_ = std::make_unique<KeyboardChannel>(
         internal_plugin_registrar_->messenger(),
         [this](const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
                void* user_data) { SendKeyEvent(event, callback, user_data); });
