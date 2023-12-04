@@ -35,6 +35,8 @@ class TizenViewBase {
   // Returns the geometry of the view.
   virtual TizenGeometry GetGeometry() = 0;
 
+  virtual uint32_t GetResourceId() = 0;
+
   // Set the geometry of the view.
   virtual bool SetGeometry(TizenGeometry geometry) = 0;
 

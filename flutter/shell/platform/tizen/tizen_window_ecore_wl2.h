@@ -44,6 +44,8 @@ class TizenWindowEcoreWl2 : public TizenWindow {
 
   uintptr_t GetWindowId() override;
 
+  uint32_t GetResourceId() override;
+
   void SetPreferredOrientations(const std::vector<int>& rotations) override;
 
   void BindKeys(const std::vector<std::string>& keys) override;

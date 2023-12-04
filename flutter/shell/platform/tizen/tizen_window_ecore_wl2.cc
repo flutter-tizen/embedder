@@ -160,9 +160,9 @@ void TizenWindowEcoreWl2::EnableCursor() {
   }
 
   // These functions are defined in vd-win-util's cursor_module.h.
-  int (*CursorModule_Initialize)(wl_display* display, wl_registry* registry,
-                                 wl_seat* seat, unsigned int id);
-  int (*Cursor_Set_Config)(wl_surface* surface, uint32_t config_type,
+  int (*CursorModule_Initialize)(wl_display * display, wl_registry * registry,
+                                 wl_seat * seat, unsigned int id);
+  int (*Cursor_Set_Config)(wl_surface * surface, uint32_t config_type,
                            void* data);
   void (*CursorModule_Finalize)(void);
   *(void**)(&CursorModule_Initialize) =
@@ -457,6 +457,63 @@ int32_t TizenWindowEcoreWl2::GetDpi() {
 
 uintptr_t TizenWindowEcoreWl2::GetWindowId() {
   return ecore_wl2_window_id_get(ecore_wl2_window_);
+}
+
+void HandleResourceId(void* data, tizen_resource* tizen_resource, uint32_t id) {
+  if (data) {
+    *reinterpret_cast<uint32_t*>(data) = id;
+  }
+}
+
+uint32_t TizenWindowEcoreWl2::GetResourceId() {
+  wl_registry* registry = ecore_wl2_display_registry_get(ecore_wl2_display_);
+  if (!registry) {
+    FT_LOG(Error) << "Could not retreive wl_registry from the display.";
+    return 0;
+  }
+
+  static const struct tizen_resource_listener tz_resource_listener = {
+      HandleResourceId};
+  Eina_Iterator* iter = ecore_wl2_display_globals_get(ecore_wl2_display_);
+  Ecore_Wl2_Global* global = nullptr;
+  struct tizen_surface* surface = nullptr;
+  EINA_ITERATOR_FOREACH(iter, global) {
+    if (strcmp(global->interface, "tizen_surface") == 0) {
+      surface = static_cast<tizen_surface*>(wl_registry_bind(
+          registry, global->id, &tizen_surface_interface, global->version));
+      break;
+    }
+  }
+  eina_iterator_free(iter);
+  if (!surface) {
+    FT_LOG(Error) << "Failed to initialize the tizen surface.";
+    return 0;
+  }
+
+  struct tizen_resource* resource = tizen_surface_get_tizen_resource(
+      surface, ecore_wl2_window_surface_get(ecore_wl2_window_));
+
+  if (!resource) {
+    FT_LOG(Error) << "Failed to get tizen resource.";
+    tizen_surface_destroy(surface);
+    return 0;
+  }
+
+  uint32_t resource_id = 0;
+  struct wl_event_queue* event_queue = wl_display_create_queue(wl2_display_);
+  if (!event_queue) {
+    FT_LOG(Error) << "Failed to create wl_event_queue.";
+    tizen_resource_destroy(resource);
+    tizen_surface_destroy(surface);
+    return 0;
+  }
+  wl_proxy_set_queue((struct wl_proxy*)resource, event_queue);
+  tizen_resource_add_listener(resource, &tz_resource_listener, &resource_id);
+  wl_display_roundtrip_queue(wl2_display_, event_queue);
+  tizen_resource_destroy(resource);
+  tizen_surface_destroy(surface);
+  wl_event_queue_destroy(event_queue);
+  return resource_id;
 }
 
 void TizenWindowEcoreWl2::SetPreferredOrientations(

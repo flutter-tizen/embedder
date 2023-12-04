@@ -204,6 +204,10 @@ FLUTTER_EXPORT void FlutterDesktopViewDestroy(FlutterDesktopViewRef view);
 FLUTTER_EXPORT void* FlutterDesktopViewGetNativeHandle(
     FlutterDesktopViewRef view);
 
+// Returns the resource id of current window.
+FLUTTER_EXPORT uint32_t
+FlutterDesktopViewGetResourceId(FlutterDesktopViewRef view);
+
 // Resizes the view.
 // @warning This API is a work-in-progress and may change.
 FLUTTER_EXPORT void FlutterDesktopViewResize(FlutterDesktopViewRef view,
