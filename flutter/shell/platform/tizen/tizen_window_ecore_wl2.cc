@@ -160,9 +160,9 @@ void TizenWindowEcoreWl2::EnableCursor() {
   }
 
   // These functions are defined in vd-win-util's cursor_module.h.
-  int (*CursorModule_Initialize)(wl_display * display, wl_registry * registry,
-                                 wl_seat * seat, unsigned int id);
-  int (*Cursor_Set_Config)(wl_surface * surface, uint32_t config_type,
+  int (*CursorModule_Initialize)(wl_display* display, wl_registry* registry,
+                                 wl_seat* seat, unsigned int id);
+  int (*Cursor_Set_Config)(wl_surface* surface, uint32_t config_type,
                            void* data);
   void (*CursorModule_Finalize)(void);
   *(void**)(&CursorModule_Initialize) =
