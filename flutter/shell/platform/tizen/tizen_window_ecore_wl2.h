@@ -79,6 +79,7 @@ class TizenWindowEcoreWl2 : public TizenWindow {
   std::vector<Ecore_Event_Handler*> ecore_event_handlers_;
 
   tizen_policy* tizen_policy_ = nullptr;
+  uint32_t resource_id_ = 0;
 };
 
 }  // namespace flutter

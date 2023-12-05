@@ -466,7 +466,11 @@ void HandleResourceId(void* data, tizen_resource* tizen_resource, uint32_t id) {
 }
 
 uint32_t TizenWindowEcoreWl2::GetResourceId() {
-  wl_registry* registry = ecore_wl2_display_registry_get(ecore_wl2_display_);
+  if (resource_id_ > 0) {
+    return resource_id_;
+  }
+  struct wl_registry* registry =
+      ecore_wl2_display_registry_get(ecore_wl2_display_);
   if (!registry) {
     FT_LOG(Error) << "Could not retreive wl_registry from the display.";
     return 0;
@@ -499,7 +503,6 @@ uint32_t TizenWindowEcoreWl2::GetResourceId() {
     return 0;
   }
 
-  uint32_t resource_id = 0;
   struct wl_event_queue* event_queue = wl_display_create_queue(wl2_display_);
   if (!event_queue) {
     FT_LOG(Error) << "Failed to create wl_event_queue.";
@@ -507,13 +510,13 @@ uint32_t TizenWindowEcoreWl2::GetResourceId() {
     tizen_surface_destroy(surface);
     return 0;
   }
-  wl_proxy_set_queue((struct wl_proxy*)resource, event_queue);
-  tizen_resource_add_listener(resource, &tz_resource_listener, &resource_id);
+  wl_proxy_set_queue(reinterpret_cast<struct wl_proxy*>(resource), event_queue);
+  tizen_resource_add_listener(resource, &tz_resource_listener, &resource_id_);
   wl_display_roundtrip_queue(wl2_display_, event_queue);
   tizen_resource_destroy(resource);
   tizen_surface_destroy(surface);
   wl_event_queue_destroy(event_queue);
-  return resource_id;
+  return resource_id_;
 }
 
 void TizenWindowEcoreWl2::SetPreferredOrientations(
