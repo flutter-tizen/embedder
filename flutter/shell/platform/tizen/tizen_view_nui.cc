@@ -66,6 +66,10 @@ uintptr_t TizenViewNui::GetWindowId() {
   return default_window_id_;
 }
 
+uint32_t TizenViewNui::GetResourceId() {
+  return 0;
+}
+
 void TizenViewNui::Show() {
   // Do nothing.
 }

@@ -362,6 +362,10 @@ uintptr_t TizenViewElementary::GetWindowId() {
       ecore_evas_ecore_evas_get(evas_object_evas_get(container_)));
 }
 
+uint32_t TizenViewElementary::GetResourceId() {
+  return 0;
+}
+
 void TizenViewElementary::Show() {
   evas_object_show(container_);
   evas_object_show(image_);

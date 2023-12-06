@@ -41,6 +41,8 @@ class TizenViewBase {
   // Returns the dpi of the screen.
   virtual int32_t GetDpi() = 0;
 
+  virtual uint32_t GetResourceId() = 0;
+
   virtual void UpdateFlutterCursor(const std::string& kind) = 0;
 
   // Sets the delegate used to communicate state changes from render target to

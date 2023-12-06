@@ -38,6 +38,8 @@ class TizenViewNui : public TizenView {
 
   uintptr_t GetWindowId() override;
 
+  uint32_t GetResourceId() override;
+
   void Show() override;
 
   void RequestRendering();
