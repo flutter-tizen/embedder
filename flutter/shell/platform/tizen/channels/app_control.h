@@ -120,8 +120,13 @@ class AppControlManager {
     return instance;
   }
 
-  void Insert(std::unique_ptr<AppControl> app_control) {
-    map_.insert({app_control->id(), std::move(app_control)});
+  // Returns a pointer to the inserted element if successful, otherwise nullptr.
+  AppControl* Insert(std::unique_ptr<AppControl> app_control) {
+    auto iter = map_.emplace(app_control->id(), std::move(app_control));
+    if (iter.second) {
+      return iter.first->second.get();
+    }
+    return nullptr;
   }
 
   void Remove(int32_t id) { map_.erase(id); }

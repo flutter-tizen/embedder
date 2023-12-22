@@ -58,13 +58,18 @@ void AppControlChannel::NotifyAppControl(void* handle) {
     FT_LOG(Error) << "Could not create an instance of AppControl.";
     return;
   }
+  AppControl* app_control_ptr =
+      AppControlManager::GetInstance().Insert(std::move(app_control));
+  if (!app_control_ptr) {
+    FT_LOG(Error) << "The handle already exists.";
+    return;
+  }
   if (event_sink_) {
-    SendAppControlEvent(app_control.get());
+    SendAppControlEvent(app_control_ptr);
   } else {
     FT_LOG(Info) << "No event channel has been set up.";
-    queue_.push(app_control.get());
+    queue_.push(app_control_ptr);
   }
-  AppControlManager::GetInstance().Insert(std::move(app_control));
 }
 
 void AppControlChannel::HandleMethodCall(
