@@ -25,9 +25,13 @@ namespace flutter {
 
 class FlutterTizenView : public TizenViewEventHandlerDelegate {
  public:
-  FlutterTizenView(std::unique_ptr<TizenViewBase> tizen_view);
+  FlutterTizenView(FlutterViewId view_id,
+                   std::unique_ptr<TizenViewBase> tizen_view);
 
   virtual ~FlutterTizenView();
+
+  // Get the view's unique identifier.
+  FlutterViewId view_id() const { return view_id_; }
 
   // Configures the window instance with an instance of a running Flutter
   // engine.
@@ -169,6 +173,9 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   // The engine associated with this view.
   std::unique_ptr<FlutterTizenEngine> engine_;
+
+  // The view's unique identifier.
+  FlutterViewId view_id_;
 
   // The platform view associated with this Flutter view.
   std::unique_ptr<TizenViewBase> tizen_view_;

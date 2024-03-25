@@ -30,8 +30,8 @@ FlutterDesktopViewRef FlutterDesktopViewCreateFromElmParent(
           view_properties.width, view_properties.height,
           static_cast<Evas_Object*>(parent));
 
-  auto view =
-      std::make_unique<flutter::FlutterTizenView>(std::move(tizen_view));
+  auto view = std::make_unique<flutter::FlutterTizenView>(
+      flutter::kImplicitViewId, std::move(tizen_view));
 
   // Take ownership of the engine, starting it if necessary.
   view->SetEngine(

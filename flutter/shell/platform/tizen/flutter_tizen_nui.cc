@@ -39,8 +39,8 @@ FlutterDesktopViewRef FlutterDesktopViewCreateFromImageView(
           reinterpret_cast<Dali::NativeImageSourceQueue*>(native_image_queue),
           default_window_id);
 
-  auto view =
-      std::make_unique<flutter::FlutterTizenView>(std::move(tizen_view));
+  auto view = std::make_unique<flutter::FlutterTizenView>(
+      flutter::kImplicitViewId, std::move(tizen_view));
 
   // Take ownership of the engine, starting it if necessary.
   view->SetEngine(
