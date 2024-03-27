@@ -5,6 +5,7 @@
 
 #include "flutter_tizen_view.h"
 
+#include "flutter/shell/platform/tizen/flutter_tizen_engine_group.h"
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/tizen_view.h"
 #ifdef NUI_SUPPORT
@@ -80,13 +81,13 @@ FlutterTizenView::~FlutterTizenView() {
     if (platform_view_channel_) {
       platform_view_channel_->Dispose();
     }
-    engine_->StopEngine();
+    FlutterTizenEngineGroup::GetInstance().StopEngine(engine_->id());
   }
   DestroyRenderSurface();
 }
 
-void FlutterTizenView::SetEngine(std::unique_ptr<FlutterTizenEngine> engine) {
-  engine_ = std::move(engine);
+void FlutterTizenView::SetEngine(FlutterTizenEngine* engine) {
+  engine_ = engine;
   engine_->SetView(this);
 
   internal_plugin_registrar_ =
@@ -354,8 +355,7 @@ void FlutterTizenView::OnKey(const char* key,
   if (engine_->keyboard_channel()) {
     engine_->keyboard_channel()->SendKey(
         key, string, compose, modifiers, scan_code, is_down,
-        [engine = engine_.get(), symbol = std::string(key),
-         is_down](bool handled) {
+        [engine = engine_, symbol = std::string(key), is_down](bool handled) {
           if (handled) {
             return;
           }

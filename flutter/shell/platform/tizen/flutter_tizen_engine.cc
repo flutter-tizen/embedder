@@ -14,6 +14,7 @@
 #include "flutter/shell/platform/tizen/flutter_platform_node_delegate_tizen.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
 #endif
+#include "flutter/shell/platform/tizen/flutter_tizen_engine_group.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_view.h"
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/system_utils.h"
@@ -98,6 +99,14 @@ void FlutterTizenEngine::CreateRenderer(
     renderer_ = std::make_unique<TizenRendererEgl>();
   }
 #endif
+}
+
+bool FlutterTizenEngine::RunOrSpawnEngine() {
+  if (FlutterTizenEngineGroup::GetInstance().GetEngineCount() <= 1) {
+    return RunEngine();
+  } else {
+    return SpawnEngine();
+  }
 }
 
 bool FlutterTizenEngine::RunEngine() {
@@ -248,6 +257,132 @@ bool FlutterTizenEngine::RunEngine() {
   if (IsHeaded()) {
     texture_registrar_ = std::make_unique<FlutterTizenTextureRegistrar>(this);
     keyboard_channel_ = std::make_unique<KeyboardChannel>(
+        internal_plugin_registrar_->messenger(),
+        [this](const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
+               void* user_data) { SendKeyEvent(event, callback, user_data); });
+    navigation_channel_ = std::make_unique<NavigationChannel>(
+        internal_plugin_registrar_->messenger());
+  }
+
+  accessibility_settings_ = std::make_unique<AccessibilitySettings>(this);
+
+  SetupLocales();
+
+  return true;
+}
+
+bool FlutterTizenEngine::SpawnEngine() {
+  if (engine_ != nullptr) {
+    FT_LOG(Error) << "The engine has already started.";
+    return false;
+  }
+  if (IsHeaded() && !renderer_->IsValid()) {
+    FT_LOG(Error) << "The display was not valid.";
+    return false;
+  }
+
+  if (!project_->HasValidPaths()) {
+    FT_LOG(Error) << "Missing or unresolvable path to assets.";
+    return false;
+  }
+  std::string assets_path_string = project_->assets_path().u8string();
+  std::string icu_path_string = project_->icu_path().u8string();
+  if (embedder_api_.RunsAOTCompiledDartCode()) {
+    aot_data_ = project_->LoadAotData(embedder_api_);
+    if (!aot_data_) {
+      FT_LOG(Error) << "Unable to start engine without AOT data.";
+      return false;
+    }
+  }
+
+  // FlutterProjectArgs is expecting a full argv, so when processing it for
+  // flags the first item is treated as the executable and ignored. Add a dummy
+  // value so that all provided arguments are used.
+  std::vector<std::string> engine_args = project_->engine_arguments();
+  std::vector<const char*> engine_argv = {"placeholder"};
+  std::transform(
+      engine_args.begin(), engine_args.end(), std::back_inserter(engine_argv),
+      [](const std::string& arg) -> const char* { return arg.c_str(); });
+
+  const std::vector<std::string>& entrypoint_args =
+      project_->dart_entrypoint_arguments();
+  std::vector<const char*> entrypoint_argv;
+  std::transform(
+      entrypoint_args.begin(), entrypoint_args.end(),
+      std::back_inserter(entrypoint_argv),
+      [](const std::string& arg) -> const char* { return arg.c_str(); });
+
+  FlutterProjectArgs args = {};
+  args.struct_size = sizeof(FlutterProjectArgs);
+  args.assets_path = assets_path_string.c_str();
+  args.icu_data_path = icu_path_string.c_str();
+  args.command_line_argc = static_cast<int>(engine_argv.size());
+  args.command_line_argv =
+      engine_argv.size() > 0 ? engine_argv.data() : nullptr;
+  args.dart_entrypoint_argc = static_cast<int>(entrypoint_argv.size());
+  args.dart_entrypoint_argv =
+      entrypoint_argv.size() > 0 ? entrypoint_argv.data() : nullptr;
+  args.platform_message_callback =
+      [](const FlutterPlatformMessage* engine_message, void* user_data) {
+        if (engine_message->struct_size != sizeof(FlutterPlatformMessage)) {
+          FT_LOG(Error) << "Invalid message size received. Expected: "
+                        << sizeof(FlutterPlatformMessage) << ", but received "
+                        << engine_message->struct_size;
+          return;
+        }
+        auto* engine = static_cast<FlutterTizenEngine*>(user_data);
+        FlutterDesktopMessage message =
+            engine->ConvertToDesktopMessage(*engine_message);
+        engine->message_dispatcher_->HandleMessage(message);
+      };
+  if (aot_data_) {
+    args.aot_data = aot_data_.get();
+  }
+  if (!project_->custom_dart_entrypoint().empty()) {
+    args.custom_dart_entrypoint = project_->custom_dart_entrypoint().c_str();
+  }
+#ifndef WEARABLE_PROFILE
+  args.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
+                                       void* user_data) {
+    auto* engine = static_cast<FlutterTizenEngine*>(user_data);
+    engine->OnUpdateSemantics(update);
+  };
+
+  if (IsHeaded() && dynamic_cast<TizenRendererEgl*>(renderer_.get())) {
+    vsync_waiter_ = std::make_unique<TizenVsyncWaiter>(this);
+    args.vsync_callback = [](void* user_data, intptr_t baton) -> void {
+      auto* engine = static_cast<FlutterTizenEngine*>(user_data);
+      engine->vsync_waiter_->AsyncWaitForVsync(baton);
+    };
+  }
+#endif
+
+  auto* spawner = FlutterTizenEngineGroup::GetInstance().GetEngineSpawner();
+  FlutterRendererConfig renderer_config = GetRendererConfig();
+  FlutterEngineResult result =
+      embedder_api_.Spawn(FLUTTER_ENGINE_VERSION, &renderer_config, &args, this,
+                          spawner->engine_, &engine_);
+
+  if (result != kSuccess || engine_ == nullptr) {
+    FT_LOG(Error) << "Failed to start the Flutter engine with error: "
+                  << result;
+    return false;
+  }
+
+  internal_plugin_registrar_ =
+      std::make_unique<PluginRegistrar>(plugin_registrar_.get());
+  accessibility_channel_ = std::make_unique<AccessibilityChannel>(
+      internal_plugin_registrar_->messenger());
+  app_control_channel_ = std::make_unique<AppControlChannel>(
+      internal_plugin_registrar_->messenger());
+  lifecycle_channel_ = std::make_unique<LifecycleChannel>(
+      internal_plugin_registrar_->messenger());
+  settings_channel_ = std::make_unique<SettingsChannel>(
+      internal_plugin_registrar_->messenger());
+
+  if (IsHeaded()) {
+    texture_registrar_ = std::make_unique<FlutterTizenTextureRegistrar>(this);
+    key_event_channel_ = std::make_unique<KeyEventChannel>(
         internal_plugin_registrar_->messenger(),
         [this](const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
                void* user_data) { SendKeyEvent(event, callback, user_data); });

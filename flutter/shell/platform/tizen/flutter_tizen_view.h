@@ -31,9 +31,9 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   // Configures the window instance with an instance of a running Flutter
   // engine.
-  void SetEngine(std::unique_ptr<FlutterTizenEngine> engine);
+  void SetEngine(FlutterTizenEngine* engine);
 
-  FlutterTizenEngine* engine() { return engine_.get(); }
+  FlutterTizenEngine* engine() { return engine_; }
 
   TizenViewBase* tizen_view() { return tizen_view_.get(); }
 
@@ -168,7 +168,7 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
                                PointerState* state);
 
   // The engine associated with this view.
-  std::unique_ptr<FlutterTizenEngine> engine_;
+  FlutterTizenEngine* engine_;
 
   // The platform view associated with this Flutter view.
   std::unique_ptr<TizenViewBase> tizen_view_;
