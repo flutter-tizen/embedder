@@ -77,7 +77,6 @@ This repository contains the following files and directories.
     - `public`: The public API of the embedder.
   - `third_party/accessibility`: A fork of the chromium accessibility library. Copied from [flutter/engine](https://github.com/flutter/engine/tree/main/third_party/accessibility).
 - `//tools`
-  - `check_symbols.py`: A script to check whether the build artifacts contain symbols not defined in the allowlist. Used by continuous integration.
   - `download_engine.py`: A script to download engine artifacts required for linking. Executed as a hook by `gclient sync`. The downloaded artifacts can be found in `//engine`.
   - `generate_sysroot.py`: A script to generate Tizen sysroots for arm/arm64/x86. Executed as a hook by `gclient sync`. The sysroots are by default generated in `//sysroot`.
   - `gn`: A script to automate running `gn gen`.
