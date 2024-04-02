@@ -45,6 +45,11 @@ const std::vector<std::string> kBindableSystemKeys = {
     "XF86Exit",
 };
 
+const std::vector<std::string> kRemoteControlDeviceTypeNameKeywords = {
+    "rc device",      // wt61p807 rc device
+    "Smart Control",  // Smart Control 2016
+};
+
 // The multiplier is taken from the Chromium source
 // (ui/events/x/events_x_utils.cc).
 constexpr int32_t kScrollOffsetMultiplier = 53;
@@ -352,9 +357,20 @@ void FlutterTizenView::OnKey(const char* key,
     }
   }
 
+  FlutterKeyEventDeviceType device_type =
+      FlutterKeyEventDeviceType::kFlutterKeyEventDeviceTypeKeyboard;
+  for (const std::string& key : kRemoteControlDeviceTypeNameKeywords) {
+    if (input_device_channel_->last_keyboard_name().find(key) !=
+        std::string::npos) {
+      device_type =
+          FlutterKeyEventDeviceType::kFlutterKeyEventDeviceTypeDirectionalPad;
+      break;
+    }
+  }
+
   if (engine_->keyboard_channel()) {
     engine_->keyboard_channel()->SendKey(
-        key, string, compose, modifiers, scan_code, is_down,
+        key, string, compose, modifiers, scan_code, is_down, device_type,
         [engine = engine_.get(), symbol = std::string(key),
          is_down](bool handled) {
           if (handled) {
