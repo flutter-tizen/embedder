@@ -45,6 +45,12 @@ struct FlutterDesktopMessenger {
 
 namespace flutter {
 
+// The view ID for a single-view Flutter app.
+//
+// See:
+// https://api.flutter.dev/flutter/dart-ui/PlatformDispatcher/implicitView.html
+constexpr FlutterViewId kImplicitViewId = 0;
+
 class FlutterTizenView;
 
 // Manages state associated with the underlying FlutterEngine.

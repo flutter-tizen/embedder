@@ -66,8 +66,9 @@ double ComputePixelRatio(flutter::TizenViewBase* view) {
 
 namespace flutter {
 
-FlutterTizenView::FlutterTizenView(std::unique_ptr<TizenViewBase> tizen_view)
-    : tizen_view_(std::move(tizen_view)) {
+FlutterTizenView::FlutterTizenView(FlutterViewId view_id,
+                                   std::unique_ptr<TizenViewBase> tizen_view)
+    : view_id_(view_id), tizen_view_(std::move(tizen_view)) {
   tizen_view_->SetView(this);
 
   if (auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get())) {
@@ -442,6 +443,7 @@ void FlutterTizenView::SendFlutterPointerEvent(FlutterPointerPhase phase,
     event.device = state->pointer_id;
     event.device_kind = state->device_kind;
     event.buttons = state->buttons;
+    event.view_id = view_id();
     engine_->SendPointerEvent(event);
 
     state->flutter_state_is_added = true;
@@ -461,6 +463,7 @@ void FlutterTizenView::SendFlutterPointerEvent(FlutterPointerPhase phase,
   event.device = state->pointer_id;
   event.device_kind = state->device_kind;
   event.buttons = state->buttons;
+  event.view_id = view_id();
   engine_->SendPointerEvent(event);
 }
 
