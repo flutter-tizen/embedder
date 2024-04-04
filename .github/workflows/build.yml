@@ -8,7 +8,7 @@ jobs:
 
     strategy:
       matrix:
-        api-version: [5.5, 6.5]
+        api-version: ['5.5', '6.0', '6.5']
         arch: [arm, arm64, x86]
         include:
           - arch: arm
@@ -43,12 +43,16 @@ jobs:
           gclient config --name=src --unmanaged https://github.com/${{ github.repository }}
           gclient sync -v --no-history --shallow
 
+      - name: Generate Tizen 6.0 sysroot
+        if: ${{ matrix.api-version == '6.0' }}
+        run: src/tools/generate_sysroot.py --api-version 6.0 --out src/sysroot-6.0
+
       - name: Generate Tizen 6.5 sysroot
-        if: ${{ matrix.api-version == 6.5 }}
+        if: ${{ matrix.api-version == '6.5' }}
         run: src/tools/generate_sysroot.py --api-version 6.5 --out src/sysroot-6.5
 
       - name: Build for Tizen 5.5
-        if: ${{ matrix.api-version == 5.5 }}
+        if: ${{ matrix.api-version == '5.5' }}
         run: |
           src/tools/gn \
             --target-cpu ${{ matrix.arch }} \
@@ -56,8 +60,19 @@ jobs:
             --target-dir build
           ninja -C src/out/build
 
+      - name: Build for Tizen 6.0
+        if: ${{ matrix.api-version == '6.0' }}
+        run: |
+          src/tools/gn \
+            --target-cpu ${{ matrix.arch }} \
+            --target-toolchain /usr/lib/llvm-12 \
+            --target-sysroot src/sysroot-6.0/${{ matrix.arch }} \
+            --api-version 6.0 --system-cxx \
+            --target-dir build
+          ninja -C src/out/build
+
       - name: Build for Tizen 6.5
-        if: ${{ matrix.api-version == 6.5 }}
+        if: ${{ matrix.api-version == '6.5' }}
         run: |
           src/tools/gn \
             --target-cpu ${{ matrix.arch }} \
@@ -87,7 +102,7 @@ jobs:
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
-        if: ${{ matrix.arch == 'arm' && matrix.api-version == 5.5 }}
+        if: ${{ matrix.arch == 'arm' && matrix.api-version == '6.0' }}
         with:
           name: tizen-common
           path: |
@@ -115,7 +130,7 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: tizen-5.5-arm_unittests
+          name: tizen-6.0-arm_unittests
 
       - name: Download engine
         run: |
