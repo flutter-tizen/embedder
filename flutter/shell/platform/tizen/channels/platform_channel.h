@@ -5,7 +5,8 @@
 #ifndef EMBEDDER_PLATFORM_CHANNEL_H_
 #define EMBEDDER_PLATFORM_CHANNEL_H_
 
-#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+#if (defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)) && \
+    !defined(TIZEN_VERSION_8_0)
 #include <cbhm.h>
 #endif
 
@@ -53,7 +54,8 @@ class PlatformChannel {
   // A reference to the native view managed by FlutterTizenView.
   TizenViewBase* view_ = nullptr;
 
-#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+#if (defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)) && \
+    !defined(TIZEN_VERSION_8_0)
   // The clipboard history manager.
   cbhm_h cbhm_handle_ = nullptr;
 #else

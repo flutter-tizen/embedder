@@ -81,7 +81,8 @@ PlatformChannel::PlatformChannel(BinaryMessenger* messenger,
           kChannelName,
           &JsonMethodCodec::GetInstance())),
       view_(view) {
-#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+#if (defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)) && \
+    !defined(TIZEN_VERSION_8_0)
   int ret = cbhm_open_service(&cbhm_handle_);
   if (ret != CBHM_ERROR_NONE) {
     FT_LOG(Error) << "Failed to initialize the clipboard service.";
@@ -96,7 +97,8 @@ PlatformChannel::PlatformChannel(BinaryMessenger* messenger,
 }
 
 PlatformChannel::~PlatformChannel() {
-#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+#if (defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)) && \
+    !defined(TIZEN_VERSION_8_0)
   cbhm_close_service(cbhm_handle_);
 #endif
 }
@@ -233,7 +235,8 @@ void PlatformChannel::HapticFeedbackVibrate(const std::string& feedback_type) {
 void PlatformChannel::GetClipboardData(ClipboardCallback on_data) {
   on_clipboard_data_ = std::move(on_data);
 
-#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+#if (defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)) && \
+    !defined(TIZEN_VERSION_8_0)
   int ret = cbhm_selection_get(
       cbhm_handle_, CBHM_SEL_TYPE_TEXT,
       [](cbhm_h cbhm_handle, const char* buf, size_t len,
@@ -264,7 +267,8 @@ void PlatformChannel::GetClipboardData(ClipboardCallback on_data) {
 }
 
 void PlatformChannel::SetClipboardData(const std::string& data) {
-#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+#if (defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)) && \
+    !defined(TIZEN_VERSION_8_0)
   int ret = cbhm_selection_set(cbhm_handle_, CBHM_SEL_TYPE_TEXT, data.c_str(),
                                data.length());
   if (ret != CBHM_ERROR_NONE) {
@@ -276,7 +280,8 @@ void PlatformChannel::SetClipboardData(const std::string& data) {
 }
 
 bool PlatformChannel::ClipboardHasStrings() {
-#if defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)
+#if (defined(MOBILE_PROFILE) || defined(COMMON_PROFILE)) && \
+    !defined(TIZEN_VERSION_8_0)
   return cbhm_item_count_get(cbhm_handle_) > 0;
 #else
   return !clipboard_.empty();

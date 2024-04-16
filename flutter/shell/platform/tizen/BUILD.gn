@@ -170,8 +170,8 @@ template("embedder") {
       ]
     }
 
-    if (target_name == "flutter_tizen_mobile" ||
-        target_name == "flutter_tizen_common") {
+    if ((target_name == "flutter_tizen_mobile" ||
+         target_name == "flutter_tizen_common") && api_version != "8.0") {
       libs += [ "cbhm" ]
     }
 
@@ -190,6 +190,10 @@ template("embedder") {
       ]
 
       defines += [ "NUI_SUPPORT" ]
+    }
+
+    if (api_version == "8.0") {
+      defines += [ "TIZEN_VERSION_8_0" ]
     }
 
     configs += [
