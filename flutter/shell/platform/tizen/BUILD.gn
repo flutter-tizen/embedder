@@ -13,7 +13,6 @@ config("flutter_tizen_config") {
   include_dirs = [
     "${sysroot_path}/usr/include/appfw",
     "${sysroot_path}/usr/include/base",
-    "${sysroot_path}/usr/include/cbhm",
     "${sysroot_path}/usr/include/dali",
     "${sysroot_path}/usr/include/dali-adaptor",
     "${sysroot_path}/usr/include/dali-toolkit",
@@ -168,11 +167,6 @@ template("embedder") {
         "tzsh_common",
         "tzsh_softkey",
       ]
-    }
-
-    if (target_name == "flutter_tizen_mobile" ||
-        target_name == "flutter_tizen_common") {
-      libs += [ "cbhm" ]
     }
 
     defines += invoker.defines
