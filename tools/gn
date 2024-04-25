@@ -100,7 +100,7 @@ def parse_args(args):
   parser.add_argument('--target-toolchain', type=str, required=True)
   parser.add_argument('--target-sysroot', type=str)
 
-  parser.add_argument('--api-version', default='5.5', type=str)
+  parser.add_argument('--api-version', default='6.0', type=str)
   parser.add_argument('--system-cxx', default=False, action='store_true')
 
   parser.add_argument('--target-dir', type=str)
