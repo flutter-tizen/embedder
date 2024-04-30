@@ -81,6 +81,10 @@ PlatformChannel::PlatformChannel(BinaryMessenger* messenger,
           kChannelName,
           &JsonMethodCodec::GetInstance())),
       view_(view) {
+#ifdef CLIPBOARD_SUPPORT
+  tizen_clipboard_ = std::make_unique<TizenClipboard>(view);
+#endif
+
   channel_->SetMethodCallHandler(
       [this](const MethodCall<rapidjson::Document>& call,
              std::unique_ptr<MethodResult<rapidjson::Document>> result) {
@@ -117,15 +121,27 @@ void PlatformChannel::HandleMethodCall(
                     "Clipboard API only supports text.");
       return;
     }
-    GetClipboardData([result = result.release()](const std::string& data) {
-      rapidjson::Document document;
-      document.SetObject();
-      rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
-      document.AddMember(rapidjson::Value(kTextKey, allocator),
-                         rapidjson::Value(data, allocator), allocator);
-      result->Success(document);
-      delete result;
-    });
+    auto* result_ptr = result.release();
+    if (!GetClipboardData([result_ptr](std::optional<std::string> data) {
+          if (!data.has_value()) {
+            result_ptr->Error(kUnknownClipboardError, "Internal error.");
+            delete result_ptr;
+            return;
+          }
+
+          rapidjson::Document document;
+          document.SetObject();
+          rapidjson::Document::AllocatorType& allocator =
+              document.GetAllocator();
+          document.AddMember(rapidjson::Value(kTextKey, allocator),
+                             rapidjson::Value(data.value(), allocator),
+                             allocator);
+          result_ptr->Success(document);
+          delete result_ptr;
+        })) {
+      result_ptr->Error(kUnknownClipboardError, "Internal error.");
+      delete result_ptr;
+    };
   } else if (method == kSetClipboardDataMethod) {
     const rapidjson::Value& document = *arguments;
     auto iter = document.FindMember(kTextKey);
@@ -219,16 +235,29 @@ void PlatformChannel::HapticFeedbackVibrate(const std::string& feedback_type) {
   FeedbackManager::GetInstance().Vibrate();
 }
 
-void PlatformChannel::GetClipboardData(ClipboardCallback on_data) {
+bool PlatformChannel::GetClipboardData(ClipboardCallback on_data) {
+#ifdef CLIPBOARD_SUPPORT
+  return tizen_clipboard_->GetData(std::move(on_data));
+#else
   on_data(clipboard_);
+  return true;
+#endif
 }
 
 void PlatformChannel::SetClipboardData(const std::string& data) {
+#ifdef CLIPBOARD_SUPPORT
+  tizen_clipboard_->SetData(data);
+#else
   clipboard_ = data;
+#endif
 }
 
 bool PlatformChannel::ClipboardHasStrings() {
+#ifdef CLIPBOARD_SUPPORT
+  return tizen_clipboard_->HasStrings();
+#else
   return !clipboard_.empty();
+#endif
 }
 
 void PlatformChannel::RestoreSystemUiOverlays() {

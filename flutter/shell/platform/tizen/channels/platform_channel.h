@@ -7,11 +7,15 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/method_channel.h"
+#ifdef CLIPBOARD_SUPPORT
+#include "flutter/shell/platform/tizen/tizen_clipboard.h"
+#endif
 #include "flutter/shell/platform/tizen/tizen_view_base.h"
 #include "rapidjson/document.h"
 
@@ -23,7 +27,8 @@ class PlatformChannel {
   virtual ~PlatformChannel();
 
  private:
-  using ClipboardCallback = std::function<void(const std::string& data)>;
+  using ClipboardCallback =
+      std::function<void(std::optional<std::string> data)>;
 
   void HandleMethodCall(
       const MethodCall<rapidjson::Document>& call,
@@ -32,7 +37,7 @@ class PlatformChannel {
   void SystemNavigatorPop();
   void PlaySystemSound(const std::string& sound_type);
   void HapticFeedbackVibrate(const std::string& feedback_type);
-  void GetClipboardData(ClipboardCallback on_data);
+  bool GetClipboardData(ClipboardCallback on_data);
   void SetClipboardData(const std::string& data);
   bool ClipboardHasStrings();
   void RestoreSystemUiOverlays();
@@ -48,11 +53,12 @@ class PlatformChannel {
 
   // A reference to the native view managed by FlutterTizenView.
   TizenViewBase* view_ = nullptr;
-
+#ifdef CLIPBOARD_SUPPORT
+  std::unique_ptr<TizenClipboard> tizen_clipboard_;
+#else
   // A container that holds clipboard data during the engine lifetime.
-  //
-  // TODO(JSUYA): Remove after implementing the ecore_wl2 based clipboard.
   std::string clipboard_;
+#endif
 };
 
 }  // namespace flutter
