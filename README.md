@@ -58,7 +58,7 @@ The Flutter embedder for Tizen.
 ### Notes
 
 - To build an app (TPK) with the embedder generated in the above, copy the output artifacts (`libflutter_tizen*.so`) into the [flutter-tizen](https://github.com/flutter-tizen/flutter-tizen) tool's cached artifacts directory (`flutter/bin/cache/artifacts/engine`) and run `flutter-tizen run` or `flutter-tizen build tpk`.
-- To use the target device's `libstdc++.so` instead of the embedder's built-in libc++ (`third_party/libcxx`), provide the `--system-cxx` option to `tools/gn`.
+- To use the embedder's built-in libc++ (`third_party/libcxx`) instead of the target device's `libstdc++.so`, provide the `--no-system-cxx` option to `tools/gn`.
 - Building NUI-related code requires a sysroot for Tizen 6.5 or above and the `--api-version 6.5` option.
 
 ## Repository structure
