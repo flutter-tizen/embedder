@@ -30,7 +30,7 @@ declare_args() {
   api_version = ""
 
   # Use the system libstdc++ without building third_party/libcxx from source.
-  no_system_cxx = false
+  use_system_cxx = false
 }
 
 _default_configs = [
@@ -38,14 +38,14 @@ _default_configs = [
   "//build/config:cxx_version_default",
 ]
 
-if (no_system_cxx) {
+if (use_system_cxx) {
+  _default_configs += [ "//build/config:system_cxx" ]
+} else {
   _default_configs += [
     "//build/config:no_system_cxx",
     "//third_party/libcxxabi:libcxxabi_config",
     "//third_party/libcxx:libcxx_config",
   ]
-} else {
-  _default_configs += [ "//build/config:system_cxx" ]
 }
 
 if (is_unopt) {
@@ -60,7 +60,7 @@ set_defaults("executable") {
   configs = _executable_configs
   deps = []
 
-  if (no_system_cxx) {
+  if (!use_system_cxx) {
     deps += [ "//third_party/libcxx" ]
   }
 }
@@ -74,7 +74,7 @@ set_defaults("shared_library") {
   configs = _executable_configs
   deps = []
 
-  if (no_system_cxx) {
+  if (!use_system_cxx) {
     deps += [ "//third_party/libcxx" ]
   }
 }
