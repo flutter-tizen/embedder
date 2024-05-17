@@ -8,9 +8,7 @@
 
 #include <memory>
 
-#ifndef WEARABLE_PROFILE
 #include "flutter/shell/platform/common/accessibility_bridge.h"
-#endif
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -27,9 +25,7 @@
 #include "flutter/shell/platform/tizen/public/flutter_tizen.h"
 #include "flutter/shell/platform/tizen/tizen_event_loop.h"
 #include "flutter/shell/platform/tizen/tizen_renderer.h"
-#ifndef WEARABLE_PROFILE
 #include "flutter/shell/platform/tizen/tizen_vsync_waiter.h"
-#endif
 
 // State associated with the plugin registrar.
 struct FlutterDesktopPluginRegistrar {
@@ -113,11 +109,9 @@ class FlutterTizenEngine {
 
   NavigationChannel* navigation_channel() { return navigation_channel_.get(); }
 
-#ifndef WEARABLE_PROFILE
   std::weak_ptr<flutter::AccessibilityBridge> accessibility_bridge() {
     return accessibility_bridge_;
   }
-#endif
 
   // Registers |callback| to be called when the plugin registrar is destroyed.
   void AddPluginRegistrarDestructionCallback(
@@ -174,7 +168,6 @@ class FlutterTizenEngine {
   // given |texture_id|.
   bool MarkExternalTextureFrameAvailable(int64_t texture_id);
 
-#ifndef WEARABLE_PROFILE
   // Dispatch accessibility action back to the Flutter framework.
   void DispatchAccessibilityAction(uint64_t target,
                                    FlutterSemanticsAction action,
@@ -182,7 +175,6 @@ class FlutterTizenEngine {
 
   // Change semantics state when accessibility state is changed.
   void SetSemanticsEnabled(bool enabled);
-#endif
 
   // Notifies the engine about enabled accessibility features.
   void UpdateAccessibilityFeatures(bool invert_colors, bool high_contrast);
@@ -203,10 +195,8 @@ class FlutterTizenEngine {
   // FlutterTizenEngine.
   FlutterRendererConfig GetRendererConfig();
 
-#ifndef WEARABLE_PROFILE
   // Called when semantics nodes updates are received from the engine.
   void OnUpdateSemantics(const FlutterSemanticsUpdate2* update);
-#endif
 
   // The Flutter engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
@@ -241,10 +231,8 @@ class FlutterTizenEngine {
            FlutterDesktopPluginRegistrarRef>
       plugin_registrar_destruction_callbacks_;
 
-#ifndef WEARABLE_PROFILE
   // The accessibility bridge for the Tizen platform.
   std::shared_ptr<AccessibilityBridge> accessibility_bridge_;
-#endif
 
   std::unique_ptr<AccessibilitySettings> accessibility_settings_;
 
@@ -277,12 +265,10 @@ class FlutterTizenEngine {
   // An interface between the Flutter rasterizer and the platform.
   std::unique_ptr<TizenRenderer> renderer_;
 
-#ifndef WEARABLE_PROFILE
   std::mutex vsync_mutex_;
 
   // The vsync waiter for the embedder.
   std::unique_ptr<TizenVsyncWaiter> vsync_waiter_;
-#endif
 };
 
 }  // namespace flutter

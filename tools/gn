@@ -75,7 +75,7 @@ def to_gn_args(args):
 
   gn_args['clang_version'] = get_clang_version(args.target_toolchain)
   gn_args['api_version'] = args.api_version
-  gn_args['use_system_cxx'] = args.system_cxx
+  gn_args['use_system_cxx'] = not args.no_system_cxx
 
   for key, val in gn_args.items():
     if isinstance(val, bool):
@@ -100,8 +100,8 @@ def parse_args(args):
   parser.add_argument('--target-toolchain', type=str, required=True)
   parser.add_argument('--target-sysroot', type=str)
 
-  parser.add_argument('--api-version', default='5.5', type=str)
-  parser.add_argument('--system-cxx', default=False, action='store_true')
+  parser.add_argument('--api-version', default='6.0', type=str)
+  parser.add_argument('--no-system-cxx', default=False, action='store_true')
 
   parser.add_argument('--target-dir', type=str)
   parser.add_argument('--verbose', default=False, action='store_true')

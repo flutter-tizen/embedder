@@ -9,15 +9,13 @@
 #include <string>
 #include <vector>
 
-#ifndef WEARABLE_PROFILE
 #include "flutter/shell/platform/tizen/accessibility_bridge_tizen.h"
 #include "flutter/shell/platform/tizen/flutter_platform_node_delegate_tizen.h"
-#include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
-#endif
 #include "flutter/shell/platform/tizen/flutter_tizen_view.h"
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/system_utils.h"
 #include "flutter/shell/platform/tizen/tizen_input_method_context.h"
+#include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_evas_gl.h"
 
 namespace flutter {
@@ -92,12 +90,9 @@ void FlutterTizenEngine::CreateRenderer(
           }
         },
         renderer_.get());
-  }
-#ifndef WEARABLE_PROFILE
-  else {
+  } else {
     renderer_ = std::make_unique<TizenRendererEgl>();
   }
-#endif
 }
 
 bool FlutterTizenEngine::RunEngine() {
@@ -205,7 +200,7 @@ bool FlutterTizenEngine::RunEngine() {
   if (!project_->custom_dart_entrypoint().empty()) {
     args.custom_dart_entrypoint = project_->custom_dart_entrypoint().c_str();
   }
-#ifndef WEARABLE_PROFILE
+
   args.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
                                        void* user_data) {
     auto* engine = static_cast<FlutterTizenEngine*>(user_data);
@@ -222,7 +217,6 @@ bool FlutterTizenEngine::RunEngine() {
       }
     };
   }
-#endif
 
   FlutterRendererConfig renderer_config = GetRendererConfig();
 
@@ -268,14 +262,14 @@ bool FlutterTizenEngine::StopEngine() {
          plugin_registrar_destruction_callbacks_) {
       callback(registrar);
     }
-#ifndef WEARABLE_PROFILE
+
     {
       std::lock_guard<std::mutex> lock(vsync_mutex_);
       if (vsync_waiter_) {
         vsync_waiter_.reset();
       }
     }
-#endif
+
     FlutterEngineResult result = embedder_api_.Shutdown(engine_);
     view_ = nullptr;
     engine_ = nullptr;
@@ -500,7 +494,6 @@ FlutterRendererConfig FlutterTizenEngine::GetRendererConfig() {
   return config;
 }
 
-#ifndef WEARABLE_PROFILE
 void FlutterTizenEngine::DispatchAccessibilityAction(
     uint64_t target,
     FlutterSemanticsAction action,
@@ -552,6 +545,5 @@ void FlutterTizenEngine::OnUpdateSemantics(
                       geometry.height);
   window->SetRootNode(root);
 }
-#endif
 
 }  // namespace flutter

@@ -1,5 +1,5 @@
 // This file is a copy of Tizen's Evas_GL_GLES2_Helpers.h file.
-// https://docs.tizen.org/application/native/api/wearable/5.5/group__Evas__GL__GLES2__Helpers.html
+// https://docs.tizen.org/application/native/api/iot-headed/6.0/group__Evas__GL__GLES2__Helpers.html
 
 /**
  * @file Evas_GL_GLES2_Helpers.h

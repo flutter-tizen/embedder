@@ -216,8 +216,8 @@ def main():
                       help='Force re-downloading of packages')
   parser.add_argument('-q', '--quiet', action='store_true',
                       help='Suppress log output')
-  parser.add_argument('--api-version', metavar='VER', default=5.5, type=float,
-                      help='Target API version (defaults to 5.5)')
+  parser.add_argument('--api-version', metavar='VER', default=6.0, type=float,
+                      help='Target API version (defaults to 6.0)')
   args = parser.parse_args()
 
   if args.out:

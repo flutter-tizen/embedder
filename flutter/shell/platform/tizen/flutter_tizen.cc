@@ -20,9 +20,7 @@
 #include "flutter/shell/platform/tizen/tizen_view_nui.h"
 #endif
 #include "flutter/shell/platform/tizen/tizen_window.h"
-#ifndef WEARABLE_PROFILE
 #include "flutter/shell/platform/tizen/tizen_window_ecore_wl2.h"
-#endif
 #include "flutter/shell/platform/tizen/tizen_window_elementary.h"
 
 namespace {
@@ -209,13 +207,9 @@ FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindow(
         window_properties.focusable, window_properties.top_level,
         window_properties.external_output_type);
   } else {
-#ifndef WEARABLE_PROFILE
     window = std::make_unique<flutter::TizenWindowEcoreWl2>(
         window_geometry, window_properties.transparent,
         window_properties.focusable, window_properties.top_level);
-#else
-    return nullptr;
-#endif
   }
 
   auto view = std::make_unique<flutter::FlutterTizenView>(

@@ -10,17 +10,13 @@
 #ifdef NUI_SUPPORT
 #include "flutter/shell/platform/tizen/tizen_view_nui.h"
 #endif
-#ifndef WEARABLE_PROFILE
 #include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
-#endif
 #include "flutter/shell/platform/tizen/tizen_window.h"
 
 namespace {
 
 #if defined(MOBILE_PROFILE)
 constexpr double kProfileFactor = 0.7;
-#elif defined(WEARABLE_PROFILE)
-constexpr double kProfileFactor = 0.4;
 #elif defined(TV_PROFILE)
 constexpr double kProfileFactor = 2.0;
 #else
@@ -196,7 +192,6 @@ void FlutterTizenView::OnRotate(int32_t degree) {
   TizenGeometry geometry = tizen_view_->GetGeometry();
   int32_t width = geometry.width;
   int32_t height = geometry.height;
-#ifndef WEARABLE_PROFILE
   if (dynamic_cast<TizenRendererEgl*>(engine_->renderer())) {
     rotation_degree_ = degree;
     // Compute renderer transformation based on the angle of rotation.
@@ -221,7 +216,6 @@ void FlutterTizenView::OnRotate(int32_t degree) {
       std::swap(width, height);
     }
   }
-#endif
 
   engine_->renderer()->ResizeSurface(width, height);
 

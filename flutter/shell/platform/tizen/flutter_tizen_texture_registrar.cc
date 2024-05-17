@@ -7,11 +7,9 @@
 #include <iostream>
 #include <mutex>
 
-#ifndef WEARABLE_PROFILE
 #include "flutter/shell/platform/tizen/external_texture_pixel_egl.h"
-#include "flutter/shell/platform/tizen/external_texture_surface_egl.h"
-#endif
 #include "flutter/shell/platform/tizen/external_texture_pixel_evas_gl.h"
+#include "flutter/shell/platform/tizen/external_texture_surface_egl.h"
 #include "flutter/shell/platform/tizen/external_texture_surface_evas_gl.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/logger.h"
@@ -110,13 +108,9 @@ FlutterTizenTextureRegistrar::CreateExternalTexture(
             texture_info->pixel_buffer_config.callback,
             texture_info->pixel_buffer_config.user_data);
       }
-#ifndef WEARABLE_PROFILE
       return std::make_unique<ExternalTexturePixelEGL>(
           texture_info->pixel_buffer_config.callback,
           texture_info->pixel_buffer_config.user_data);
-#else
-      return nullptr;
-#endif
     case kFlutterDesktopGpuSurfaceTexture:
       ExternalTextureExtensionType gl_extension =
           ExternalTextureExtensionType::kNone;
@@ -133,13 +127,9 @@ FlutterTizenTextureRegistrar::CreateExternalTexture(
             gl_extension, texture_info->gpu_surface_config.callback,
             texture_info->gpu_surface_config.user_data);
       }
-#ifndef WEARABLE_PROFILE
       return std::make_unique<ExternalTextureSurfaceEGL>(
           gl_extension, texture_info->gpu_surface_config.callback,
           texture_info->gpu_surface_config.user_data);
-#else
-      return nullptr;
-#endif
   }
 }
 

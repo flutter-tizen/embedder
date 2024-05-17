@@ -377,14 +377,9 @@ TizenGeometry TizenWindowElementary::GetGeometry() {
 }
 
 bool TizenWindowElementary::SetGeometry(TizenGeometry geometry) {
-#ifndef WEARABLE_PROFILE
   evas_object_resize(elm_win_, geometry.width, geometry.height);
   evas_object_move(elm_win_, geometry.left, geometry.top);
   return true;
-#else
-  FT_LOG(Error) << "SetGeometry is not supported.";
-  return false;
-#endif
 }
 
 TizenGeometry TizenWindowElementary::GetScreenGeometry() {

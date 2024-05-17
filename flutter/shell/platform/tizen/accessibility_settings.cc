@@ -16,7 +16,6 @@ namespace flutter {
 
 AccessibilitySettings::AccessibilitySettings(FlutterTizenEngine* engine)
     : engine_(engine) {
-#ifndef WEARABLE_PROFILE
   bool tts_enabled = false;
   int ret = system_settings_get_value_bool(
       SYSTEM_SETTINGS_KEY_ACCESSIBILITY_TTS, &tts_enabled);
@@ -29,7 +28,6 @@ AccessibilitySettings::AccessibilitySettings(FlutterTizenEngine* engine)
   }
   system_settings_set_changed_cb(SYSTEM_SETTINGS_KEY_ACCESSIBILITY_TTS,
                                  OnScreenReaderStateChanged, this);
-#endif
 
 #ifdef TV_PROFILE
   int high_contrast = 0;
@@ -46,9 +44,7 @@ AccessibilitySettings::AccessibilitySettings(FlutterTizenEngine* engine)
 }
 
 AccessibilitySettings::~AccessibilitySettings() {
-#ifndef WEARABLE_PROFILE
   system_settings_unset_changed_cb(SYSTEM_SETTINGS_KEY_ACCESSIBILITY_TTS);
-#endif
 #ifdef TV_PROFILE
   system_settings_unset_changed_cb(
       SYSTEM_SETTINGS_KEY_ACCESSIBILITY_HIGHCONTRAST);
@@ -76,7 +72,6 @@ void AccessibilitySettings::OnHighContrastStateChanged(
 void AccessibilitySettings::OnScreenReaderStateChanged(
     system_settings_key_e key,
     void* user_data) {
-#ifndef WEARABLE_PROFILE
   auto* self = static_cast<AccessibilitySettings*>(user_data);
 
   bool enabled = false;
@@ -90,7 +85,6 @@ void AccessibilitySettings::OnScreenReaderStateChanged(
     self->screen_reader_enabled_ = enabled;
     self->engine_->SetSemanticsEnabled(enabled);
   }
-#endif
 }
 
 }  // namespace flutter

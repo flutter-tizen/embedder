@@ -77,6 +77,7 @@ template("embedder") {
     public = _public_headers
 
     sources = [
+      "accessibility_bridge_tizen.cc",
       "accessibility_settings.cc",
       "channels/accessibility_channel.cc",
       "channels/app_control.cc",
@@ -93,8 +94,11 @@ template("embedder") {
       "channels/settings_channel.cc",
       "channels/text_input_channel.cc",
       "channels/window_channel.cc",
+      "external_texture_pixel_egl.cc",
       "external_texture_pixel_evas_gl.cc",
+      "external_texture_surface_egl.cc",
       "external_texture_surface_evas_gl.cc",
+      "flutter_platform_node_delegate_tizen.cc",
       "flutter_project_bundle.cc",
       "flutter_tizen.cc",
       "flutter_tizen_elementary.cc",
@@ -106,8 +110,11 @@ template("embedder") {
       "tizen_event_loop.cc",
       "tizen_input_method_context.cc",
       "tizen_renderer.cc",
+      "tizen_renderer_egl.cc",
       "tizen_renderer_evas_gl.cc",
       "tizen_view_elementary.cc",
+      "tizen_vsync_waiter.cc",
+      "tizen_window_ecore_wl2.cc",
       "tizen_window_elementary.cc",
     ]
 
@@ -128,6 +135,7 @@ template("embedder") {
       "ecore_imf",
       "ecore_imf_evas",
       "ecore_input",
+      "ecore_wl2",
       "efl-extension",
       "eina",
       "elementary",
@@ -136,29 +144,13 @@ template("embedder") {
       "feedback",
       "flutter_engine",
       "tbm",
+      "tdm-client",
+      "tizen-extension-client",
       "vconf",
       "wayland-client",
+      "EGL",
+      "GLESv2",
     ]
-
-    if (target_name != "flutter_tizen_wearable") {
-      sources += [
-        "accessibility_bridge_tizen.cc",
-        "external_texture_pixel_egl.cc",
-        "external_texture_surface_egl.cc",
-        "flutter_platform_node_delegate_tizen.cc",
-        "tizen_renderer_egl.cc",
-        "tizen_vsync_waiter.cc",
-        "tizen_window_ecore_wl2.cc",
-      ]
-
-      libs += [
-        "ecore_wl2",
-        "tdm-client",
-        "tizen-extension-client",
-        "EGL",
-        "GLESv2",
-      ]
-    }
 
     if (target_name == "flutter_tizen_common") {
       sources += [ "channels/tizen_shell.cc" ]
@@ -172,7 +164,7 @@ template("embedder") {
     defines += invoker.defines
     defines += [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
 
-    if (api_version == "6.5" && target_name != "flutter_tizen_wearable") {
+    if (api_version == "6.5") {
       sources += [
         "flutter_tizen_nui.cc",
         "tizen_clipboard.cc",
@@ -203,16 +195,13 @@ template("embedder") {
     deps += [
       ":dart_api_dl",
       "//flutter/shell/platform/common:common_cpp",
+      "//flutter/shell/platform/common:common_cpp_accessibility",
       "//flutter/shell/platform/common:common_cpp_input",
       "//flutter/shell/platform/common:common_cpp_library_headers",
       "//flutter/shell/platform/common/client_wrapper:client_wrapper",
       "//flutter/shell/platform/embedder:embedder_headers",
       "//third_party/rapidjson",
     ]
-
-    if (target_name != "flutter_tizen_wearable") {
-      deps += [ "//flutter/shell/platform/common:common_cpp_accessibility" ]
-    }
   }
 }
 
@@ -220,12 +209,6 @@ embedder("flutter_tizen_mobile") {
   target_type = "shared_library"
 
   defines = [ "MOBILE_PROFILE" ]
-}
-
-embedder("flutter_tizen_wearable") {
-  target_type = "shared_library"
-
-  defines = [ "WEARABLE_PROFILE" ]
 }
 
 embedder("flutter_tizen_tv") {
@@ -286,7 +269,6 @@ group("flutter_tizen") {
     ":flutter_tizen_common",
     ":flutter_tizen_mobile",
     ":flutter_tizen_tv",
-    ":flutter_tizen_wearable",
     ":publish_cpp_client_wrapper",
     ":publish_headers_tizen",
   ]
