@@ -43,7 +43,7 @@ class FlutterTizenTextureRegistrarTest : public ::testing::Test {
 };
 
 TEST_F(FlutterTizenTextureRegistrarTest, CreateDestroy) {
-  FlutterTizenTextureRegistrar registrar(engine_);
+  FlutterTizenTextureRegistrar registrar(engine_,false);
 
   EXPECT_TRUE(true);
 }
@@ -51,7 +51,7 @@ TEST_F(FlutterTizenTextureRegistrarTest, CreateDestroy) {
 TEST_F(FlutterTizenTextureRegistrarTest, RegisterUnregisterTexture) {
   EngineModifier modifier(engine_);
 
-  FlutterTizenTextureRegistrar registrar(engine_);
+  FlutterTizenTextureRegistrar registrar(engine_,false);
 
   FlutterDesktopTextureInfo texture_info = {};
   texture_info.type = kFlutterDesktopGpuSurfaceTexture;
@@ -105,7 +105,7 @@ TEST_F(FlutterTizenTextureRegistrarTest, RegisterUnregisterTexture) {
 TEST_F(FlutterTizenTextureRegistrarTest, RegisterUnknownTextureType) {
   EngineModifier modifier(engine_);
 
-  FlutterTizenTextureRegistrar registrar(engine_);
+  FlutterTizenTextureRegistrar registrar(engine_,false);
 
   FlutterDesktopTextureInfo texture_info = {};
   texture_info.type = static_cast<FlutterDesktopTextureType>(1234);
@@ -116,7 +116,7 @@ TEST_F(FlutterTizenTextureRegistrarTest, RegisterUnknownTextureType) {
 }
 
 TEST_F(FlutterTizenTextureRegistrarTest, PopulateInvalidTexture) {
-  FlutterTizenTextureRegistrar registrar(engine_);
+  FlutterTizenTextureRegistrar registrar(engine_,false);
 
   bool result = registrar.PopulateTexture(1, 640, 480, nullptr);
   EXPECT_FALSE(result);
