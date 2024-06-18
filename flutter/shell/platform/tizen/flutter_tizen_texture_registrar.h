@@ -20,7 +20,8 @@ class FlutterTizenEngine;
 // Thread safety: All member methods are thread safe.
 class FlutterTizenTextureRegistrar {
  public:
-  explicit FlutterTizenTextureRegistrar(FlutterTizenEngine* engine, bool enable_impeller);
+  explicit FlutterTizenTextureRegistrar(FlutterTizenEngine* engine,
+                                        bool enable_impeller);
 
   // Registers a texture described by the given |texture_info| object.
   //
