@@ -36,7 +36,6 @@ class ExternalTextureSurfaceEGLImpeller : public ExternalTexture {
 
  private:
   static bool OnBindCallback(void* user_data);
-  static void OnDestruction(void* user_data);
   bool CreateOrUpdateEglImage(
       const FlutterDesktopGpuSurfaceDescriptor* descriptor);
   void ReleaseImage();

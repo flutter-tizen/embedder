@@ -62,7 +62,7 @@ bool ExternalTextureSurfaceEGLImpeller::PopulateTexture(
   opengl_texture->impeller_texture_type =
       FlutterGLImpellerTextureType::kFlutterGLImpellerTextureGpuSuface;
   opengl_texture->bind_callback = OnBindCallback;
-  opengl_texture->destruction_callback = OnDestruction;
+  opengl_texture->destruction_callback = nullptr;
   opengl_texture->user_data = this;
   opengl_texture->width = width;
   opengl_texture->height = height;
@@ -184,7 +184,5 @@ bool ExternalTextureSurfaceEGLImpeller::OnBind() {
   glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_src_image_);
   return true;
 }
-
-void ExternalTextureSurfaceEGLImpeller::OnDestruction(void* user_data) {}
 
 }  // namespace flutter

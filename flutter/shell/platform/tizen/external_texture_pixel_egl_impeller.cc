@@ -16,7 +16,6 @@ bool ExternalTexturePixelEGLImpeller::PopulateTexture(
     size_t width,
     size_t height,
     FlutterOpenGLTexture* opengl_texture) {
-  FT_LOG(Error) << "PopulateTexture";
   if (!texture_callback_) {
     return false;
   }
@@ -49,8 +48,6 @@ ExternalTexturePixelEGLImpeller::ExternalTexturePixelEGLImpeller(
     void* user_data)
     : ExternalTexture(),
       texture_callback_(texture_callback),
-      user_data_(user_data) {
-  FT_LOG(Error) << "ExternalTexturePixelEGLImpeller";
-}
+      user_data_(user_data) {}
 
 }  // namespace flutter

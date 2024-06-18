@@ -22,9 +22,7 @@ namespace flutter {
 FlutterTizenTextureRegistrar::FlutterTizenTextureRegistrar(
     FlutterTizenEngine* engine,
     bool enable_impeller)
-    : engine_(engine), enable_impeller_(enable_impeller) {
-  FT_LOG(Error) << "enable_impeller : " << enable_impeller_;
-}
+    : engine_(engine), enable_impeller_(enable_impeller) {}
 
 int64_t FlutterTizenTextureRegistrar::RegisterTexture(
     const FlutterDesktopTextureInfo* texture_info) {
