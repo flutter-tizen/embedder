@@ -364,7 +364,7 @@ typedef enum {
 
 typedef enum {
   kFlutterGLImpellerTexturePixelBuffer,
-  kFlutterGLImpellerTextureGpuSuface,
+  kFlutterGLImpellerTextureGpuSurface,
 } FlutterGLImpellerTextureType;
 
 typedef struct {
@@ -377,11 +377,11 @@ typedef struct {
   uint32_t format;
   /// The pixel data buffer.
   const uint8_t* buffer;
-  /// The size of buffer.
+  /// The size of pixel buffer.
   size_t buffer_size;
-  /// Callback invoked that texture start binding.
+  /// Callback invoked that the gpu surface texture start binding.
   BoolCallback bind_callback;
-  /// the type of the texture.
+  /// The type of the texture.
   FlutterGLImpellerTextureType impeller_texture_type;
   /// User data to be returned on the invocation of the destruction callback.
   void* user_data;
