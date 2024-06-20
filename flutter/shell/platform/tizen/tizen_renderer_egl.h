@@ -15,7 +15,7 @@ namespace flutter {
 
 class TizenRendererEgl : public TizenRenderer {
  public:
-  explicit TizenRendererEgl();
+  explicit TizenRendererEgl(bool enable_impeller);
 
   virtual ~TizenRendererEgl();
 
@@ -55,6 +55,7 @@ class TizenRendererEgl : public TizenRenderer {
   EGLSurface egl_resource_surface_ = EGL_NO_SURFACE;
 
   std::string egl_extension_str_;
+  bool enable_impeller_;
 };
 
 }  // namespace flutter
