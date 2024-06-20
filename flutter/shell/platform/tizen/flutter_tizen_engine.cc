@@ -91,7 +91,8 @@ void FlutterTizenEngine::CreateRenderer(
         },
         renderer_.get());
   } else {
-    renderer_ = std::make_unique<TizenRendererEgl>();
+    renderer_ = std::make_unique<TizenRendererEgl>(
+        project_->HasArgument("--enable-impeller"));
   }
 }
 
