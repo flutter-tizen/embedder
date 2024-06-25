@@ -1,4 +1,4 @@
-// Copyright 2020 Samsung Electronics Co., Ltd. All rights reserved.
+// Copyright 2024 Samsung Electronics Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -48,4 +48,4 @@ class ExternalTextureSurfaceEGLImpeller : public ExternalTexture {
 
 }  // namespace flutter
 
-#endif  // EMBEDDER_EXTERNAL_TEXTURE_SURFACE_EGL_H_
+#endif  // EMBEDDER_EXTERNAL_TEXTURE_SURFACE_EGL_IMPELLER_H_

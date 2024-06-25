@@ -176,8 +176,9 @@ bool ExternalTextureSurfaceEGLImpeller::OnBindCallback(void* user_data) {
 }
 
 bool ExternalTextureSurfaceEGLImpeller::OnBind() {
-  if (!egl_src_image_)
+  if (!egl_src_image_) {
     return false;
+  }
   PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES =
       reinterpret_cast<PFNGLEGLIMAGETARGETTEXTURE2DOESPROC>(
           eglGetProcAddress("glEGLImageTargetTexture2DOES"));

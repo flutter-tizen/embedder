@@ -35,7 +35,7 @@ bool ExternalTexturePixelEGLImpeller::PopulateTexture(
       FlutterGLImpellerTextureType::kFlutterGLImpellerTexturePixelBuffer;
   opengl_texture->buffer = pixel_buffer->buffer;
   opengl_texture->buffer_size =
-      size_t(pixel_buffer->width) * size_t(pixel_buffer->height) * (32 >> 3);
+      size_t(pixel_buffer->width) * size_t(pixel_buffer->height) * 4;
   opengl_texture->destruction_callback = nullptr;
   opengl_texture->user_data = nullptr;
   opengl_texture->width = width;
