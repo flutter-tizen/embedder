@@ -8,8 +8,10 @@
 #include <mutex>
 
 #include "flutter/shell/platform/tizen/external_texture_pixel_egl.h"
+#include "flutter/shell/platform/tizen/external_texture_pixel_egl_impeller.h"
 #include "flutter/shell/platform/tizen/external_texture_pixel_evas_gl.h"
 #include "flutter/shell/platform/tizen/external_texture_surface_egl.h"
+#include "flutter/shell/platform/tizen/external_texture_surface_egl_impeller.h"
 #include "flutter/shell/platform/tizen/external_texture_surface_evas_gl.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/logger.h"
@@ -18,8 +20,9 @@
 namespace flutter {
 
 FlutterTizenTextureRegistrar::FlutterTizenTextureRegistrar(
-    FlutterTizenEngine* engine)
-    : engine_(engine) {}
+    FlutterTizenEngine* engine,
+    bool enable_impeller)
+    : engine_(engine), enable_impeller_(enable_impeller) {}
 
 int64_t FlutterTizenTextureRegistrar::RegisterTexture(
     const FlutterDesktopTextureInfo* texture_info) {
@@ -108,9 +111,15 @@ FlutterTizenTextureRegistrar::CreateExternalTexture(
             texture_info->pixel_buffer_config.callback,
             texture_info->pixel_buffer_config.user_data);
       }
-      return std::make_unique<ExternalTexturePixelEGL>(
-          texture_info->pixel_buffer_config.callback,
-          texture_info->pixel_buffer_config.user_data);
+      if (enable_impeller_) {
+        return std::make_unique<ExternalTexturePixelEGLImpeller>(
+            texture_info->pixel_buffer_config.callback,
+            texture_info->pixel_buffer_config.user_data);
+      } else {
+        return std::make_unique<ExternalTexturePixelEGL>(
+            texture_info->pixel_buffer_config.callback,
+            texture_info->pixel_buffer_config.user_data);
+      }
     case kFlutterDesktopGpuSurfaceTexture:
       ExternalTextureExtensionType gl_extension =
           ExternalTextureExtensionType::kNone;
@@ -127,9 +136,15 @@ FlutterTizenTextureRegistrar::CreateExternalTexture(
             gl_extension, texture_info->gpu_surface_config.callback,
             texture_info->gpu_surface_config.user_data);
       }
-      return std::make_unique<ExternalTextureSurfaceEGL>(
-          gl_extension, texture_info->gpu_surface_config.callback,
-          texture_info->gpu_surface_config.user_data);
+      if (enable_impeller_) {
+        return std::make_unique<ExternalTextureSurfaceEGLImpeller>(
+            gl_extension, texture_info->gpu_surface_config.callback,
+            texture_info->gpu_surface_config.user_data);
+      } else {
+        return std::make_unique<ExternalTextureSurfaceEGL>(
+            gl_extension, texture_info->gpu_surface_config.callback,
+            texture_info->gpu_surface_config.user_data);
+      }
   }
 }
 
