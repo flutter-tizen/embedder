@@ -169,17 +169,17 @@ bool TizenRendererEgl::ChooseEGLConfiguration() {
   if (enable_impeller_) {
     EGLint impeller_config_attribs[] = {
         // clang-format off
-      EGL_SURFACE_TYPE,    EGL_WINDOW_BIT,
-      EGL_RED_SIZE,        8,
-      EGL_GREEN_SIZE,      8,
-      EGL_BLUE_SIZE,       8,
-      EGL_ALPHA_SIZE,      8,
-      EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-      EGL_SAMPLE_BUFFERS,  1,
-      EGL_SAMPLES,         4,
-      EGL_STENCIL_SIZE,    8,
-      EGL_DEPTH_SIZE,      0,
-      EGL_NONE
+        EGL_SURFACE_TYPE,    EGL_WINDOW_BIT,
+        EGL_RED_SIZE,        8,
+        EGL_GREEN_SIZE,      8,
+        EGL_BLUE_SIZE,       8,
+        EGL_ALPHA_SIZE,      8,
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+        EGL_SAMPLE_BUFFERS,  1,
+        EGL_SAMPLES,         4,
+        EGL_STENCIL_SIZE,    8,
+        EGL_DEPTH_SIZE,      0,
+        EGL_NONE
         // clang-format on
     };
     if (!eglChooseConfig(egl_display_, impeller_config_attribs, configs,
@@ -192,15 +192,15 @@ bool TizenRendererEgl::ChooseEGLConfiguration() {
   } else {
     EGLint config_attribs[] = {
         // clang-format off
-      EGL_SURFACE_TYPE,    EGL_WINDOW_BIT,
-      EGL_RED_SIZE,        8,
-      EGL_GREEN_SIZE,      8,
-      EGL_BLUE_SIZE,       8,
-      EGL_ALPHA_SIZE,      EGL_DONT_CARE,
-      EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-      EGL_SAMPLE_BUFFERS,  EGL_DONT_CARE,
-      EGL_SAMPLES,         EGL_DONT_CARE,
-      EGL_NONE
+        EGL_SURFACE_TYPE,    EGL_WINDOW_BIT,
+        EGL_RED_SIZE,        8,
+        EGL_GREEN_SIZE,      8,
+        EGL_BLUE_SIZE,       8,
+        EGL_ALPHA_SIZE,      EGL_DONT_CARE,
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+        EGL_SAMPLE_BUFFERS,  EGL_DONT_CARE,
+        EGL_SAMPLES,         EGL_DONT_CARE,
+        EGL_NONE
         // clang-format on
     };
     if (!eglChooseConfig(egl_display_, config_attribs, configs, config_size,
