@@ -6,8 +6,8 @@ deps = {
   'src/third_party/rapidjson': 'https://fuchsia.googlesource.com/third_party/rapidjson@ef3564c5c8824989393b87df25355baf35ff544b',
   'src/third_party/libcxx': 'https://llvm.googlesource.com/llvm-project/libcxx@44079a4cc04cdeffb9cfe8067bfb3c276fb2bab0',
   'src/third_party/libcxxabi': 'https://llvm.googlesource.com/llvm-project/libcxxabi@2ce528fb5e0f92e57c97ec3ff53b75359d33af12',
-  'src/third_party/googletest': 'https://github.com/google/googletest@054a986a8513149e8374fc669a5fe40117ca6b41',
-  'src/third_party/dart': 'https://dart.googlesource.com/sdk.git@1618a775995ef6f862b9f05be61a6a8fc23f2e4d',
+  'src/third_party/googletest': 'https://github.com/google/googletest@7f036c5563af7d0329f20e8bb42effb04629f0c0',
+  'src/third_party/dart': 'https://dart.googlesource.com/sdk.git@b9479eb440de7af2c9946931a1ecaabf457b31af',
   'src/third_party/clang': {
     'packages': [
       {
