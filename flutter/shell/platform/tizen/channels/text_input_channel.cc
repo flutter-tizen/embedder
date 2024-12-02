@@ -19,6 +19,7 @@ constexpr char kClearClientMethod[] = "TextInput.clearClient";
 constexpr char kSetClientMethod[] = "TextInput.setClient";
 constexpr char kShowMethod[] = "TextInput.show";
 constexpr char kHideMethod[] = "TextInput.hide";
+constexpr char kNoneInputType[] = "TextInputType.none";
 constexpr char kMultilineInputType[] = "TextInputType.multiline";
 constexpr char kUpdateEditingStateMethod[] =
     "TextInputClient.updateEditingState";
@@ -132,7 +133,9 @@ void TextInputChannel::HandleMethodCall(
   const std::string& method = method_call.method_name();
 
   if (method.compare(kShowMethod) == 0) {
-    input_method_context_->ShowInputPanel();
+    if (input_type_ != kNoneInputType) {
+      input_method_context_->ShowInputPanel();
+    }
   } else if (method.compare(kHideMethod) == 0) {
     input_method_context_->HideInputPanel();
     input_method_context_->ResetInputMethodContext();
@@ -207,7 +210,9 @@ void TextInputChannel::HandleMethodCall(
         // The panel should be closed and reopened to fully apply the layout
         // change. See https://github.com/flutter-tizen/engine/pull/194.
         input_method_context_->HideInputPanel();
-        input_method_context_->ShowInputPanel();
+        if (input_type_ != kNoneInputType) {
+          input_method_context_->ShowInputPanel();
+        }
       }
     }
 
