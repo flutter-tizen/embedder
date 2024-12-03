@@ -5,6 +5,8 @@
 #ifndef EMBEDDER_ACCESSIBILITY_CHANNEL_H_
 #define EMBEDDER_ACCESSIBILITY_CHANNEL_H_
 
+#include <Eldbus.h>
+
 #include <functional>
 #include <memory>
 
@@ -20,6 +22,10 @@ class AccessibilityChannel {
 
  private:
   std::unique_ptr<BasicMessageChannel<EncodableValue>> channel_;
+
+  Eldbus_Connection* session_bus_ = nullptr;
+  Eldbus_Connection* accessibility_bus_ = nullptr;
+  Eldbus_Object* bus_ = nullptr;
 };
 
 }  // namespace flutter

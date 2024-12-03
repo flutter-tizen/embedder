@@ -71,6 +71,8 @@ unified_packages = [
   'eina',
   'eina-devel',
   'eina-tools',
+  'eldbus',
+  'eldbus-devel',
   'elementary',
   'elementary-devel',
   'emile-devel',
