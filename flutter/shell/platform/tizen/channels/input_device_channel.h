@@ -23,6 +23,8 @@ class InputDeviceChannel {
     last_keyboard_name_ = name;
   }
 
+  std::string last_keyboard_name() { return last_keyboard_name_; }
+
  private:
   void HandleMethodCall(const MethodCall<EncodableValue>& method_call,
                         std::unique_ptr<MethodResult<EncodableValue>> result);

@@ -35,6 +35,7 @@ class KeyboardChannel {
                uint32_t modifiers,
                uint32_t scan_code,
                bool is_down,
+               FlutterKeyEventDeviceType device_type,
                std::function<void(bool)> callback);
 
  private:
@@ -69,7 +70,8 @@ class KeyboardChannel {
                          uint32_t modifiers,
                          uint32_t scan_code,
                          bool is_down,
-                         uint64_t sequence_id);
+                         uint64_t sequence_id,
+                         FlutterKeyEventDeviceType device_type);
 
   void SendChannelEvent(const char* key,
                         const char* string,
