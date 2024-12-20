@@ -126,8 +126,8 @@ FlutterDesktopEngineGetPluginRegistrar(FlutterDesktopEngineRef engine,
                                        const char* plugin_name);
 
 // Returns the messenger associated with the engine.
-FLUTTER_EXPORT FlutterDesktopMessengerRef
-FlutterDesktopEngineGetMessenger(FlutterDesktopEngineRef engine);
+FLUTTER_EXPORT FlutterDesktopMessengerRef FlutterDesktopEngineGetMessenger(
+    FlutterDesktopEngineRef engine);
 
 // Posts an app control to the engine instance.
 FLUTTER_EXPORT void FlutterDesktopEngineNotifyAppControl(
@@ -205,8 +205,8 @@ FLUTTER_EXPORT void* FlutterDesktopViewGetNativeHandle(
     FlutterDesktopViewRef view);
 
 // Returns the resource id of current window.
-FLUTTER_EXPORT uint32_t
-FlutterDesktopViewGetResourceId(FlutterDesktopViewRef view);
+FLUTTER_EXPORT uint32_t FlutterDesktopViewGetResourceId(
+    FlutterDesktopViewRef view);
 
 // Resizes the view.
 // @warning This API is a work-in-progress and may change.
