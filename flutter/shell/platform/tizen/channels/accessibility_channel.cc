@@ -50,6 +50,8 @@ AccessibilityChannel::AccessibilityChannel(BinaryMessenger* messenger)
           messenger,
           kChannelName,
           &StandardMessageCodec::GetInstance())) {
+  eldbus_init();
+
   session_bus_ = eldbus_connection_get(ELDBUS_CONNECTION_TYPE_SESSION);
   bus_ = eldbus_object_get(session_bus_, kAccessibilityDbus,
                            kAccessibilityDbusPath);
@@ -92,6 +94,8 @@ AccessibilityChannel::~AccessibilityChannel() {
   eldbus_connection_unref(accessibility_bus_);
   eldbus_connection_unref(session_bus_);
   eldbus_object_unref(bus_);
+
+  eldbus_shutdown();
 }
 
 }  // namespace flutter
