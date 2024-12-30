@@ -70,6 +70,8 @@ void WindowChannel::HandleMethodCall(
     map[EncodableValue("width")] = EncodableValue(geometry.width);
     map[EncodableValue("height")] = EncodableValue(geometry.height);
     result->Success(EncodableValue(map));
+  } else if (method_name == "getRotation") {
+    result->Success(EncodableValue(window_->GetRotation()));
   } else {
     result->NotImplemented();
   }
