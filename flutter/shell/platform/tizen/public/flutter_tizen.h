@@ -67,6 +67,8 @@ typedef struct {
   FlutterDesktopExternalOutputType external_output_type;
   // The user-defined pixel ratio.
   double user_pixel_ratio;
+  // The precreated window handle.
+  void* window_handle;
 } FlutterDesktopWindowProperties;
 
 // Properties for configuring the initial settings of a Flutter view.
