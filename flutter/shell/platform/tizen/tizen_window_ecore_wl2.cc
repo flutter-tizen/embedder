@@ -225,6 +225,7 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
             int32_t degree = rotation_event->angle;
             self->view_delegate_->OnRotate(degree);
             TizenGeometry geometry = self->GetGeometry();
+            ecore_wl2_window_rotation_set(self->ecore_wl2_window_, degree);
             ecore_wl2_window_rotation_change_done_send(
                 self->ecore_wl2_window_, rotation_event->rotation,
                 geometry.width, geometry.height);
