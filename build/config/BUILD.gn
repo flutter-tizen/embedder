@@ -37,6 +37,7 @@ config("compiler") {
   # Stack protection.
   cflags += [
     "-fstack-protector",
+
     # 8 is the default, but make this explicit here so that we don't have to
     # go hunting for the flag name if we ever want a value that is
     # different from the default.
@@ -85,7 +86,7 @@ config("compiler") {
     "-Wno-psabi",
     "-Wno-unqualified-std-cast-call",
     "-Wno-non-c-typedef-for-linkage",
-    "-Wno-range-loop-construct"
+    "-Wno-range-loop-construct",
   ]
 
   # Extra warnings.
