@@ -24,7 +24,7 @@ declare_args() {
   target_triple = ""
 
   # The compiler version.
-  clang_version = 10
+  clang_version = 17
 
   # The target API version.
   api_version = ""
