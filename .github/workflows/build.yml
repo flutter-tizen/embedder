@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-12 rpm2cpio cpio binutils-${{ matrix.triple }}
+          sudo apt-get install -y clang-17 rpm2cpio cpio binutils-${{ matrix.triple }}
 
       - name: Install depot_tools
         run: |
@@ -56,7 +56,7 @@ jobs:
         run: |
           src/tools/gn \
             --target-cpu ${{ matrix.arch }} \
-            --target-toolchain /usr/lib/llvm-12 \
+            --target-toolchain /usr/lib/llvm-17 \
             --target-sysroot src/sysroot-6.0/${{ matrix.arch }} \
             --target-dir build
           ninja -C src/out/build
@@ -66,7 +66,7 @@ jobs:
         run: |
           src/tools/gn \
             --target-cpu ${{ matrix.arch }} \
-            --target-toolchain /usr/lib/llvm-12 \
+            --target-toolchain /usr/lib/llvm-17 \
             --target-sysroot src/sysroot-6.5/${{ matrix.arch }} \
             --api-version 6.5 \
             --target-dir build
