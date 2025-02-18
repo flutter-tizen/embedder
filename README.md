@@ -10,8 +10,8 @@ The Flutter embedder for Tizen.
 
 - Linux (x64)
 - [depot_tools](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up)
-- [LLVM](https://apt.llvm.org) (10 or later)
-  - `sudo apt install clang-12`
+- [LLVM](https://apt.llvm.org) (17 or later)
+  - `sudo apt install clang-17`
 - Additional dependencies
   - `sudo apt install git python3 rpm2cpio cpio`
   - `sudo apt install binutils-arm-linux-gnueabi binutils-aarch64-linux-gnu binutils-i686-linux-gnu`
@@ -37,21 +37,21 @@ The Flutter embedder for Tizen.
 - **For arm**
 
   ```sh
-  tools/gn --target-cpu arm --target-toolchain /usr/lib/llvm-12
+  tools/gn --target-cpu arm --target-toolchain /usr/lib/llvm-17
   ninja -C out/tizen_arm
   ```
 
 - **For arm64**
 
   ```sh
-  tools/gn --target-cpu arm64 --target-toolchain /usr/lib/llvm-12
+  tools/gn --target-cpu arm64 --target-toolchain /usr/lib/llvm-17
   ninja -C out/tizen_arm64
   ```
 
 - **For x86**
 
   ```sh
-  tools/gn --target-cpu x86 --target-toolchain /usr/lib/llvm-12
+  tools/gn --target-cpu x86 --target-toolchain /usr/lib/llvm-17
   ninja -C out/tizen_x86
   ```
 
