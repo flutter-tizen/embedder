@@ -596,7 +596,15 @@ namespace atk_action {
 
 gboolean DoAction(AtkAction* atk_action, gint index) {
   g_return_val_if_fail(ATK_IS_ACTION(atk_action), FALSE);
-  g_return_val_if_fail(!index, FALSE);
+  // TODO(JSUYA): The index of DoAction is the number of the action that can be
+  // called. If there is no action that can be called in atk, the index is
+  // passed as -1. Currently, our AXPlatformNode only supports default actions,
+  // so we need to distinguish between -1 and numbers greater than 0. In Tizen,
+  // the DoActionName function in atk causes this problem. Since at-spi2-atk in
+  // tizen is not under our management scope, we temporarily return immediately
+  // when it is -1 to prevent unnecessary error messages.
+  if (index < 0)
+    return FALSE;
 
   AtkObject* atk_object = ATK_OBJECT(atk_action);
   AXPlatformNodeAuraLinux* obj =
