@@ -326,12 +326,23 @@ void PlatformChannel::SetEnabledSystemUiOverlays(
 void PlatformChannel::SetPreferredOrientations(
     const std::vector<std::string>& orientations) {
   if (auto* window = dynamic_cast<TizenWindow*>(view_)) {
-    static const std::map<std::string, int> orientation_mapping = {
-        {kPortraitUp, 0},
-        {kLandscapeLeft, 90},
-        {kPortraitDown, 180},
-        {kLandscapeRight, 270},
-    };
+    std::map<std::string, int> orientation_mapping;
+    TizenGeometry geometry = window->GetGeometry();
+    if (geometry.width > geometry.height) {
+      orientation_mapping = {
+          {kLandscapeLeft, 0},
+          {kPortraitDown, 90},
+          {kLandscapeRight, 180},
+          {kPortraitUp, 270},
+      };
+    } else {
+      orientation_mapping = {
+          {kPortraitUp, 0},
+          {kLandscapeLeft, 90},
+          {kPortraitDown, 180},
+          {kLandscapeRight, 270},
+      };
+    }
     std::vector<int> rotations;
     for (const auto& orientation : orientations) {
       rotations.push_back(orientation_mapping.at(orientation));
