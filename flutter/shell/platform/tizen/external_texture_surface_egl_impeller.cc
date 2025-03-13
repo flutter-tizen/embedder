@@ -59,8 +59,6 @@ bool ExternalTextureSurfaceEGLImpeller::PopulateTexture(
     return false;
   }
 
-  opengl_texture->impeller_texture_type =
-      FlutterGLImpellerTextureType::kFlutterGLImpellerTextureGpuSurface;
   opengl_texture->bind_callback = OnBindCallback;
   opengl_texture->destruction_callback = nullptr;
   opengl_texture->user_data = this;
