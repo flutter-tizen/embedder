@@ -8,7 +8,6 @@
 #include <EGL/eglext.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
-#include <GLES3/gl32.h>
 #include <tbm_bufmgr.h>
 #include <tbm_surface.h>
 #include <tbm_surface_internal.h>
@@ -141,9 +140,9 @@ bool ExternalTextureSurfaceEGL::PopulateTexture(
                   static_cast<GLuint>(state_->gl_texture));
     // set the texture wrapping parameters
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S,
-                    GL_CLAMP_TO_BORDER);
+                    GL_CLAMP_TO_BORDER_OES);
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T,
-                    GL_CLAMP_TO_BORDER);
+                    GL_CLAMP_TO_BORDER_OES);
     // set texture filtering parameters
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -163,7 +162,7 @@ bool ExternalTextureSurfaceEGL::PopulateTexture(
   }
   opengl_texture->target = GL_TEXTURE_EXTERNAL_OES;
   opengl_texture->name = state_->gl_texture;
-  opengl_texture->format = GL_RGBA8;
+  opengl_texture->format = GL_RGBA8_OES;
   opengl_texture->destruction_callback = nullptr;
   opengl_texture->user_data = nullptr;
   opengl_texture->width = width;

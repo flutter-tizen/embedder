@@ -6,7 +6,6 @@
 
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include <GLES3/gl32.h>
 
 #include "flutter/shell/platform/tizen/logger.h"
 

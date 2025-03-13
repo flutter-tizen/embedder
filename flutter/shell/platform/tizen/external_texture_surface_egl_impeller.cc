@@ -8,7 +8,6 @@
 #include <EGL/eglext.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
-#include <GLES3/gl32.h>
 #include <tbm_bufmgr.h>
 #include <tbm_surface.h>
 #include <tbm_surface_internal.h>
