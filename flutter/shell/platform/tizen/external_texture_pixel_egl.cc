@@ -6,7 +6,8 @@
 
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include <GLES3/gl32.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 
 namespace flutter {
 
@@ -21,7 +22,7 @@ bool ExternalTexturePixelEGL::PopulateTexture(
   // Populate the texture object used by the engine.
   opengl_texture->target = GL_TEXTURE_2D;
   opengl_texture->name = state_->gl_texture;
-  opengl_texture->format = GL_RGBA8;
+  opengl_texture->format = GL_RGBA8_OES;
   opengl_texture->destruction_callback = nullptr;
   opengl_texture->user_data = nullptr;
   opengl_texture->width = width;
@@ -54,8 +55,8 @@ bool ExternalTexturePixelEGL::CopyPixelBuffer(size_t& width, size_t& height) {
   if (state_->gl_texture == 0) {
     glGenTextures(1, static_cast<GLuint*>(&state_->gl_texture));
     glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(state_->gl_texture));
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER_OES);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER_OES);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   } else {

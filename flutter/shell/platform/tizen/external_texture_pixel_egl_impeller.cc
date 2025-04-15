@@ -6,7 +6,6 @@
 
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include <GLES3/gl32.h>
 
 #include "flutter/shell/platform/tizen/logger.h"
 
@@ -31,8 +30,6 @@ bool ExternalTexturePixelEGLImpeller::PopulateTexture(
   height = pixel_buffer->height;
 
   // Populate the texture object used by the engine.
-  opengl_texture->impeller_texture_type =
-      FlutterGLImpellerTextureType::kFlutterGLImpellerTexturePixelBuffer;
   opengl_texture->buffer = pixel_buffer->buffer;
   opengl_texture->buffer_size =
       size_t(pixel_buffer->width) * size_t(pixel_buffer->height) * 4;

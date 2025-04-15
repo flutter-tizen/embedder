@@ -8,7 +8,6 @@
 #include <EGL/eglext.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
-#include <GLES3/gl32.h>
 #include <tbm_bufmgr.h>
 #include <tbm_surface.h>
 #include <tbm_surface_internal.h>
@@ -59,8 +58,6 @@ bool ExternalTextureSurfaceEGLImpeller::PopulateTexture(
     return false;
   }
 
-  opengl_texture->impeller_texture_type =
-      FlutterGLImpellerTextureType::kFlutterGLImpellerTextureGpuSurface;
   opengl_texture->bind_callback = OnBindCallback;
   opengl_texture->destruction_callback = nullptr;
   opengl_texture->user_data = this;
