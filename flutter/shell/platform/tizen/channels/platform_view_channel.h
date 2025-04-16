@@ -43,6 +43,7 @@ class PlatformViewChannel {
   void RemoveViewIfExists(int view_id);
   void ClearViews();
   void ClearViewFactories();
+  bool ValidateDirection(int direction);
 
   void HandleMethodCall(const MethodCall<EncodableValue>& call,
                         std::unique_ptr<MethodResult<EncodableValue>> result);
@@ -59,6 +60,8 @@ class PlatformViewChannel {
                 std::unique_ptr<MethodResult<EncodableValue>>&& result);
   void OnTouch(const EncodableValue* arguments,
                std::unique_ptr<MethodResult<EncodableValue>>&& result);
+  void OnSetDirection(const EncodableValue* arguments,
+                      std::unique_ptr<MethodResult<EncodableValue>>&& result);
 
   std::unique_ptr<MethodChannel<EncodableValue>> channel_;
   std::map<std::string, std::unique_ptr<PlatformViewFactory>> view_factories_;

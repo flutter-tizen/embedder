@@ -14,6 +14,8 @@ namespace flutter {
 namespace {
 
 constexpr char kChannelName[] = "flutter/platform_views";
+constexpr int kLayoutDirectionLtr = 0;
+constexpr int kLayoutDirectionRtl = 1;
 
 }  // namespace
 
@@ -112,6 +114,8 @@ void PlatformViewChannel::HandleMethodCall(
     OnResize(arguments, std::move(result));
   } else if (method == "touch") {
     OnTouch(arguments, std::move(result));
+  } else if (method == "setDirection") {
+    OnSetDirection(arguments, std::move(result));
   } else {
     FT_LOG(Warn) << "Unimplemented method: " << method;
     result->NotImplemented();
@@ -131,8 +135,9 @@ void PlatformViewChannel::OnCreate(
   EncodableValueHolder<int> view_id(map, "id");
   EncodableValueHolder<double> width(map, "width");
   EncodableValueHolder<double> height(map, "height");
+  EncodableValueHolder<int> direction(map, "direction");
 
-  if (!view_type || !view_id || !width || !height) {
+  if (!view_type || !view_id || !width || !height || !direction) {
     result->Error("Invalid arguments");
     return;
   }
@@ -154,6 +159,7 @@ void PlatformViewChannel::OnCreate(
     PlatformView* view = iter->second->Create(
         *view_id, *width * pixel_ratio_, *height * pixel_ratio_, byte_message);
     if (view) {
+      view->SetDirection(*direction);
       views_[*view_id] = view;
       result->Success(EncodableValue(view->GetTextureId()));
     } else {
@@ -313,6 +319,43 @@ void PlatformViewChannel::OnTouch(
   }
 
   result->Success();
+}
+
+void PlatformViewChannel::OnSetDirection(
+    const EncodableValue* arguments,
+    std::unique_ptr<MethodResult<EncodableValue>>&& result) {
+  auto* map = std::get_if<EncodableMap>(arguments);
+  if (!map) {
+    result->Error("Invalid arguments");
+    return;
+  }
+
+  EncodableValueHolder<int> view_id(map, "id");
+  EncodableValueHolder<int> direction(map, "direction");
+
+  if (!view_id || !direction) {
+    result->Error("Invalid arguments");
+    return;
+  }
+  if (!ValidateDirection(*direction)) {
+    result->Error(
+        "Trying to set unknown direction value: " + std::to_string(*direction) +
+        "(view id: " + std::to_string(*view_id) + ")");
+    return;
+  }
+
+  PlatformView* view = FindViewById(*view_id);
+  if (!view) {
+    result->Error("Can't find view id");
+    return;
+  }
+
+  view->SetDirection(*direction);
+  result->Success();
+}
+
+bool PlatformViewChannel::ValidateDirection(int direction) {
+  return direction == kLayoutDirectionLtr || direction == kLayoutDirectionRtl;
 }
 
 }  // namespace flutter
