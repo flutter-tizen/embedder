@@ -32,9 +32,11 @@ Ecore_IMF_Input_Panel_Layout TextInputTypeToEcoreImfInputPanelLayout(
     return ECORE_IMF_INPUT_PANEL_LAYOUT_PHONENUMBER;
   } else if (text_input_type == "TextInputType.datetime") {
     return ECORE_IMF_INPUT_PANEL_LAYOUT_DATETIME;
-  } else if (text_input_type == "TextInputType.emailAddress") {
+  } else if (text_input_type == "TextInputType.emailAddress" ||
+             text_input_type == "TextInputType.twitter") {
     return ECORE_IMF_INPUT_PANEL_LAYOUT_EMAIL;
-  } else if (text_input_type == "TextInputType.url") {
+  } else if (text_input_type == "TextInputType.url" ||
+             text_input_type == "TextInputType.webSearch") {
     return ECORE_IMF_INPUT_PANEL_LAYOUT_URL;
   } else if (text_input_type == "TextInputType.visiblePassword") {
     return ECORE_IMF_INPUT_PANEL_LAYOUT_PASSWORD;
