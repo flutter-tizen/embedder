@@ -63,8 +63,11 @@ double ComputePixelRatio(flutter::TizenViewBase* view) {
 namespace flutter {
 
 FlutterTizenView::FlutterTizenView(FlutterViewId view_id,
-                                   std::unique_ptr<TizenViewBase> tizen_view)
-    : view_id_(view_id), tizen_view_(std::move(tizen_view)) {
+                                   std::unique_ptr<TizenViewBase> tizen_view,
+                                   double user_pixel_ratio)
+    : view_id_(view_id),
+      tizen_view_(std::move(tizen_view)),
+      user_pixel_ratio_(user_pixel_ratio) {
   tizen_view_->SetView(this);
 
   if (auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get())) {
@@ -98,7 +101,12 @@ void FlutterTizenView::SetEngine(std::unique_ptr<FlutterTizenEngine> engine) {
   platform_channel_ =
       std::make_unique<PlatformChannel>(messenger, tizen_view_.get());
 
-  double pixel_ratio = ComputePixelRatio(tizen_view_.get());
+  double pixel_ratio;
+  if (user_pixel_ratio_ == 0.0) {
+    pixel_ratio = ComputePixelRatio(tizen_view_.get());
+  } else {
+    pixel_ratio = user_pixel_ratio_;
+  }
   platform_view_channel_ =
       std::make_unique<PlatformViewChannel>(messenger, pixel_ratio);
   mouse_cursor_channel_ =
@@ -219,7 +227,8 @@ void FlutterTizenView::OnRotate(int32_t degree) {
 
   engine_->renderer()->ResizeSurface(width, height);
 
-  // Window position does not change on rotation regardless of its orientation.
+  // Window position does not change on rotation regardless of its
+  // orientation.
   SendWindowMetrics(geometry.left, geometry.top, width, height, 0.0);
 }
 
@@ -397,7 +406,11 @@ void FlutterTizenView::SendWindowMetrics(int32_t left,
                                          int32_t height,
                                          double pixel_ratio) {
   if (pixel_ratio == 0.0) {
-    pixel_ratio = ComputePixelRatio(tizen_view_.get());
+    if (user_pixel_ratio_ == 0.0) {
+      pixel_ratio = ComputePixelRatio(tizen_view_.get());
+    } else {
+      pixel_ratio = user_pixel_ratio_;
+    }
   }
 
   engine_->SendWindowMetrics(left, top, width, height, pixel_ratio);
@@ -424,8 +437,8 @@ void FlutterTizenView::SendFlutterPointerEvent(FlutterPointerPhase phase,
     new_y = geometry.width - x;
   }
 
-  // If the pointer isn't already added, synthesize an add to satisfy Flutter's
-  // expectations about events.
+  // If the pointer isn't already added, synthesize an add to satisfy
+  // Flutter's expectations about events.
   if (!state->flutter_state_is_added) {
     FlutterPointerEvent event = {};
     event.struct_size = sizeof(event);

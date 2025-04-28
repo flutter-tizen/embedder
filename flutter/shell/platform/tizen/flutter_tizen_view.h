@@ -26,7 +26,8 @@ namespace flutter {
 class FlutterTizenView : public TizenViewEventHandlerDelegate {
  public:
   FlutterTizenView(FlutterViewId view_id,
-                   std::unique_ptr<TizenViewBase> tizen_view);
+                   std::unique_ptr<TizenViewBase> tizen_view,
+                   double user_pixel_ratio = 0);
 
   virtual ~FlutterTizenView();
 
@@ -210,6 +211,8 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   // The current view transformation.
   FlutterTransformation flutter_transformation_ = {1.0, 0.0, 0.0, 0.0, 1.0,
                                                    0.0, 0.0, 0.0, 1.0};
+  // The user-defined pixel ratio.
+  double user_pixel_ratio_ = 0;
 };
 
 }  // namespace flutter
