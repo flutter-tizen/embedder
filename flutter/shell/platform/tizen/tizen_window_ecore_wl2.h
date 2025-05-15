@@ -22,7 +22,8 @@ class TizenWindowEcoreWl2 : public TizenWindow {
   TizenWindowEcoreWl2(TizenGeometry geometry,
                       bool transparent,
                       bool focusable,
-                      bool top_level);
+                      bool top_level,
+                      void* window_handle);
 
   ~TizenWindowEcoreWl2();
 
@@ -55,7 +56,7 @@ class TizenWindowEcoreWl2 : public TizenWindow {
   void UpdateFlutterCursor(const std::string& kind) override;
 
  private:
-  bool CreateWindow();
+  bool CreateWindow(void* window_handle);
 
   void DestroyWindow();
 

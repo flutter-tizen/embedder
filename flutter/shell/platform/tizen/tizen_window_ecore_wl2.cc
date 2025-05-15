@@ -52,9 +52,10 @@ FlutterPointerDeviceKind ToFlutterDeviceKind(const Ecore_Device* dev) {
 TizenWindowEcoreWl2::TizenWindowEcoreWl2(TizenGeometry geometry,
                                          bool transparent,
                                          bool focusable,
-                                         bool top_level)
+                                         bool top_level,
+                                         void* window_handle = nullptr)
     : TizenWindow(geometry, transparent, focusable, top_level) {
-  if (!CreateWindow()) {
+  if (!CreateWindow(window_handle)) {
     FT_LOG(Error) << "Failed to create a platform window.";
     return;
   }
@@ -70,7 +71,7 @@ TizenWindowEcoreWl2::~TizenWindowEcoreWl2() {
   DestroyWindow();
 }
 
-bool TizenWindowEcoreWl2::CreateWindow() {
+bool TizenWindowEcoreWl2::CreateWindow(void* window_handle) {
   if (!ecore_wl2_init()) {
     FT_LOG(Error) << "Could not initialize Ecore Wl2.";
     return false;
@@ -99,9 +100,14 @@ bool TizenWindowEcoreWl2::CreateWindow() {
     initial_geometry_.height = height;
   }
 
-  ecore_wl2_window_ = ecore_wl2_window_new(
-      ecore_wl2_display_, nullptr, initial_geometry_.left,
-      initial_geometry_.top, initial_geometry_.width, initial_geometry_.height);
+  if (window_handle == nullptr) {
+    ecore_wl2_window_ =
+        ecore_wl2_window_new(ecore_wl2_display_, nullptr,
+                             initial_geometry_.left, initial_geometry_.top,
+                             initial_geometry_.width, initial_geometry_.height);
+  } else {
+    ecore_wl2_window_ = static_cast<Ecore_Wl2_Window*>(window_handle);
+  }
 
   ecore_wl2_egl_window_ = ecore_wl2_egl_window_create(
       ecore_wl2_window_, initial_geometry_.width, initial_geometry_.height);
