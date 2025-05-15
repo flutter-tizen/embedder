@@ -11,6 +11,7 @@
 
 #include "flutter/shell/platform/tizen/accessibility_bridge_tizen.h"
 #include "flutter/shell/platform/tizen/flutter_platform_node_delegate_tizen.h"
+#include "flutter/shell/platform/tizen/flutter_tizen_display_monitor.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_view.h"
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/system_utils.h"
@@ -70,6 +71,8 @@ FlutterTizenEngine::FlutterTizenEngine(const FlutterProjectBundle& project)
 
   plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
   plugin_registrar_->engine = this;
+
+  display_monitor_ = std::make_unique<FlutterTizenDisplayMonitor>(this);
 }
 
 FlutterTizenEngine::~FlutterTizenEngine() {
@@ -253,9 +256,20 @@ bool FlutterTizenEngine::RunEngine() {
 
   accessibility_settings_ = std::make_unique<AccessibilitySettings>(this);
 
+  display_monitor_->UpdateDisplays();
+
   SetupLocales();
 
   return true;
+}
+
+void FlutterTizenEngine::UpdateDisplay(
+    const std::vector<FlutterEngineDisplay>& displays) {
+  if (engine_) {
+    embedder_api_.NotifyDisplayUpdate(engine_,
+                                      kFlutterEngineDisplaysUpdateTypeStartup,
+                                      displays.data(), displays.size());
+  }
 }
 
 bool FlutterTizenEngine::StopEngine() {

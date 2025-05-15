@@ -48,6 +48,7 @@ namespace flutter {
 constexpr FlutterViewId kImplicitViewId = 0;
 
 class FlutterTizenView;
+class FlutterTizenDisplayMonitor;
 
 // Manages state associated with the underlying FlutterEngine.
 class FlutterTizenEngine {
@@ -179,6 +180,9 @@ class FlutterTizenEngine {
   // Notifies the engine about enabled accessibility features.
   void UpdateAccessibilityFeatures(bool invert_colors, bool high_contrast);
 
+  // Notifies the engine about a display update.
+  void UpdateDisplay(const std::vector<FlutterEngineDisplay>& displays);
+
  private:
   friend class EngineModifier;
 
@@ -269,6 +273,9 @@ class FlutterTizenEngine {
 
   // The vsync waiter for the embedder.
   std::unique_ptr<TizenVsyncWaiter> vsync_waiter_;
+
+  // The display monitor.
+  std::unique_ptr<FlutterTizenDisplayMonitor> display_monitor_;
 };
 
 }  // namespace flutter
