@@ -6,6 +6,7 @@
 #include "flutter_tizen_view.h"
 
 #include "flutter/shell/platform/tizen/logger.h"
+#include "flutter/shell/platform/tizen/system_utils.h"
 #include "flutter/shell/platform/tizen/tizen_view.h"
 #ifdef NUI_SUPPORT
 #include "flutter/shell/platform/tizen/tizen_view_nui.h"
@@ -14,14 +15,6 @@
 #include "flutter/shell/platform/tizen/tizen_window.h"
 
 namespace {
-
-#if defined(MOBILE_PROFILE)
-constexpr double kProfileFactor = 0.7;
-#elif defined(TV_PROFILE)
-constexpr double kProfileFactor = 2.0;
-#else
-constexpr double kProfileFactor = 1.0;
-#endif
 
 constexpr char kSysMenuKey[] = "XF86SysMenu";
 constexpr char kBackKey[] = "XF86Back";
@@ -44,19 +37,6 @@ const std::vector<std::string> kBindableSystemKeys = {
 // The multiplier is taken from the Chromium source
 // (ui/events/x/events_x_utils.cc).
 constexpr int32_t kScrollOffsetMultiplier = 53;
-
-double ComputePixelRatio(flutter::TizenViewBase* view) {
-  // The scale factor is computed based on the display DPI and the current
-  // profile. A fixed DPI value (72) is used on TVs. See:
-  // https://docs.tizen.org/application/native/guides/ui/efl/multiple-screens
-#ifdef TV_PROFILE
-  double dpi = 72.0;
-#else
-  double dpi = static_cast<double>(view->GetDpi());
-#endif
-  double scale_factor = dpi / 90.0 * kProfileFactor;
-  return std::max(scale_factor, 1.0);
-}
 
 }  // namespace
 
@@ -103,7 +83,7 @@ void FlutterTizenView::SetEngine(std::unique_ptr<FlutterTizenEngine> engine) {
 
   double pixel_ratio;
   if (user_pixel_ratio_ == 0.0) {
-    pixel_ratio = ComputePixelRatio(tizen_view_.get());
+    pixel_ratio = ComputePixelRatio(tizen_view_->GetDpi());
   } else {
     pixel_ratio = user_pixel_ratio_;
   }
@@ -407,7 +387,7 @@ void FlutterTizenView::SendWindowMetrics(int32_t left,
                                          double pixel_ratio) {
   if (pixel_ratio == 0.0) {
     if (user_pixel_ratio_ == 0.0) {
-      pixel_ratio = ComputePixelRatio(tizen_view_.get());
+      pixel_ratio = ComputePixelRatio(tizen_view_->GetDpi());
     } else {
       pixel_ratio = user_pixel_ratio_;
     }

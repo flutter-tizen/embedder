@@ -69,6 +69,20 @@ TEST_F(FlutterTizenEngineTest, RunDoesExpectedInitialization) {
         return kSuccess;
       }));
 
+  bool notify_display_update_called = false;
+  modifier.embedder_api().NotifyDisplayUpdate = MOCK_ENGINE_PROC(
+      NotifyDisplayUpdate,
+      ([&notify_display_update_called](
+           auto engine, FlutterEngineDisplaysUpdateType update_type,
+           const FlutterEngineDisplay* displays, size_t display_count) {
+        notify_display_update_called = true;
+        EXPECT_GE(display_count, (size_t)1);
+        EXPECT_EQ(update_type, kFlutterEngineDisplaysUpdateTypeStartup);
+        EXPECT_NE(displays, nullptr);
+
+        return kSuccess;
+      }));
+
   // It should send locale info.
   bool update_locales_called = false;
   modifier.embedder_api().UpdateLocales = MOCK_ENGINE_PROC(
@@ -97,6 +111,7 @@ TEST_F(FlutterTizenEngineTest, RunDoesExpectedInitialization) {
   engine_->RunEngine();
 
   EXPECT_TRUE(run_called);
+  EXPECT_TRUE(notify_display_update_called);
   EXPECT_TRUE(update_locales_called);
   EXPECT_TRUE(settings_message_sent);
   EXPECT_NE(engine_->plugin_registrar(), nullptr);
@@ -197,6 +212,12 @@ TEST_F(FlutterTizenEngineTest, AddPluginRegistrarDestructionCallback) {
         *engine_out = reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(1);
         return kSuccess;
       }));
+
+  modifier.embedder_api().NotifyDisplayUpdate = MOCK_ENGINE_PROC(
+      NotifyDisplayUpdate,
+      ([](auto engine, FlutterEngineDisplaysUpdateType update_type,
+          const FlutterEngineDisplay* displays,
+          size_t display_count) { return kSuccess; }));
 
   // Stub out UpdateLocales and SendPlatformMessage as we don't have a fully
   // initialized engine instance.

@@ -21,6 +21,7 @@
 #include "flutter/shell/platform/tizen/channels/platform_view_channel.h"
 #include "flutter/shell/platform/tizen/channels/settings_channel.h"
 #include "flutter/shell/platform/tizen/flutter_project_bundle.h"
+#include "flutter/shell/platform/tizen/flutter_tizen_display_monitor.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_texture_registrar.h"
 #include "flutter/shell/platform/tizen/public/flutter_tizen.h"
 #include "flutter/shell/platform/tizen/tizen_event_loop.h"
@@ -179,6 +180,9 @@ class FlutterTizenEngine {
   // Notifies the engine about enabled accessibility features.
   void UpdateAccessibilityFeatures(bool invert_colors, bool high_contrast);
 
+  // Notifies the engine about a display update.
+  void UpdateDisplay(const std::vector<FlutterEngineDisplay>& displays);
+
  private:
   friend class EngineModifier;
 
@@ -269,6 +273,9 @@ class FlutterTizenEngine {
 
   // The vsync waiter for the embedder.
   std::unique_ptr<TizenVsyncWaiter> vsync_waiter_;
+
+  // The display monitor.
+  std::unique_ptr<FlutterTizenDisplayMonitor> display_monitor_;
 };
 
 }  // namespace flutter

@@ -18,6 +18,10 @@ struct LanguageInfo {
   std::string variant;
 };
 
+// Returns the scale factor calculated based on the display DPI and the current
+// profile.
+double ComputePixelRatio(int32_t screen_dpi);
+
 // Returns the list of user-preferred locales, in preference order,
 // parsed into LanguageInfo structures.
 std::vector<LanguageInfo> GetPreferredLanguageInfo();

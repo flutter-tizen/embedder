@@ -10,6 +10,27 @@
 
 namespace flutter {
 
+#if defined(MOBILE_PROFILE)
+constexpr double kProfileFactor = 0.7;
+#elif defined(TV_PROFILE)
+constexpr double kProfileFactor = 2.0;
+#else
+constexpr double kProfileFactor = 1.0;
+#endif
+
+double ComputePixelRatio(int32_t screen_dpi) {
+  // The scale factor is computed based on the display DPI and the current
+  // profile. A fixed DPI value (72) is used on TVs. See:
+  // https://docs.tizen.org/application/native/guides/ui/efl/multiple-screens
+#ifdef TV_PROFILE
+  double dpi = 72.0;
+#else
+  double dpi = static_cast<double>(screen_dpi);
+#endif
+  double scale_factor = dpi / 90.0 * kProfileFactor;
+  return std::max(scale_factor, 1.0);
+}
+
 std::vector<LanguageInfo> GetPreferredLanguageInfo() {
   std::vector<LanguageInfo> languages;
   const char* locale;
