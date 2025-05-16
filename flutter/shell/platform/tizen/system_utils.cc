@@ -10,6 +10,14 @@
 
 namespace flutter {
 
+#if defined(MOBILE_PROFILE)
+constexpr double kProfileFactor = 0.7;
+#elif defined(TV_PROFILE)
+constexpr double kProfileFactor = 2.0;
+#else
+constexpr double kProfileFactor = 1.0;
+#endif
+
 double ComputePixelRatio(int32_t screen_dpi) {
   // The scale factor is computed based on the display DPI and the current
   // profile. A fixed DPI value (72) is used on TVs. See:
