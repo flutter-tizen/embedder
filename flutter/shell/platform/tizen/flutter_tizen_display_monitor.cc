@@ -6,12 +6,12 @@
 #include <Ecore.h>
 #include <system_info.h>
 
-#include "flutter_tizen_display_monitor.h"
-#include "flutter_tizen_engine.h"
-#include "flutter_tizen_view.h"
+#include "flutter/shell/platform/tizen/flutter_tizen_display_monitor.h"
+#include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
+#include "flutter/shell/platform/tizen/flutter_tizen_view.h"
+#include "flutter/shell/platform/tizen/system_utils.h"
 
 namespace flutter {
-double ComputePixelRatio(int32_t dpi);
 
 FlutterTizenDisplayMonitor::FlutterTizenDisplayMonitor(
     FlutterTizenEngine* engine)
@@ -58,4 +58,5 @@ void FlutterTizenDisplayMonitor::UpdateDisplays() {
   std::vector<FlutterEngineDisplay> displays = {display};
   engine_->UpdateDisplay(displays);
 }
+
 }  // namespace flutter
