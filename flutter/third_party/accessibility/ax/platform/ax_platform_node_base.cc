@@ -166,7 +166,6 @@ std::optional<int> AXPlatformNodeBase::GetIndexInParent() {
 
   BASE_LOG()
       << "Unable to find the child in the list of its parent's children.";
-  BASE_UNREACHABLE();
   return std::nullopt;
 }
 
