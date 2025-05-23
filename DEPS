@@ -4,10 +4,10 @@
 
 deps = {
   'src/third_party/rapidjson': 'https://fuchsia.googlesource.com/third_party/rapidjson@ef3564c5c8824989393b87df25355baf35ff544b',
-  'src/third_party/libcxx': 'https://llvm.googlesource.com/llvm-project/libcxx@44079a4cc04cdeffb9cfe8067bfb3c276fb2bab0',
-  'src/third_party/libcxxabi': 'https://llvm.googlesource.com/llvm-project/libcxxabi@2ce528fb5e0f92e57c97ec3ff53b75359d33af12',
+  'src/third_party/libcxx': 'https://llvm.googlesource.com/llvm-project/libcxx@bd557f6f764d1e40b62528a13b124ce740624f8f',
+  'src/third_party/libcxxabi': 'https://llvm.googlesource.com/llvm-project/libcxxabi@a4dda1589d37a7e4b4f7a81ebad01b1083f2e726',
   'src/third_party/googletest': 'https://github.com/google/googletest@7f036c5563af7d0329f20e8bb42effb04629f0c0',
-  'src/third_party/dart': 'https://dart.googlesource.com/sdk.git@f6ed8d7df6bfdf6fb08b38dd93c2ee1eba476b5a',
+  'src/third_party/dart': 'https://dart.googlesource.com/sdk.git@b04011c77cd93e6ab9144af37976733b558d716c',
   'src/third_party/clang': {
     'packages': [
       {
@@ -21,7 +21,7 @@ deps = {
     'packages': [
       {
         'package': 'gn/gn/${{platform}}',
-        'version': 'git_revision:b79031308cc878488202beb99883ec1f2efd9a6d',
+        'version': 'git_revision:7a8aa3a08a13521336853a28c46537ec04338a2d',
       },
     ],
     'dep_type': 'cipd',
