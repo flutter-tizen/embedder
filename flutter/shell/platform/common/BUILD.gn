@@ -54,6 +54,27 @@ source_set("common_cpp_input") {
   deps = [ "//flutter/fml:fml" ]
 }
 
+source_set("common_cpp_enums") {
+  public = [
+    "app_lifecycle_state.h",
+    "platform_provided_menu.h",
+  ]
+
+  public_configs = [
+    "//flutter:config",
+  ]
+}
+
+source_set("common_cpp_switches") {
+  public = [ "engine_switches.h" ]
+
+  sources = [ "engine_switches.cc" ]
+
+  public_configs = [
+    "//flutter:config",
+  ]
+}
+
 source_set("common_cpp_accessibility") {
   public = [
     "accessibility_bridge.h",
