@@ -60,9 +60,7 @@ source_set("common_cpp_enums") {
     "platform_provided_menu.h",
   ]
 
-  public_configs = [
-    "//flutter:config",
-  ]
+  public_configs = [ "//flutter:config" ]
 }
 
 source_set("common_cpp_switches") {
@@ -70,9 +68,7 @@ source_set("common_cpp_switches") {
 
   sources = [ "engine_switches.cc" ]
 
-  public_configs = [
-    "//flutter:config",
-  ]
+  public_configs = [ "//flutter:config" ]
 }
 
 source_set("common_cpp_accessibility") {
