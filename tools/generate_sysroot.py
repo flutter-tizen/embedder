@@ -11,6 +11,7 @@ import subprocess
 import sys
 import urllib.parse
 import urllib.request
+from urllib.error import HTTPError
 from pathlib import Path
 
 
@@ -137,10 +138,15 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
   else:
     sys.exit('Unknown arch: ' + arch)
 
-  base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen-{}/Tizen-{}-Base/latest/repos/standard/packages'.format(
-    api_version, api_version)
-  unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen-{}/Tizen-{}-Unified/latest/repos/standard/packages'.format(
-    api_version, api_version)
+  # TODO(jsuya): When Tizen 10.0 is released, the version check should be updated.
+  if api_version >= 10.0:
+    base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base/latest/repos/standard/packages'
+    unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified/latest/repos/standard/packages'
+  else:
+    base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen-{}/Tizen-{}-Base/latest/repos/standard/packages'.format(
+      api_version, api_version)
+    unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen-{}/Tizen-{}-Unified/latest/repos/standard/packages'.format(
+      api_version, api_version)
 
   # Retrieve html documents.
   documents = {}
@@ -148,9 +154,12 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
               '{}/{}'.format(base_repo, 'noarch'),
               '{}/{}'.format(unified_repo, tizen_arch),
               '{}/{}'.format(unified_repo, 'noarch')]:
-    request = urllib.request.Request(url)
-    with urllib.request.urlopen(request) as response:
-      documents[url] = response.read().decode('utf-8')
+    try:
+      request = urllib.request.Request(url)
+      with urllib.request.urlopen(request) as response:
+        documents[url] = response.read().decode('utf-8')
+    except HTTPError as e:
+      sys.exit('Invalid URL [{}]: {}'.format(url, e.getcode()))
 
   # Download packages.
   download_path = sysroot / '.rpms'
@@ -228,7 +237,13 @@ def main():
     outpath = Path(__file__).parent.parent / 'sysroot'
   outpath.mkdir(exist_ok=True)
 
-  for arch in ['arm', 'arm64', 'x86']:
+  # TODO(jsuya): x86 package does not exist in Tizen 10.0.(2025-05-27)
+  if args.api_version >= 10.0:
+    arches = ['arm', 'arm64']
+  else:
+    arches = ['arm', 'arm64', 'x86']
+
+  for arch in arches:
     sysroot = outpath / arch
     if args.force and sysroot.is_dir():
       shutil.rmtree(sysroot)
