@@ -22,8 +22,7 @@ class TizenWindowElementary : public TizenWindow {
   TizenWindowElementary(TizenGeometry geometry,
                         bool transparent,
                         bool focusable,
-                        bool top_level,
-                        FlutterDesktopExternalOutputType external_output_type);
+                        bool top_level);
 
   ~TizenWindowElementary();
 
@@ -56,12 +55,6 @@ class TizenWindowElementary : public TizenWindow {
   void UpdateFlutterCursor(const std::string& kind) override;
 
  private:
-  bool InitializeExternalOutputManager();
-
-  void DestroyExternalOutputManager();
-
-  int GetExternalOutputId();
-
   bool CreateWindow();
 
   void DestroyWindow();
@@ -80,10 +73,6 @@ class TizenWindowElementary : public TizenWindow {
   Evas_Smart_Cb rotation_changed_callback_ = nullptr;
   std::unordered_map<Evas_Callback_Type, Evas_Object_Event_Cb>
       evas_object_callbacks_;
-
-  int32_t external_output_id_;
-  FlutterDesktopExternalOutputType external_output_type_ =
-      FlutterDesktopExternalOutputType::kNone;
 };
 
 }  // namespace flutter
