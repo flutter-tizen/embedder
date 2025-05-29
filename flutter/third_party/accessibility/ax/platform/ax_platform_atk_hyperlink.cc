@@ -248,11 +248,11 @@ static void AXPlatformAtkHyperlinkInit(AXPlatformAtkHyperlink* self, gpointer) {
 }
 
 GType ax_platform_atk_hyperlink_get_type() {
-  static volatile gsize type_volatile = 0;
+  static gsize type_id = 0;
 
   AXPlatformNodeAuraLinux::EnsureGTypeInit();
 
-  if (g_once_init_enter(&type_volatile)) {
+  if (g_once_init_enter(&type_id)) {
     static const GTypeInfo tinfo = {
         sizeof(AXPlatformAtkHyperlinkClass),
         (GBaseInitFunc) nullptr,
@@ -273,10 +273,10 @@ GType ax_platform_atk_hyperlink_get_type() {
     GType type = g_type_register_static(
         ATK_TYPE_HYPERLINK, "AXPlatformAtkHyperlink", &tinfo, GTypeFlags(0));
     g_type_add_interface_static(type, ATK_TYPE_ACTION, &actionInfo);
-    g_once_init_leave(&type_volatile, type);
+    g_once_init_leave(&type_id, type);
   }
 
-  return type_volatile;
+  return type_id;
 }
 
 }  // namespace ui
