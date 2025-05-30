@@ -63,8 +63,6 @@ typedef struct {
   bool top_level;
   // The renderer type of the engine.
   FlutterDesktopRendererType renderer_type;
-  // The external output type of the window.
-  FlutterDesktopExternalOutputType external_output_type;
   // The user-defined pixel ratio.
   double user_pixel_ratio;
   // The precreated window handle.
