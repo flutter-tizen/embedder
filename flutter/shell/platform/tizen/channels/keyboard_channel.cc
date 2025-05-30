@@ -118,6 +118,7 @@ void KeyboardChannel::SendKey(const char* key,
                               uint32_t modifiers,
                               uint32_t scan_code,
                               bool is_down,
+                              FlutterKeyEventDeviceType device_type,
                               std::function<void(bool)> callback) {
   uint64_t sequence_id = last_sequence_id_++;
 
@@ -142,7 +143,7 @@ void KeyboardChannel::SendKey(const char* key,
   }
 
   SendEmbedderEvent(key, string, compose, modifiers, scan_code, is_down,
-                    sequence_id);
+                    sequence_id, device_type);
   // The channel-based API (RawKeyEvent) is deprecated and |SendChannelEvent|
   // will be removed in the future. This class (KeyboardChannel) itself will
   // also be renamed and refactored then.
@@ -205,7 +206,8 @@ void KeyboardChannel::SendEmbedderEvent(const char* key,
                                         uint32_t modifiers,
                                         uint32_t scan_code,
                                         bool is_down,
-                                        uint64_t sequence_id) {
+                                        uint64_t sequence_id,
+                                        FlutterKeyEventDeviceType device_type) {
   uint64_t physical_key = GetPhysicalKey(scan_code);
   uint64_t logical_key = GetLogicalKey(key);
   const char* character = is_down ? string : nullptr;
@@ -242,6 +244,7 @@ void KeyboardChannel::SendEmbedderEvent(const char* key,
           .logical = 0,
           .character = "",
           .synthesized = false,
+          .device_type = device_type,
       };
       send_event_(empty_event, nullptr, nullptr);
       ResolvePendingEvent(sequence_id, true);
@@ -263,6 +266,7 @@ void KeyboardChannel::SendEmbedderEvent(const char* key,
   event.logical = last_logical_record != 0 ? last_logical_record : logical_key;
   event.character = character;
   event.synthesized = false;
+  event.device_type = device_type;
 
   send_event_(
       event,
