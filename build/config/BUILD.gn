@@ -131,11 +131,21 @@ config("system_cxx") {
     assert(false, "Unknown target_cpu: " + target_cpu)
   }
 
-  include_dirs = [
-    "${lib_path}/gcc/${gcc_target_triple}/9.2.0/include",
-    "${lib_path}/gcc/${gcc_target_triple}/9.2.0/include/c++",
-    "${lib_path}/gcc/${gcc_target_triple}/9.2.0/include/c++/${gcc_target_triple}",
-  ]
+  include_dirs = []
+  if (api_version == "10.0") {
+    include_dirs += [
+        "${lib_path}/gcc/${gcc_target_triple}/14.2.0/include",
+        "${lib_path}/gcc/${gcc_target_triple}/14.2.0/include/c++",
+        "${lib_path}/gcc/${gcc_target_triple}/14.2.0/include/c++/${gcc_target_triple}",
+      ]
+  } else {
+    include_dirs += [
+        "${lib_path}/gcc/${gcc_target_triple}/9.2.0/include",
+        "${lib_path}/gcc/${gcc_target_triple}/9.2.0/include/c++",
+        "${lib_path}/gcc/${gcc_target_triple}/9.2.0/include/c++/${gcc_target_triple}",
+      ]
+  }
+
   libs = [ "stdc++" ]
 }
 
