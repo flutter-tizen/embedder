@@ -6,6 +6,7 @@
 #define UI_ACCESSIBILITY_PLATFORM_COMPUTE_ATTRIBUTES_H_
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 
 #include "ax/ax_enums.h"

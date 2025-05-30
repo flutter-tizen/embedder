@@ -6,6 +6,7 @@
 
 #include <app.h>
 
+#include <algorithm>
 #include <map>
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/method_result_functions.h"

@@ -5,6 +5,7 @@
 #ifndef UI_ACCESSIBILITY_AX_ACTIVE_POPUP_H_
 #define UI_ACCESSIBILITY_AX_ACTIVE_POPUP_H_
 
+#include <cstdint>
 #include <optional>
 
 #include "ax/ax_export.h"
