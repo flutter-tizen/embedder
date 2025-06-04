@@ -204,8 +204,7 @@ FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindow(
   if (window_properties.renderer_type == FlutterDesktopRendererType::kEvasGL) {
     window = std::make_unique<flutter::TizenWindowElementary>(
         window_geometry, window_properties.transparent,
-        window_properties.focusable, window_properties.top_level,
-        window_properties.external_output_type);
+        window_properties.focusable, window_properties.top_level);
   } else {
     window = std::make_unique<flutter::TizenWindowEcoreWl2>(
         window_geometry, window_properties.transparent,

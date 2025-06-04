@@ -5,7 +5,6 @@
 #include "tizen_window_elementary.h"
 
 #include <efl_extension.h>
-#include <eom.h>
 #include <ui/efl_util.h>
 
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -56,20 +55,11 @@ uint32_t EvasModifierToEcoreEventModifiers(const Evas_Modifier* evas_modifier) {
 
 }  // namespace
 
-TizenWindowElementary::TizenWindowElementary(
-    TizenGeometry geometry,
-    bool transparent,
-    bool focusable,
-    bool top_level,
-    FlutterDesktopExternalOutputType external_output_type)
-    : TizenWindow(geometry, transparent, focusable, top_level),
-      external_output_type_(external_output_type) {
-  if (external_output_type_ != FlutterDesktopExternalOutputType::kNone &&
-      !InitializeExternalOutputManager()) {
-    FT_LOG(Error) << "Failed to initialize the External Output Manager.";
-    return;
-  }
-
+TizenWindowElementary::TizenWindowElementary(TizenGeometry geometry,
+                                             bool transparent,
+                                             bool focusable,
+                                             bool top_level)
+    : TizenWindow(geometry, transparent, focusable, top_level) {
   if (!CreateWindow()) {
     FT_LOG(Error) << "Failed to create a platform window.";
     return;
@@ -82,9 +72,6 @@ TizenWindowElementary::TizenWindowElementary(
 }
 
 TizenWindowElementary::~TizenWindowElementary() {
-  if (external_output_type_ != FlutterDesktopExternalOutputType::kNone) {
-    DestroyExternalOutputManager();
-  }
   UnregisterEventHandlers();
   DestroyWindow();
 }
@@ -101,14 +88,10 @@ bool TizenWindowElementary::CreateWindow() {
   elm_win_aux_hint_add(elm_win_, "wm.policy.win.user.geometry", "1");
 
   int32_t width = 0, height = 0;
-  if (external_output_type_ != FlutterDesktopExternalOutputType::kNone) {
-    eom_get_output_resolution(external_output_id_, &width, &height);
-  } else {
-    Ecore_Evas* ecore_evas =
-        ecore_evas_ecore_evas_get(evas_object_evas_get(elm_win_));
-    ecore_evas_screen_geometry_get(ecore_evas, nullptr, nullptr, &width,
-                                   &height);
-  }
+  Ecore_Evas* ecore_evas =
+      ecore_evas_ecore_evas_get(evas_object_evas_get(elm_win_));
+  ecore_evas_screen_geometry_get(ecore_evas, nullptr, nullptr, &width, &height);
+
   if (width == 0 || height == 0) {
     FT_LOG(Error) << "Invalid screen size: " << width << " x " << height;
     return false;
@@ -133,14 +116,6 @@ bool TizenWindowElementary::CreateWindow() {
                              initial_geometry_.height);
   evas_object_image_alpha_set(image_, EINA_TRUE);
   elm_win_resize_object_add(elm_win_, image_);
-
-  if (external_output_type_ != FlutterDesktopExternalOutputType::kNone) {
-    if (eom_set_output_window(external_output_id_, elm_win_) !=
-        EOM_ERROR_NONE) {
-      FT_LOG(Error) << "eom_set_output_window() failed.";
-      return false;
-    }
-  }
 
   return elm_win_ && image_;
 }
@@ -448,56 +423,6 @@ void TizenWindowElementary::PrepareInputMethod() {
       [this]() { view_delegate_->OnComposeEnd(); });
   input_method_context_->SetOnCommit(
       [this](std::string str) { view_delegate_->OnCommit(str); });
-}
-
-int32_t TizenWindowElementary::GetExternalOutputId() {
-  int32_t num_ids = 0;
-  eom_output_id* output_ids = eom_get_eom_output_ids(&num_ids);
-  if (!output_ids || num_ids == 0) {
-    FT_LOG(Error) << "No external output found.";
-    return 0;
-  }
-
-  eom_output_id output_id = 0;
-  for (int32_t i = 0; i < num_ids; i++) {
-    eom_output_type_e output_type = EOM_OUTPUT_TYPE_UNKNOWN;
-    eom_get_output_type(output_ids[i], &output_type);
-
-    if (external_output_type_ == FlutterDesktopExternalOutputType::kHDMI &&
-        (output_type == EOM_OUTPUT_TYPE_HDMIA ||
-         output_type == EOM_OUTPUT_TYPE_HDMIB)) {
-      output_id = output_ids[i];
-      break;
-    }
-  }
-  free(output_ids);
-  return output_id;
-}
-
-bool TizenWindowElementary::InitializeExternalOutputManager() {
-  if (eom_init()) {
-    FT_LOG(Error) << "eom_init() failed.";
-    return false;
-  }
-
-  external_output_id_ = GetExternalOutputId();
-  if (external_output_id_ == 0) {
-    FT_LOG(Error) << "Invalid external output ID.";
-    return false;
-  }
-
-  int ret = eom_set_output_attribute(external_output_id_,
-                                     EOM_OUTPUT_ATTRIBUTE_NORMAL);
-  if (ret != EOM_ERROR_NONE) {
-    FT_LOG(Error)
-        << "eom_set_output_attribute() failed. Cannot use external output.";
-    return false;
-  }
-  return true;
-}
-
-void TizenWindowElementary::DestroyExternalOutputManager() {
-  eom_deinit();
 }
 
 }  // namespace flutter
