@@ -231,15 +231,16 @@ FlutterTizenView::PointerState* FlutterTizenView::GetOrCreatePointerState(
 }
 
 FlutterPointerPhase FlutterTizenView::GetPointerPhaseFromState(
-    const PointerState* state) const {
+    bool is_button_down,
+    uint64_t button_type) const {
   // For details about this logic, see FlutterPointerPhase in the embedder.h
   // file.
-  if (state->buttons == 0) {
-    return state->flutter_state_is_down ? FlutterPointerPhase::kUp
-                                        : FlutterPointerPhase::kHover;
+  if (button_type == 0) {
+    return is_button_down ? FlutterPointerPhase::kUp
+                          : FlutterPointerPhase::kHover;
   } else {
-    return state->flutter_state_is_down ? FlutterPointerPhase::kMove
-                                        : FlutterPointerPhase::kDown;
+    return is_button_down ? FlutterPointerPhase::kMove
+                          : FlutterPointerPhase::kDown;
   }
 }
 
@@ -249,7 +250,8 @@ void FlutterTizenView::OnPointerMove(double x,
                                      FlutterPointerDeviceKind device_kind,
                                      int32_t device_id) {
   PointerState* state = GetOrCreatePointerState(device_kind, device_id);
-  FlutterPointerPhase phase = GetPointerPhaseFromState(state);
+  FlutterPointerPhase phase =
+      GetPointerPhaseFromState(state->flutter_state_is_down, state->buttons);
   SendFlutterPointerEvent(phase, x, y, 0, 0, timestamp, state);
 }
 
@@ -262,7 +264,8 @@ void FlutterTizenView::OnPointerDown(double x,
   if (button != 0) {
     PointerState* state = GetOrCreatePointerState(device_kind, device_id);
     state->buttons |= button;
-    FlutterPointerPhase phase = GetPointerPhaseFromState(state);
+    FlutterPointerPhase phase =
+        GetPointerPhaseFromState(state->flutter_state_is_down, state->buttons);
     SendFlutterPointerEvent(phase, x, y, 0, 0, timestamp, state);
 
     state->flutter_state_is_down = true;
@@ -277,10 +280,11 @@ void FlutterTizenView::OnPointerUp(double x,
                                    int32_t device_id) {
   if (button != 0) {
     PointerState* state = GetOrCreatePointerState(device_kind, device_id);
-    state->buttons &= ~button;
-    FlutterPointerPhase phase = GetPointerPhaseFromState(state);
+    uint64_t clear_button_state = state->buttons & ~button;
+    FlutterPointerPhase phase = GetPointerPhaseFromState(
+        state->flutter_state_is_down, clear_button_state);
     SendFlutterPointerEvent(phase, x, y, 0, 0, timestamp, state);
-
+    state->buttons = clear_button_state;
     if (phase == FlutterPointerPhase::kUp) {
       state->flutter_state_is_down = false;
     }
@@ -295,7 +299,8 @@ void FlutterTizenView::OnScroll(double x,
                                 FlutterPointerDeviceKind device_kind,
                                 int32_t device_id) {
   PointerState* state = GetOrCreatePointerState(device_kind, device_id);
-  FlutterPointerPhase phase = GetPointerPhaseFromState(state);
+  FlutterPointerPhase phase =
+      GetPointerPhaseFromState(state->flutter_state_is_down, state->buttons);
   SendFlutterPointerEvent(phase, x, y, delta_x, delta_y, timestamp, state);
 }
 

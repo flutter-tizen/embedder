@@ -153,7 +153,8 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
                                         int32_t device_id);
 
   // Returns a FlutterPointerPhase corresponding to the current pointer state.
-  FlutterPointerPhase GetPointerPhaseFromState(const PointerState* state) const;
+  FlutterPointerPhase GetPointerPhaseFromState(bool is_button_down,
+                                               uint64_t button_type) const;
 
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical.
