@@ -443,6 +443,13 @@ void* TizenRendererEgl::OnProcResolver(const char* name) {
   GL_FUNC(glVertexAttrib4fv)
   GL_FUNC(glVertexAttribPointer)
   GL_FUNC(glViewport)
+#define GL_FUNC_EXT(ExtFunctionName, FunctionName)                    \
+  else if (strcmp(name, #ExtFunctionName) == 0) {                     \
+    return reinterpret_cast<void*>(eglGetProcAddress(#FunctionName)); \
+  }
+  GL_FUNC_EXT(glMultiDrawArraysIndirectEXT, glMultiDrawArraysIndirect)
+  GL_FUNC_EXT(glMultiDrawElementsIndirectEXT, glMultiDrawElementsIndirect)
+#undef GL_FUNC_EXT
 #undef GL_FUNC
 
   FT_LOG(Warn) << "Could not resolve: " << name;
