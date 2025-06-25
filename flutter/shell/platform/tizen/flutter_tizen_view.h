@@ -27,6 +27,8 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
  public:
   FlutterTizenView(FlutterViewId view_id,
                    std::unique_ptr<TizenViewBase> tizen_view,
+                   std::unique_ptr<FlutterTizenEngine> engine,
+                   FlutterDesktopRendererType renderer_type,
                    double user_pixel_ratio = 0);
 
   virtual ~FlutterTizenView();
@@ -36,18 +38,11 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   // Configures the window instance with an instance of a running Flutter
   // engine.
-  void SetEngine(std::unique_ptr<FlutterTizenEngine> engine);
+  void SetupChannels();
 
   FlutterTizenEngine* engine() { return engine_.get(); }
 
   TizenViewBase* tizen_view() { return tizen_view_.get(); }
-
-  // Creates rendering surface for Flutter engine to draw into.
-  // Should be called before calling FlutterEngineRun using this view.
-  void CreateRenderSurface(FlutterDesktopRendererType renderer_type);
-
-  // Destroys current rendering surface if one has been allocated.
-  void DestroyRenderSurface();
 
   void Resize(int32_t width, int32_t height);
 
@@ -148,6 +143,13 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
     uint64_t buttons = 0;
   };
 
+  // Creates rendering surface for Flutter engine to draw into.
+  // Should be called before calling FlutterEngineRun using this view.
+  void CreateRenderSurface(FlutterDesktopRendererType renderer_type);
+
+  // Destroys current rendering surface if one has been allocated.
+  void DestroyRenderSurface();
+
   // Creates a PointerState object unless it already exists.
   PointerState* GetOrCreatePointerState(FlutterPointerDeviceKind device_kind,
                                         int32_t device_id);
@@ -172,14 +174,14 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
                                size_t timestamp,
                                PointerState* state);
 
-  // The engine associated with this view.
-  std::unique_ptr<FlutterTizenEngine> engine_;
-
   // The view's unique identifier.
   FlutterViewId view_id_;
 
   // The platform view associated with this Flutter view.
   std::unique_ptr<TizenViewBase> tizen_view_;
+
+  // The engine associated with this view.
+  std::unique_ptr<FlutterTizenEngine> engine_;
 
   // Keeps track of pointer states.
   std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;

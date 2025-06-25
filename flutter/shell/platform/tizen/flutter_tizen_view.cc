@@ -44,12 +44,17 @@ namespace flutter {
 
 FlutterTizenView::FlutterTizenView(FlutterViewId view_id,
                                    std::unique_ptr<TizenViewBase> tizen_view,
+                                   std::unique_ptr<FlutterTizenEngine> engine,
+                                   FlutterDesktopRendererType renderer_type,
                                    double user_pixel_ratio)
     : view_id_(view_id),
       tizen_view_(std::move(tizen_view)),
+      engine_(std::move(engine)),
       user_pixel_ratio_(user_pixel_ratio) {
   tizen_view_->SetView(this);
-
+  engine_->SetView(this);
+  SetupChannels();
+  CreateRenderSurface(renderer_type);
   if (auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get())) {
     window->BindKeys(kBindableSystemKeys);
   }
@@ -65,10 +70,7 @@ FlutterTizenView::~FlutterTizenView() {
   DestroyRenderSurface();
 }
 
-void FlutterTizenView::SetEngine(std::unique_ptr<FlutterTizenEngine> engine) {
-  engine_ = std::move(engine);
-  engine_->SetView(this);
-
+void FlutterTizenView::SetupChannels() {
   internal_plugin_registrar_ =
       std::make_unique<PluginRegistrar>(engine_->plugin_registrar());
 

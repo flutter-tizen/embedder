@@ -40,12 +40,10 @@ FlutterDesktopViewRef FlutterDesktopViewCreateFromImageView(
           default_window_id);
 
   auto view = std::make_unique<flutter::FlutterTizenView>(
-      flutter::kImplicitViewId, std::move(tizen_view));
+      flutter::kImplicitViewId, std::move(tizen_view),
+      std::unique_ptr<flutter::FlutterTizenEngine>(EngineFromHandle(engine)),
+      FlutterDesktopRendererType::kEGL);
 
-  // Take ownership of the engine, starting it if necessary.
-  view->SetEngine(
-      std::unique_ptr<flutter::FlutterTizenEngine>(EngineFromHandle(engine)));
-  view->CreateRenderSurface(FlutterDesktopRendererType::kEGL);
   if (!view->engine()->IsRunning()) {
     if (!view->engine()->RunEngine()) {
       return nullptr;
