@@ -32,8 +32,8 @@ FlutterDesktopViewRef FlutterDesktopViewCreateFromElmParent(
 
   auto view = std::make_unique<flutter::FlutterTizenView>(
       flutter::kImplicitViewId, std::move(tizen_view),
-    std::unique_ptr<flutter::FlutterTizenEngine>(EngineFromHandle(engine)),
-  FlutterDesktopRendererType::kEvasGL);
+      std::unique_ptr<flutter::FlutterTizenEngine>(EngineFromHandle(engine)),
+      FlutterDesktopRendererType::kEvasGL);
 
   if (!view->engine()->IsRunning()) {
     if (!view->engine()->RunEngine()) {

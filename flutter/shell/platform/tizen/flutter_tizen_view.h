@@ -36,8 +36,7 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   // Get the view's unique identifier.
   FlutterViewId view_id() const { return view_id_; }
 
-  // Configures the window instance with an instance of a running Flutter
-  // engine.
+  // Set up window dependent channels.
   void SetupChannels();
 
   FlutterTizenEngine* engine() { return engine_.get(); }
@@ -45,17 +44,6 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   TizenViewBase* tizen_view() { return tizen_view_.get(); }
 
   void Resize(int32_t width, int32_t height);
-
-  // Callbacks for clearing context, settings context and swapping buffers,
-  // these are typically called on an engine-controlled (non-platform) thread.
-  bool OnMakeCurrent();
-  bool OnClearCurrent();
-  bool OnMakeResourceCurrent();
-  bool OnPresent();
-
-  uint32_t OnGetFBO();
-
-  void* OnProcResolver(const char* name);
 
   void OnResize(int32_t left,
                 int32_t top,

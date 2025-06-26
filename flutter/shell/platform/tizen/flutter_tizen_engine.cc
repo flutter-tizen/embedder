@@ -19,6 +19,11 @@
 #include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_evas_gl.h"
 
+#ifdef NUI_SUPPORT
+#include "flutter/shell/platform/tizen/tizen_renderer_nui.h"
+#include "flutter/shell/platform/tizen/tizen_view_nui.h"
+#endif
+
 namespace flutter {
 
 namespace {
@@ -94,8 +99,19 @@ void FlutterTizenEngine::CreateRenderer(
         },
         renderer_.get());
   } else {
+#ifdef NUI_SUPPORT
+    if (auto* nui_view =
+            dynamic_cast<flutter::TizenViewNui*>(view_->tizen_view())) {
+      renderer_ = std::make_unique<TizenRendererNui>(
+          true, dynamic_cast<flutter::TizenViewNui*>(view_->tizen_view()));
+    } else {
+      renderer_ = std::make_unique<TizenRendererEgl>(
+          project_->HasArgument("--enable-impeller"));
+    }
+#else
     renderer_ = std::make_unique<TizenRendererEgl>(
         project_->HasArgument("--enable-impeller"));
+#endif
   }
 }
 
@@ -444,35 +460,35 @@ FlutterRendererConfig FlutterTizenEngine::GetRendererConfig() {
       if (!engine->view()) {
         return false;
       }
-      return engine->view()->OnMakeCurrent();
+      return engine->renderer()->OnMakeCurrent();
     };
     config.open_gl.make_resource_current = [](void* user_data) -> bool {
       auto* engine = static_cast<FlutterTizenEngine*>(user_data);
       if (!engine->view()) {
         return false;
       }
-      return engine->view()->OnMakeResourceCurrent();
+      return engine->renderer()->OnMakeResourceCurrent();
     };
     config.open_gl.clear_current = [](void* user_data) -> bool {
       auto* engine = static_cast<FlutterTizenEngine*>(user_data);
       if (!engine->view()) {
         return false;
       }
-      return engine->view()->OnClearCurrent();
+      return engine->renderer()->OnClearCurrent();
     };
     config.open_gl.present = [](void* user_data) -> bool {
       auto* engine = static_cast<FlutterTizenEngine*>(user_data);
       if (!engine->view()) {
         return false;
       }
-      return engine->view()->OnPresent();
+      return engine->renderer()->OnPresent();
     };
     config.open_gl.fbo_callback = [](void* user_data) -> uint32_t {
       auto* engine = static_cast<FlutterTizenEngine*>(user_data);
       if (!engine->view()) {
         return false;
       }
-      return engine->view()->OnGetFBO();
+      return engine->renderer()->OnGetFBO();
     };
     config.open_gl.surface_transformation =
         [](void* user_data) -> FlutterTransformation {
@@ -488,7 +504,7 @@ FlutterRendererConfig FlutterTizenEngine::GetRendererConfig() {
       if (!engine->view()) {
         return nullptr;
       }
-      return engine->view()->OnProcResolver(name);
+      return engine->renderer()->OnProcResolver(name);
     };
     config.open_gl.gl_external_texture_frame_callback =
         [](void* user_data, int64_t texture_id, size_t width, size_t height,

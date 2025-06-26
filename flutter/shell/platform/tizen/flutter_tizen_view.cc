@@ -55,6 +55,7 @@ FlutterTizenView::FlutterTizenView(FlutterViewId view_id,
   engine_->SetView(this);
   SetupChannels();
   CreateRenderSurface(renderer_type);
+
   if (auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get())) {
     window->BindKeys(kBindableSystemKeys);
   }
@@ -74,7 +75,6 @@ void FlutterTizenView::SetupChannels() {
   internal_plugin_registrar_ =
       std::make_unique<PluginRegistrar>(engine_->plugin_registrar());
 
-  // Set up window dependent channels.
   BinaryMessenger* messenger = internal_plugin_registrar_->messenger();
 
   auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get());
@@ -132,37 +132,6 @@ void FlutterTizenView::Resize(int32_t width, int32_t height) {
   geometry.width = width;
   geometry.height = height;
   tizen_view_->SetGeometry(geometry);
-}
-
-bool FlutterTizenView::OnMakeCurrent() {
-  return engine_->renderer()->OnMakeCurrent();
-}
-
-bool FlutterTizenView::OnClearCurrent() {
-  return engine_->renderer()->OnClearCurrent();
-}
-
-bool FlutterTizenView::OnMakeResourceCurrent() {
-  return engine_->renderer()->OnMakeResourceCurrent();
-}
-
-bool FlutterTizenView::OnPresent() {
-  bool result = engine_->renderer()->OnPresent();
-#ifdef NUI_SUPPORT
-  if (auto* nui_view =
-          dynamic_cast<flutter::TizenViewNui*>(tizen_view_.get())) {
-    nui_view->RequestRendering();
-  }
-#endif
-  return result;
-}
-
-uint32_t FlutterTizenView::OnGetFBO() {
-  return engine_->renderer()->OnGetFBO();
-}
-
-void* FlutterTizenView::OnProcResolver(const char* name) {
-  return engine_->renderer()->OnProcResolver(name);
 }
 
 void FlutterTizenView::OnResize(int32_t left,

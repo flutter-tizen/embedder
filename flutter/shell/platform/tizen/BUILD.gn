@@ -172,6 +172,7 @@ template("embedder") {
         "flutter_tizen_nui.cc",
         "tizen_clipboard.cc",
         "tizen_view_nui.cc",
+        "tizen_renderer_nui.cc",
       ]
 
       libs += [
