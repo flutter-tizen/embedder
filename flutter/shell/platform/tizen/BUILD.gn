@@ -115,6 +115,7 @@ template("embedder") {
       "tizen_renderer.cc",
       "tizen_renderer_egl.cc",
       "tizen_renderer_evas_gl.cc",
+      "tizen_renderer_gl.cc",
       "tizen_view_elementary.cc",
       "tizen_vsync_waiter.cc",
       "tizen_window_ecore_wl2.cc",

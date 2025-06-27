@@ -18,20 +18,6 @@ class TizenRenderer {
   virtual ~TizenRenderer();
   bool IsValid() { return is_valid_; }
 
-  virtual bool OnMakeCurrent() = 0;
-
-  virtual bool OnClearCurrent() = 0;
-
-  virtual bool OnMakeResourceCurrent() = 0;
-
-  virtual bool OnPresent() = 0;
-
-  virtual uint32_t OnGetFBO() = 0;
-
-  virtual void* OnProcResolver(const char* name) = 0;
-
-  virtual bool IsSupportedExtension(const char* name) = 0;
-
   virtual void ResizeSurface(int32_t width, int32_t height) = 0;
   virtual bool CreateSurface(void* render_target,
                              void* render_target_display,
@@ -39,16 +25,11 @@ class TizenRenderer {
                              int32_t height) = 0;
   virtual void DestroySurface() = 0;
 
-  FlutterTransformation GetTransformation() const;
-
-  FlutterRendererConfig GetRendererConfig();
+  virtual FlutterRendererConfig GetRendererConfig() = 0;
 
  protected:
   bool CreateSurface(TizenViewBase* view);
   bool is_valid_ = false;
-  // The current surface transformation.
-  FlutterTransformation flutter_transformation_ = {1.0, 0.0, 0.0, 0.0, 1.0,
-                                                   0.0, 0.0, 0.0, 1.0};
 };
 
 }  // namespace flutter

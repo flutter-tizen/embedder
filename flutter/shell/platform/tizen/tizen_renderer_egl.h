@@ -11,10 +11,11 @@
 
 #include "flutter/shell/platform/tizen/tizen_renderer.h"
 #include "flutter/shell/platform/tizen/tizen_view_base.h"
+#include "flutter/shell/platform/tizen/tizen_renderer_gl.h"
 
 namespace flutter {
 
-class TizenRendererEgl : public TizenRenderer {
+class TizenRendererEgl : public TizenRendererGL {
  public:
   explicit TizenRendererEgl(TizenViewBase* view_base, bool enable_impeller);
 
