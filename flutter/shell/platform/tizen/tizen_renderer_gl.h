@@ -7,8 +7,8 @@
 
 #include <cstdint>
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/tizen/tizen_view_base.h"
 #include "flutter/shell/platform/tizen/tizen_renderer.h"
+#include "flutter/shell/platform/tizen/tizen_view_base.h"
 
 namespace flutter {
 
@@ -29,7 +29,6 @@ class TizenRendererGL : public TizenRenderer {
   virtual uint32_t OnGetFBO() = 0;
 
   virtual void* OnProcResolver(const char* name) = 0;
-
 
   virtual bool IsSupportedExtension(const char* name) = 0;
 

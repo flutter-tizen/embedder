@@ -172,7 +172,7 @@ template("embedder") {
       sources += [
         "flutter_tizen_nui.cc",
         "tizen_clipboard.cc",
-        "tizen_renderer_nui.cc",
+        "tizen_renderer_nui_gl.cc",
         "tizen_view_nui.cc",
       ]
 

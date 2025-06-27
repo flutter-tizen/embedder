@@ -20,7 +20,7 @@
 #include "flutter/shell/platform/tizen/tizen_renderer_evas_gl.h"
 
 #ifdef NUI_SUPPORT
-#include "flutter/shell/platform/tizen/tizen_renderer_nui.h"
+#include "flutter/shell/platform/tizen/tizen_renderer_nui_gl.h"
 #include "flutter/shell/platform/tizen/tizen_view_nui.h"
 #endif
 
@@ -102,7 +102,7 @@ void FlutterTizenEngine::CreateRenderer(
 #ifdef NUI_SUPPORT
     if (auto* nui_view =
             dynamic_cast<flutter::TizenViewNui*>(view_->tizen_view())) {
-      renderer_ = std::make_unique<TizenRendererNui>(
+      renderer_ = std::make_unique<TizenRendererNuiGL>(
           dynamic_cast<flutter::TizenViewNui*>(view_->tizen_view()),
           project_->HasArgument("--enable-impeller"));
     } else {

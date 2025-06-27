@@ -52,7 +52,7 @@ FlutterTizenView::FlutterTizenView(FlutterViewId view_id,
       engine_(std::move(engine)),
       user_pixel_ratio_(user_pixel_ratio) {
   tizen_view_->SetView(this);
-  engine_->SetView(this,renderer_type);
+  engine_->SetView(this, renderer_type);
   SetupChannels();
 
   if (auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get())) {

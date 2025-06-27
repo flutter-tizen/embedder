@@ -2,61 +2,62 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/tizen/tizen_renderer_nui.h"
+#include "flutter/shell/platform/tizen/tizen_renderer_nui_gl.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
 #include "tizen_renderer.h"
 
 namespace flutter {
 
-TizenRendererNui::TizenRendererNui(TizenViewNui* view_nui, bool enable_impeller)
+TizenRendererNuiGL::TizenRendererNuiGL(TizenViewNui* view_nui,
+                                       bool enable_impeller)
     : renderer_(std::make_unique<TizenRendererEgl>(view_nui, enable_impeller)),
       view_(view_nui) {}
 
-TizenRendererNui::~TizenRendererNui() {}
+TizenRendererNuiGL::~TizenRendererNuiGL() {}
 
-bool TizenRendererNui::CreateSurface(void* render_target,
-                                     void* render_target_display,
-                                     int32_t width,
-                                     int32_t height) {
+bool TizenRendererNuiGL::CreateSurface(void* render_target,
+                                       void* render_target_display,
+                                       int32_t width,
+                                       int32_t height) {
   return renderer_->CreateSurface(render_target, render_target_display, width,
                                   height);
 }
 
-void TizenRendererNui::DestroySurface() {
+void TizenRendererNuiGL::DestroySurface() {
   renderer_->DestroySurface();
 }
 
-bool TizenRendererNui::OnMakeCurrent() {
+bool TizenRendererNuiGL::OnMakeCurrent() {
   return renderer_->OnMakeCurrent();
 }
 
-bool TizenRendererNui::OnClearCurrent() {
+bool TizenRendererNuiGL::OnClearCurrent() {
   return renderer_->OnClearCurrent();
 }
 
-bool TizenRendererNui::OnMakeResourceCurrent() {
+bool TizenRendererNuiGL::OnMakeResourceCurrent() {
   return renderer_->OnMakeResourceCurrent();
 }
 
-bool TizenRendererNui::OnPresent() {
+bool TizenRendererNuiGL::OnPresent() {
   auto result = renderer_->OnPresent();
   view_->RequestRendering();
   return result;
 }
 
-uint32_t TizenRendererNui::OnGetFBO() {
+uint32_t TizenRendererNuiGL::OnGetFBO() {
   return renderer_->OnGetFBO();
 }
 
-void* TizenRendererNui::OnProcResolver(const char* name) {
+void* TizenRendererNuiGL::OnProcResolver(const char* name) {
   return renderer_->OnProcResolver(name);
 }
 
-bool TizenRendererNui::IsSupportedExtension(const char* name) {
+bool TizenRendererNuiGL::IsSupportedExtension(const char* name) {
   return renderer_->IsSupportedExtension(name);
 }
 
-void TizenRendererNui::ResizeSurface(int32_t width, int32_t height) {
+void TizenRendererNuiGL::ResizeSurface(int32_t width, int32_t height) {
   renderer_->ResizeSurface(width, height);
 }
 

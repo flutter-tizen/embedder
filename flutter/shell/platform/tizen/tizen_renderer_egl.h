@@ -10,8 +10,8 @@
 #include <string>
 
 #include "flutter/shell/platform/tizen/tizen_renderer.h"
-#include "flutter/shell/platform/tizen/tizen_view_base.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_gl.h"
+#include "flutter/shell/platform/tizen/tizen_view_base.h"
 
 namespace flutter {
 

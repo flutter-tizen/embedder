@@ -7,16 +7,16 @@
 
 #include <cstdint>
 #include <memory>
-#include "flutter/shell/platform/tizen/tizen_renderer.h"
+#include "flutter/shell/platform/tizen/tizen_renderer_gl.h"
 #include "flutter/shell/platform/tizen/tizen_view_nui.h"
 
 namespace flutter {
 
-class TizenRendererNui : public TizenRenderer {
+class TizenRendererNuiGL : public TizenRendererGL {
  public:
-  explicit TizenRendererNui(TizenViewNui* view_nui, bool enable_impeller);
+  explicit TizenRendererNuiGL(TizenViewNui* view_nui, bool enable_impeller);
 
-  virtual ~TizenRendererNui();
+  virtual ~TizenRendererNuiGL();
 
   bool CreateSurface(void* render_target,
                      void* render_target_display,
@@ -42,7 +42,7 @@ class TizenRendererNui : public TizenRenderer {
   void ResizeSurface(int32_t width, int32_t height) override;
 
  private:
-  std::unique_ptr<TizenRenderer> renderer_;
+  std::unique_ptr<TizenRendererGL> renderer_;
   TizenViewNui* view_;
 };
 
