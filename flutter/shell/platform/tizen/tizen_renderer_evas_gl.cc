@@ -14,7 +14,9 @@ EVAS_GL_GLOBAL_GLES2_DEFINE();
 
 namespace flutter {
 
-TizenRendererEvasGL::TizenRendererEvasGL() {}
+TizenRendererEvasGL::TizenRendererEvasGL(TizenViewBase* view_base) {
+  TizenRenderer::CreateSurface(view_base);
+}
 
 TizenRendererEvasGL::~TizenRendererEvasGL() {
   DestroySurface();

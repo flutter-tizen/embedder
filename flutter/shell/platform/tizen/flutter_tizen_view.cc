@@ -52,9 +52,8 @@ FlutterTizenView::FlutterTizenView(FlutterViewId view_id,
       engine_(std::move(engine)),
       user_pixel_ratio_(user_pixel_ratio) {
   tizen_view_->SetView(this);
-  engine_->SetView(this);
+  engine_->SetView(this,renderer_type);
   SetupChannels();
-  CreateRenderSurface(renderer_type);
 
   if (auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get())) {
     window->BindKeys(kBindableSystemKeys);
@@ -68,7 +67,6 @@ FlutterTizenView::~FlutterTizenView() {
     }
     engine_->StopEngine();
   }
-  DestroyRenderSurface();
 }
 
 void FlutterTizenView::SetupChannels() {
@@ -98,33 +96,6 @@ void FlutterTizenView::SetupChannels() {
       tizen_view_->input_method_context());
 
   input_device_channel_ = std::make_unique<InputDeviceChannel>(messenger);
-}
-
-void FlutterTizenView::CreateRenderSurface(
-    FlutterDesktopRendererType renderer_type) {
-  if (engine_) {
-    engine_->CreateRenderer(renderer_type);
-  }
-
-  if (engine_ && engine_->renderer()) {
-    TizenGeometry geometry = tizen_view_->GetGeometry();
-    if (dynamic_cast<TizenWindow*>(tizen_view_.get())) {
-      auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get());
-      engine_->renderer()->CreateSurface(window->GetRenderTarget(),
-                                         window->GetRenderTargetDisplay(),
-                                         geometry.width, geometry.height);
-    } else {
-      auto* tizen_view = dynamic_cast<TizenView*>(tizen_view_.get());
-      engine_->renderer()->CreateSurface(tizen_view->GetRenderTarget(), nullptr,
-                                         geometry.width, geometry.height);
-    }
-  }
-}
-
-void FlutterTizenView::DestroyRenderSurface() {
-  if (engine_ && engine_->renderer()) {
-    engine_->renderer()->DestroySurface();
-  }
 }
 
 void FlutterTizenView::Resize(int32_t width, int32_t height) {

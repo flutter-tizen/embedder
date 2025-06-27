@@ -78,7 +78,8 @@ class FlutterTizenEngine {
   bool StopEngine();
 
   // Sets the view that is displaying this engine's content.
-  void SetView(FlutterTizenView* view);
+  void SetView(FlutterTizenView* view,
+               FlutterDesktopRendererType renderer_type);
 
   // The view displaying this engine's content, if any. This will be null for
   // headless engines.

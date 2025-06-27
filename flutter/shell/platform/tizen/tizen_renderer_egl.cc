@@ -19,8 +19,11 @@
 
 namespace flutter {
 
-TizenRendererEgl::TizenRendererEgl(bool enable_impeller)
-    : enable_impeller_(enable_impeller) {}
+TizenRendererEgl::TizenRendererEgl(TizenViewBase* view_base,
+                                   bool enable_impeller)
+    : enable_impeller_(enable_impeller) {
+  TizenRenderer::CreateSurface(view_base);
+}
 
 TizenRendererEgl::~TizenRendererEgl() {
   DestroySurface();

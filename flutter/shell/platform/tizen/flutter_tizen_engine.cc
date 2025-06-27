@@ -87,7 +87,7 @@ FlutterTizenEngine::~FlutterTizenEngine() {
 void FlutterTizenEngine::CreateRenderer(
     FlutterDesktopRendererType renderer_type) {
   if (renderer_type == FlutterDesktopRendererType::kEvasGL) {
-    renderer_ = std::make_unique<TizenRendererEvasGL>();
+    renderer_ = std::make_unique<TizenRendererEvasGL>(view_->tizen_view());
 
     render_loop_ = std::make_unique<TizenRenderEventLoop>(
         std::this_thread::get_id(),  // main thread
@@ -103,14 +103,15 @@ void FlutterTizenEngine::CreateRenderer(
     if (auto* nui_view =
             dynamic_cast<flutter::TizenViewNui*>(view_->tizen_view())) {
       renderer_ = std::make_unique<TizenRendererNui>(
-          true, dynamic_cast<flutter::TizenViewNui*>(view_->tizen_view()));
+          dynamic_cast<flutter::TizenViewNui*>(view_->tizen_view()),
+          project_->HasArgument("--enable-impeller"));
     } else {
       renderer_ = std::make_unique<TizenRendererEgl>(
-          project_->HasArgument("--enable-impeller"));
+          view_->tizen_view(), project_->HasArgument("--enable-impeller"));
     }
 #else
     renderer_ = std::make_unique<TizenRendererEgl>(
-        project_->HasArgument("--enable-impeller"));
+        view_->tizen_view(), project_->HasArgument("--enable-impeller"));
 #endif
   }
 }
@@ -310,8 +311,9 @@ bool FlutterTizenEngine::StopEngine() {
   return false;
 }
 
-void FlutterTizenEngine::SetView(FlutterTizenView* view) {
+void FlutterTizenEngine::SetView(FlutterTizenView* view, FlutterDesktopRendererType renderer_type) {
   view_ = view;
+  CreateRenderer(renderer_type);
 }
 
 void FlutterTizenEngine::AddPluginRegistrarDestructionCallback(

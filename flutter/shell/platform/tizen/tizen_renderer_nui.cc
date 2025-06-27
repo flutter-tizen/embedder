@@ -8,8 +8,8 @@
 
 namespace flutter {
 
-TizenRendererNui::TizenRendererNui(bool enable_impeller, TizenViewNui* view_nui)
-    : renderer_(std::make_unique<TizenRendererEgl>(enable_impeller)),
+TizenRendererNui::TizenRendererNui(TizenViewNui* view_nui, bool enable_impeller)
+    : renderer_(std::make_unique<TizenRendererEgl>(view_nui, enable_impeller)),
       view_(view_nui) {}
 
 TizenRendererNui::~TizenRendererNui() {}

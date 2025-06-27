@@ -14,7 +14,7 @@ namespace flutter {
 
 class TizenRendererNui : public TizenRenderer {
  public:
-  explicit TizenRendererNui(bool enable_impeller, TizenViewNui* view_nui);
+  explicit TizenRendererNui(TizenViewNui* view_nui, bool enable_impeller);
 
   virtual ~TizenRendererNui();
 

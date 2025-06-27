@@ -131,13 +131,6 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
     uint64_t buttons = 0;
   };
 
-  // Creates rendering surface for Flutter engine to draw into.
-  // Should be called before calling FlutterEngineRun using this view.
-  void CreateRenderSurface(FlutterDesktopRendererType renderer_type);
-
-  // Destroys current rendering surface if one has been allocated.
-  void DestroyRenderSurface();
-
   // Creates a PointerState object unless it already exists.
   PointerState* GetOrCreatePointerState(FlutterPointerDeviceKind device_kind,
                                         int32_t device_id);

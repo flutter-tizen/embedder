@@ -10,12 +10,13 @@
 #include <string>
 
 #include "flutter/shell/platform/tizen/tizen_renderer.h"
+#include "flutter/shell/platform/tizen/tizen_view_base.h"
 
 namespace flutter {
 
 class TizenRendererEgl : public TizenRenderer {
  public:
-  explicit TizenRendererEgl(bool enable_impeller);
+  explicit TizenRendererEgl(TizenViewBase* view_base, bool enable_impeller);
 
   virtual ~TizenRendererEgl();
 

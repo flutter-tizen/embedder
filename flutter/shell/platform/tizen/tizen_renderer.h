@@ -6,6 +6,7 @@
 #define EMBEDDER_TIZEN_RENDERER_H_
 
 #include <cstdint>
+#include "flutter/shell/platform/tizen/tizen_view_base.h"
 
 namespace flutter {
 
@@ -14,14 +15,6 @@ class TizenRenderer {
   TizenRenderer();
 
   virtual ~TizenRenderer();
-
-  virtual bool CreateSurface(void* render_target,
-                             void* render_target_display,
-                             int32_t width,
-                             int32_t height) = 0;
-
-  virtual void DestroySurface() = 0;
-
   bool IsValid() { return is_valid_; }
 
   virtual bool OnMakeCurrent() = 0;
@@ -39,8 +32,15 @@ class TizenRenderer {
   virtual bool IsSupportedExtension(const char* name) = 0;
 
   virtual void ResizeSurface(int32_t width, int32_t height) = 0;
+  virtual bool CreateSurface(void* render_target,
+                             void* render_target_display,
+                             int32_t width,
+                             int32_t height) = 0;
+  virtual void DestroySurface() = 0;
 
  protected:
+  bool CreateSurface(TizenViewBase* view);
+
   bool is_valid_ = false;
 };
 
