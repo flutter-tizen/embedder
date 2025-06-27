@@ -6,6 +6,7 @@
 #define EMBEDDER_TIZEN_RENDERER_H_
 
 #include <cstdint>
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/tizen/tizen_view_base.h"
 
 namespace flutter {
@@ -38,10 +39,16 @@ class TizenRenderer {
                              int32_t height) = 0;
   virtual void DestroySurface() = 0;
 
+  FlutterTransformation GetTransformation() const;
+
+  FlutterRendererConfig GetRendererConfig();
+
  protected:
   bool CreateSurface(TizenViewBase* view);
-
   bool is_valid_ = false;
+  // The current surface transformation.
+  FlutterTransformation flutter_transformation_ = {1.0, 0.0, 0.0, 0.0, 1.0,
+                                                   0.0, 0.0, 0.0, 1.0};
 };
 
 }  // namespace flutter
