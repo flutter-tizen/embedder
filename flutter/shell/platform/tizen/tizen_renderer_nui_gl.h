@@ -41,6 +41,9 @@ class TizenRendererNuiGL : public TizenRendererGL {
 
   void ResizeSurface(int32_t width, int32_t height) override;
 
+  std::unique_ptr<ExternalTexture> CreateExternalTexture(
+      const FlutterDesktopTextureInfo* info) override;
+
  private:
   std::unique_ptr<TizenRendererGL> renderer_;
   TizenViewNui* view_;

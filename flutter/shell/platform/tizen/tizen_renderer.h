@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/tizen/external_texture.h"
 #include "flutter/shell/platform/tizen/tizen_view_base.h"
 
 namespace flutter {
@@ -26,6 +27,8 @@ class TizenRenderer {
   virtual void DestroySurface() = 0;
 
   virtual FlutterRendererConfig GetRendererConfig() = 0;
+  virtual std::unique_ptr<ExternalTexture> CreateExternalTexture(
+      const FlutterDesktopTextureInfo* texture_info) = 0;
 
  protected:
   bool CreateSurface(TizenViewBase* view);

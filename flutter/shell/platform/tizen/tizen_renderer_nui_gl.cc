@@ -27,6 +27,11 @@ void TizenRendererNuiGL::DestroySurface() {
   renderer_->DestroySurface();
 }
 
+std::unique_ptr<ExternalTexture> TizenRendererNuiGL::CreateExternalTexture(
+    const FlutterDesktopTextureInfo* info) {
+  return renderer_->CreateExternalTexture(info);
+}
+
 bool TizenRendererNuiGL::OnMakeCurrent() {
   return renderer_->OnMakeCurrent();
 }

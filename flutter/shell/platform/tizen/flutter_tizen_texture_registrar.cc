@@ -20,9 +20,8 @@
 namespace flutter {
 
 FlutterTizenTextureRegistrar::FlutterTizenTextureRegistrar(
-    FlutterTizenEngine* engine,
-    bool enable_impeller)
-    : engine_(engine), enable_impeller_(enable_impeller) {}
+    FlutterTizenEngine* engine)
+    : engine_(engine) {}
 
 int64_t FlutterTizenTextureRegistrar::RegisterTexture(
     const FlutterDesktopTextureInfo* texture_info) {
@@ -45,12 +44,8 @@ int64_t FlutterTizenTextureRegistrar::RegisterTexture(
       return -1;
     }
   }
-  FlutterDesktopRendererType renderer_type = FlutterDesktopRendererType::kEGL;
-  if (dynamic_cast<TizenRendererEvasGL*>(engine_->renderer())) {
-    renderer_type = FlutterDesktopRendererType::kEvasGL;
-  }
   std::unique_ptr<ExternalTexture> texture_gl =
-      CreateExternalTexture(texture_info, renderer_type);
+      engine_->renderer()->CreateExternalTexture(texture_info);
   if (!texture_gl) {
     FT_LOG(Error) << "Failed to create ExternalTexture.";
     return -1;
@@ -98,55 +93,6 @@ bool FlutterTizenTextureRegistrar::PopulateTexture(
     texture = iter->second.get();
   }
   return texture->PopulateTexture(width, height, opengl_texture);
-}
-
-std::unique_ptr<ExternalTexture>
-FlutterTizenTextureRegistrar::CreateExternalTexture(
-    const FlutterDesktopTextureInfo* texture_info,
-    FlutterDesktopRendererType renderer_type) {
-  switch (texture_info->type) {
-    case kFlutterDesktopPixelBufferTexture:
-      if (renderer_type == FlutterDesktopRendererType::kEvasGL) {
-        return std::make_unique<ExternalTexturePixelEvasGL>(
-            texture_info->pixel_buffer_config.callback,
-            texture_info->pixel_buffer_config.user_data);
-      }
-      if (enable_impeller_) {
-        return std::make_unique<ExternalTexturePixelEGLImpeller>(
-            texture_info->pixel_buffer_config.callback,
-            texture_info->pixel_buffer_config.user_data);
-      } else {
-        return std::make_unique<ExternalTexturePixelEGL>(
-            texture_info->pixel_buffer_config.callback,
-            texture_info->pixel_buffer_config.user_data);
-      }
-    case kFlutterDesktopGpuSurfaceTexture:
-      ExternalTextureExtensionType gl_extension =
-          ExternalTextureExtensionType::kNone;
-      if (engine_->renderer() &&
-          dynamic_cast<TizenRendererGL*>(engine_->renderer())
-              ->IsSupportedExtension("EGL_TIZEN_image_native_surface")) {
-        gl_extension = ExternalTextureExtensionType::kNativeSurface;
-      } else if (engine_->renderer() &&
-                 dynamic_cast<TizenRendererGL*>(engine_->renderer())
-                     ->IsSupportedExtension("EGL_EXT_image_dma_buf_import")) {
-        gl_extension = ExternalTextureExtensionType::kDmaBuffer;
-      }
-      if (renderer_type == FlutterDesktopRendererType::kEvasGL) {
-        return std::make_unique<ExternalTextureSurfaceEvasGL>(
-            gl_extension, texture_info->gpu_surface_config.callback,
-            texture_info->gpu_surface_config.user_data);
-      }
-      if (enable_impeller_) {
-        return std::make_unique<ExternalTextureSurfaceEGLImpeller>(
-            gl_extension, texture_info->gpu_surface_config.callback,
-            texture_info->gpu_surface_config.user_data);
-      } else {
-        return std::make_unique<ExternalTextureSurfaceEGL>(
-            gl_extension, texture_info->gpu_surface_config.callback,
-            texture_info->gpu_surface_config.user_data);
-      }
-  }
 }
 
 }  // namespace flutter

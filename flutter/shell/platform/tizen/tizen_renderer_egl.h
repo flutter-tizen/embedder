@@ -9,6 +9,7 @@
 
 #include <string>
 
+#include "flutter/shell/platform/tizen/external_texture.h"
 #include "flutter/shell/platform/tizen/tizen_renderer.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_gl.h"
 #include "flutter/shell/platform/tizen/tizen_view_base.h"
@@ -43,6 +44,9 @@ class TizenRendererEgl : public TizenRendererGL {
   bool IsSupportedExtension(const char* name) override;
 
   void ResizeSurface(int32_t width, int32_t height) override;
+
+  std::unique_ptr<ExternalTexture> CreateExternalTexture(
+      const FlutterDesktopTextureInfo* texture_info) override;
 
  private:
   bool ChooseEGLConfiguration();

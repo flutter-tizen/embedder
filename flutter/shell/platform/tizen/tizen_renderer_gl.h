@@ -36,6 +36,8 @@ class TizenRendererGL : public TizenRenderer {
 
   FlutterRendererConfig GetRendererConfig() override;
 
+  ExternalTextureExtensionType GetExternalTextureExtensionType();
+
  protected:
   // The current surface transformation.
   FlutterTransformation flutter_transformation_ = {1.0, 0.0, 0.0, 0.0, 1.0,
