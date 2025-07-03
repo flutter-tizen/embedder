@@ -11,7 +11,9 @@ namespace flutter {
 TizenRendererNuiGL::TizenRendererNuiGL(TizenViewNui* view_nui,
                                        bool enable_impeller)
     : renderer_(std::make_unique<TizenRendererEgl>(view_nui, enable_impeller)),
-      view_(view_nui) {}
+      view_(view_nui) {
+  is_valid_ = renderer_->IsValid();
+}
 
 TizenRendererNuiGL::~TizenRendererNuiGL() {}
 
