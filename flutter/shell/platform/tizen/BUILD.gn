@@ -231,7 +231,7 @@ embedder("flutter_tizen_common") {
 embedder("flutter_tizen_source") {
   target_type = "source_set"
 
-  defines = []
+  defines = [ "UNIT_TESTS" ]
 }
 
 executable("flutter_tizen_unittests") {
@@ -242,6 +242,7 @@ executable("flutter_tizen_unittests") {
     "channels/settings_channel_unittests.cc",
     "flutter_project_bundle_unittests.cc",
     "flutter_tizen_engine_unittest.cc",
+    "flutter_tizen_texture_registrar_unittests.cc",
   ]
 
   ldflags = [ "-Wl,--unresolved-symbols=ignore-in-shared-libs" ]

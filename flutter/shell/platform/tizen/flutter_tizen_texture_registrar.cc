@@ -45,9 +45,18 @@ int64_t FlutterTizenTextureRegistrar::RegisterTexture(
     }
   }
   std::unique_ptr<ExternalTexture> texture_gl = nullptr;
+
+#ifndef UNIT_TESTS
   if (engine_->renderer()) {
     texture_gl = engine_->renderer()->CreateExternalTexture(texture_info);
   }
+#else
+  texture_gl = std::make_unique<ExternalTextureSurfaceEGL>(
+      ExternalTextureExtensionType::kDmaBuffer,
+      texture_info->gpu_surface_config.callback,
+      texture_info->gpu_surface_config.user_data);
+#endif
+
   if (!texture_gl) {
     FT_LOG(Error) << "Failed to create ExternalTexture.";
     return -1;
