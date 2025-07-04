@@ -425,7 +425,6 @@ void FlutterTizenView::SendFlutterPointerEvent(FlutterPointerPhase phase,
     event.phase = FlutterPointerPhase::kAdd;
     event.x = new_x;
     event.y = new_y;
-    event.buttons = 0;
     event.timestamp = timestamp * 1000;
     event.device = state->pointer_id;
     event.device_kind = state->device_kind;
