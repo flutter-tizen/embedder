@@ -189,8 +189,7 @@ void KeyboardChannel::SendChannelEvent(const char* key,
     event.AddMember(kTypeKey, kKeyUp, allocator);
   }
   key_event_channel_->Send(
-      event, [this, sequence_id, symbol = std::string(key)](
-                 const uint8_t* reply, size_t reply_size) {
+      event, [this, sequence_id](const uint8_t* reply, size_t reply_size) {
         if (reply != nullptr) {
           std::unique_ptr<rapidjson::Document> decoded =
               JsonMessageCodec::GetInstance().DecodeMessage(reply, reply_size);
