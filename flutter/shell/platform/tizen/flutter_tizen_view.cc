@@ -344,17 +344,13 @@ void FlutterTizenView::OnKey(const char* key,
           // If System's back key is handled in key-down, it should be
           // handled so that "popRoute" is not called in key-up.
           if (symbol == kBackKey) {
-            if (handled && is_down) {
-              backkey_handled = true;
-            }
-
-            handled = handled || backkey_handled;
-
-            if (handled && !is_down) {
+            if (is_down) {
+              backkey_handled = handled;
+            } else {
+              handled |= backkey_handled;
               backkey_handled = false;
             }
           }
-
           if (handled) {
             return;
           }
