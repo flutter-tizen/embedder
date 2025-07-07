@@ -36,8 +36,6 @@ constexpr char kKeyDown[] = "keydown";
 constexpr char kGtkToolkit[] = "gtk";
 constexpr char kLinuxKeyMap[] = "linux";
 
-constexpr char kBackKey[] = "XF86Back";
-
 constexpr size_t kMaxPendingEvents = 1000;
 
 uint32_t Utf8ToUtf32CodePoint(const char* utf8) {
@@ -191,25 +189,12 @@ void KeyboardChannel::SendChannelEvent(const char* key,
     event.AddMember(kTypeKey, kKeyUp, allocator);
   }
   key_event_channel_->Send(
-      event, [this, sequence_id, symbol = std::string(key), is_down](
+      event, [this, sequence_id, symbol = std::string(key)](
                  const uint8_t* reply, size_t reply_size) {
         if (reply != nullptr) {
           std::unique_ptr<rapidjson::Document> decoded =
               JsonMessageCodec::GetInstance().DecodeMessage(reply, reply_size);
           bool handled = (*decoded)[kHandledKey].GetBool();
-          // If System's back key is handled in key-down, it should be
-          // handled so that "popRoute" is not called in key-up.
-          if (symbol == kBackKey) {
-            if (handled && is_down) {
-              this->backkey_handled_ = true;
-            }
-
-            handled = handled || this->backkey_handled_;
-
-            if (handled && !is_down) {
-              this->backkey_handled_ = false;
-            }
-          }
           ResolvePendingEvent(sequence_id, handled);
         }
       });

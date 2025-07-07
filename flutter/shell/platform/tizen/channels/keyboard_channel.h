@@ -63,9 +63,6 @@ class KeyboardChannel {
   // key.
   std::map<uint64_t, uint64_t> pressing_records_;
 
-  // Whether the back key of the system has been handled.
-  bool backkey_handled_;
-
   void SendEmbedderEvent(const char* key,
                          const char* string,
                          const char* compose,
