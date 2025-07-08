@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/tizen/tizen_renderer_gl.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
+#include "flutter/shell/platform/tizen/flutter_tizen_view.h"
 #include "flutter/shell/platform/tizen/tizen_view.h"
 #include "flutter/shell/platform/tizen/tizen_view_base.h"
 #include "flutter/shell/platform/tizen/tizen_window.h"
@@ -11,10 +12,6 @@
 namespace flutter {
 
 TizenRendererGL::TizenRendererGL() {}
-
-FlutterTransformation TizenRendererGL::GetTransformation() const {
-  return flutter_transformation_;
-}
 
 FlutterRendererConfig TizenRendererGL::GetRendererConfig() {
   FlutterRendererConfig config = {};
@@ -62,8 +59,7 @@ FlutterRendererConfig TizenRendererGL::GetRendererConfig() {
     if (!engine->view()) {
       return FlutterTransformation();
     }
-    return dynamic_cast<TizenRendererGL*>(engine->renderer())
-        ->GetTransformation();
+    return engine->view()->GetFlutterTransformation();
   };
   config.open_gl.gl_proc_resolver = [](void* user_data,
                                        const char* name) -> void* {

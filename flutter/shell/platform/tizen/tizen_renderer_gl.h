@@ -32,16 +32,9 @@ class TizenRendererGL : public TizenRenderer {
 
   virtual bool IsSupportedExtension(const char* name) = 0;
 
-  FlutterTransformation GetTransformation() const;
-
   FlutterRendererConfig GetRendererConfig() override;
 
   ExternalTextureExtensionType GetExternalTextureExtensionType();
-
- protected:
-  // The current surface transformation.
-  FlutterTransformation flutter_transformation_ = {1.0, 0.0, 0.0, 0.0, 1.0,
-                                                   0.0, 0.0, 0.0, 1.0};
 };
 
 }  // namespace flutter
