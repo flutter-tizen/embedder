@@ -63,7 +63,8 @@ class FlutterTizenEngine {
   FlutterTizenEngine& operator=(FlutterTizenEngine const&) = delete;
 
   // Creates a GL renderer from the given type.
-  void CreateRenderer(FlutterDesktopRendererType renderer_type);
+  std::unique_ptr<TizenRenderer> CreateRenderer(
+      FlutterDesktopRendererType renderer_type);
 
   // Starts running the engine with the given entrypoint. If null, defaults to
   // main().

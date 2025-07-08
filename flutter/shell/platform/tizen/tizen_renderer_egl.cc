@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "tizen_renderer_egl.h"
+#include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
 
 #define EFL_BETA_API_SUPPORT
 #include <Ecore_Wl2.h>
@@ -15,12 +15,11 @@
 #include <tbm_surface.h>
 #include <tbm_surface_queue.h>
 
-#include "flutter/shell/platform/tizen/logger.h"
-
 #include "flutter/shell/platform/tizen/external_texture_pixel_egl.h"
 #include "flutter/shell/platform/tizen/external_texture_pixel_egl_impeller.h"
 #include "flutter/shell/platform/tizen/external_texture_surface_egl.h"
 #include "flutter/shell/platform/tizen/external_texture_surface_egl_impeller.h"
+#include "flutter/shell/platform/tizen/logger.h"
 
 namespace flutter {
 

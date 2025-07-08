@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "tizen_renderer_gl.h"
+#include "flutter/shell/platform/tizen/tizen_renderer_gl.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/tizen_view.h"
 #include "flutter/shell/platform/tizen/tizen_view_base.h"
