@@ -22,13 +22,6 @@ class TizenRendererEgl : public TizenRendererGL {
 
   virtual ~TizenRendererEgl();
 
-  bool CreateSurface(void* render_target,
-                     void* render_target_display,
-                     int32_t width,
-                     int32_t height) override;
-
-  void DestroySurface() override;
-
   bool OnMakeCurrent() override;
 
   bool OnClearCurrent() override;
@@ -47,6 +40,14 @@ class TizenRendererEgl : public TizenRendererGL {
 
   std::unique_ptr<ExternalTexture> CreateExternalTexture(
       const FlutterDesktopTextureInfo* texture_info) override;
+
+ protected:
+  bool CreateSurface(void* render_target,
+                     void* render_target_display,
+                     int32_t width,
+                     int32_t height) override;
+
+  void DestroySurface() override;
 
  private:
   bool ChooseEGLConfiguration();

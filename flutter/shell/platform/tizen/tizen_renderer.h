@@ -20,11 +20,6 @@ class TizenRenderer {
   bool IsValid() { return is_valid_; }
 
   virtual void ResizeSurface(int32_t width, int32_t height) = 0;
-  virtual bool CreateSurface(void* render_target,
-                             void* render_target_display,
-                             int32_t width,
-                             int32_t height) = 0;
-  virtual void DestroySurface() = 0;
 
   virtual FlutterRendererConfig GetRendererConfig() = 0;
   virtual std::unique_ptr<ExternalTexture> CreateExternalTexture(
@@ -32,6 +27,11 @@ class TizenRenderer {
 
  protected:
   bool CreateSurface(TizenViewBase* view);
+  virtual bool CreateSurface(void* render_target,
+                             void* render_target_display,
+                             int32_t width,
+                             int32_t height) = 0;
+  virtual void DestroySurface() = 0;
   bool is_valid_ = false;
 };
 

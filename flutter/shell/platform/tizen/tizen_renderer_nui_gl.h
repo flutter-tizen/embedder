@@ -18,13 +18,6 @@ class TizenRendererNuiGL : public TizenRendererGL {
 
   virtual ~TizenRendererNuiGL();
 
-  bool CreateSurface(void* render_target,
-                     void* render_target_display,
-                     int32_t width,
-                     int32_t height) override;
-
-  void DestroySurface() override;
-
   bool OnMakeCurrent() override;
 
   bool OnClearCurrent() override;
@@ -43,6 +36,15 @@ class TizenRendererNuiGL : public TizenRendererGL {
 
   std::unique_ptr<ExternalTexture> CreateExternalTexture(
       const FlutterDesktopTextureInfo* info) override;
+
+ protected:
+  bool CreateSurface(void* render_target,
+                     void* render_target_display,
+                     int32_t width,
+                     int32_t height) override {
+    return false;
+  }
+  void DestroySurface() override {}
 
  private:
   std::unique_ptr<TizenRendererGL> renderer_;

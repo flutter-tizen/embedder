@@ -150,7 +150,6 @@ bool TizenRendererEgl::CreateSurface(void* render_target,
 }
 
 void TizenRendererEgl::DestroySurface() {
-  FT_LOG(Error) << "DestroySurface";
   if (egl_display_) {
     eglMakeCurrent(egl_display_, EGL_NO_SURFACE, EGL_NO_SURFACE,
                    EGL_NO_CONTEXT);

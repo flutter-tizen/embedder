@@ -94,8 +94,7 @@ std::unique_ptr<TizenRenderer> FlutterTizenEngine::CreateRenderer(
       if (auto* nui_view =
               dynamic_cast<flutter::TizenViewNui*>(view_->tizen_view())) {
         return std::make_unique<TizenRendererNuiGL>(
-            dynamic_cast<flutter::TizenViewNui*>(view_->tizen_view()),
-            project_->HasArgument("--enable-impeller"));
+            nui_view, project_->HasArgument("--enable-impeller"));
       }
 #endif
       return std::make_unique<TizenRendererEgl>(

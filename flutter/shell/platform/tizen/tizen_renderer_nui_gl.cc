@@ -17,18 +17,6 @@ TizenRendererNuiGL::TizenRendererNuiGL(TizenViewNui* view_nui,
 
 TizenRendererNuiGL::~TizenRendererNuiGL() {}
 
-bool TizenRendererNuiGL::CreateSurface(void* render_target,
-                                       void* render_target_display,
-                                       int32_t width,
-                                       int32_t height) {
-  return renderer_->CreateSurface(render_target, render_target_display, width,
-                                  height);
-}
-
-void TizenRendererNuiGL::DestroySurface() {
-  renderer_->DestroySurface();
-}
-
 std::unique_ptr<ExternalTexture> TizenRendererNuiGL::CreateExternalTexture(
     const FlutterDesktopTextureInfo* info) {
   return renderer_->CreateExternalTexture(info);

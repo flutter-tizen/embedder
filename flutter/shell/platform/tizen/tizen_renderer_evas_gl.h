@@ -24,13 +24,6 @@ class TizenRendererEvasGL : public TizenRendererGL {
 
   virtual ~TizenRendererEvasGL();
 
-  bool CreateSurface(void* render_target,
-                     void* render_target_display,
-                     int32_t width,
-                     int32_t height) override;
-
-  void DestroySurface() override;
-
   bool OnMakeCurrent() override;
 
   bool OnClearCurrent() override;
@@ -53,6 +46,14 @@ class TizenRendererEvasGL : public TizenRendererGL {
 
   std::unique_ptr<ExternalTexture> CreateExternalTexture(
       const FlutterDesktopTextureInfo* info) override;
+
+ protected:
+  bool CreateSurface(void* render_target,
+                     void* render_target_display,
+                     int32_t width,
+                     int32_t height) override;
+
+  void DestroySurface() override;
 
  private:
   Evas_GL* evas_gl_ = nullptr;
