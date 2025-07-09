@@ -196,6 +196,9 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
                                                    0.0, 0.0, 0.0, 1.0};
   // The user-defined pixel ratio.
   double user_pixel_ratio_ = 0;
+
+  // Whether the back key of the system has been handled.
+  bool backkey_handled_ = false;
 };
 
 }  // namespace flutter
