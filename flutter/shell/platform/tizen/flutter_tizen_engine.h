@@ -63,7 +63,8 @@ class FlutterTizenEngine {
   FlutterTizenEngine& operator=(FlutterTizenEngine const&) = delete;
 
   // Creates a GL renderer from the given type.
-  void CreateRenderer(FlutterDesktopRendererType renderer_type);
+  std::unique_ptr<TizenRenderer> CreateRenderer(
+      FlutterDesktopRendererType renderer_type);
 
   // Starts running the engine with the given entrypoint. If null, defaults to
   // main().
@@ -78,7 +79,8 @@ class FlutterTizenEngine {
   bool StopEngine();
 
   // Sets the view that is displaying this engine's content.
-  void SetView(FlutterTizenView* view);
+  void SetView(FlutterTizenView* view,
+               FlutterDesktopRendererType renderer_type);
 
   // The view displaying this engine's content, if any. This will be null for
   // headless engines.

@@ -6,6 +6,9 @@
 #define EMBEDDER_TIZEN_RENDERER_H_
 
 #include <cstdint>
+#include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/tizen/external_texture.h"
+#include "flutter/shell/platform/tizen/tizen_view_base.h"
 
 namespace flutter {
 
@@ -14,33 +17,21 @@ class TizenRenderer {
   TizenRenderer();
 
   virtual ~TizenRenderer();
+  bool IsValid() { return is_valid_; }
 
+  virtual void ResizeSurface(int32_t width, int32_t height) = 0;
+
+  virtual FlutterRendererConfig GetRendererConfig() = 0;
+  virtual std::unique_ptr<ExternalTexture> CreateExternalTexture(
+      const FlutterDesktopTextureInfo* texture_info) = 0;
+
+ protected:
+  bool CreateSurface(TizenViewBase* view);
   virtual bool CreateSurface(void* render_target,
                              void* render_target_display,
                              int32_t width,
                              int32_t height) = 0;
-
   virtual void DestroySurface() = 0;
-
-  bool IsValid() { return is_valid_; }
-
-  virtual bool OnMakeCurrent() = 0;
-
-  virtual bool OnClearCurrent() = 0;
-
-  virtual bool OnMakeResourceCurrent() = 0;
-
-  virtual bool OnPresent() = 0;
-
-  virtual uint32_t OnGetFBO() = 0;
-
-  virtual void* OnProcResolver(const char* name) = 0;
-
-  virtual bool IsSupportedExtension(const char* name) = 0;
-
-  virtual void ResizeSurface(int32_t width, int32_t height) = 0;
-
- protected:
   bool is_valid_ = false;
 };
 

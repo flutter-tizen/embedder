@@ -9,38 +9,45 @@
 
 #include <string>
 
+#include "flutter/shell/platform/tizen/external_texture.h"
 #include "flutter/shell/platform/tizen/tizen_renderer.h"
+#include "flutter/shell/platform/tizen/tizen_renderer_gl.h"
+#include "flutter/shell/platform/tizen/tizen_view_base.h"
 
 namespace flutter {
 
-class TizenRendererEgl : public TizenRenderer {
+class TizenRendererEgl : public TizenRendererGL {
  public:
-  explicit TizenRendererEgl(bool enable_impeller);
+  explicit TizenRendererEgl(TizenViewBase* view_base, bool enable_impeller);
 
   virtual ~TizenRendererEgl();
 
+  virtual bool OnMakeCurrent() override;
+
+  virtual bool OnClearCurrent() override;
+
+  virtual bool OnMakeResourceCurrent() override;
+
+  virtual bool OnPresent() override;
+
+  virtual uint32_t OnGetFBO() override;
+
+  virtual void* OnProcResolver(const char* name) override;
+
+  virtual bool IsSupportedExtension(const char* name) override;
+
+  virtual void ResizeSurface(int32_t width, int32_t height) override;
+
+  virtual std::unique_ptr<ExternalTexture> CreateExternalTexture(
+      const FlutterDesktopTextureInfo* texture_info) override;
+
+ protected:
   bool CreateSurface(void* render_target,
                      void* render_target_display,
                      int32_t width,
                      int32_t height) override;
 
   void DestroySurface() override;
-
-  bool OnMakeCurrent() override;
-
-  bool OnClearCurrent() override;
-
-  bool OnMakeResourceCurrent() override;
-
-  bool OnPresent() override;
-
-  uint32_t OnGetFBO() override;
-
-  void* OnProcResolver(const char* name) override;
-
-  bool IsSupportedExtension(const char* name) override;
-
-  void ResizeSurface(int32_t width, int32_t height) override;
 
  private:
   bool ChooseEGLConfiguration();

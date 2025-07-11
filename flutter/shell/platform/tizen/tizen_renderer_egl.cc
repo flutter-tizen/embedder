@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "tizen_renderer_egl.h"
+#include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
 
 #define EFL_BETA_API_SUPPORT
 #include <Ecore_Wl2.h>
@@ -15,15 +15,50 @@
 #include <tbm_surface.h>
 #include <tbm_surface_queue.h>
 
+#include "flutter/shell/platform/tizen/external_texture_pixel_egl.h"
+#include "flutter/shell/platform/tizen/external_texture_pixel_egl_impeller.h"
+#include "flutter/shell/platform/tizen/external_texture_surface_egl.h"
+#include "flutter/shell/platform/tizen/external_texture_surface_egl_impeller.h"
 #include "flutter/shell/platform/tizen/logger.h"
 
 namespace flutter {
 
-TizenRendererEgl::TizenRendererEgl(bool enable_impeller)
-    : enable_impeller_(enable_impeller) {}
+TizenRendererEgl::TizenRendererEgl(TizenViewBase* view_base,
+                                   bool enable_impeller)
+    : enable_impeller_(enable_impeller) {
+  TizenRenderer::CreateSurface(view_base);
+}
 
 TizenRendererEgl::~TizenRendererEgl() {
   DestroySurface();
+}
+
+std::unique_ptr<ExternalTexture> TizenRendererEgl::CreateExternalTexture(
+    const FlutterDesktopTextureInfo* texture_info) {
+  switch (texture_info->type) {
+    case kFlutterDesktopPixelBufferTexture:
+      if (enable_impeller_) {
+        return std::make_unique<ExternalTexturePixelEGLImpeller>(
+            texture_info->pixel_buffer_config.callback,
+            texture_info->pixel_buffer_config.user_data);
+      } else {
+        return std::make_unique<ExternalTexturePixelEGL>(
+            texture_info->pixel_buffer_config.callback,
+            texture_info->pixel_buffer_config.user_data);
+      }
+    case kFlutterDesktopGpuSurfaceTexture:
+      if (enable_impeller_) {
+        return std::make_unique<ExternalTextureSurfaceEGLImpeller>(
+            GetExternalTextureExtensionType(),
+            texture_info->gpu_surface_config.callback,
+            texture_info->gpu_surface_config.user_data);
+      } else {
+        return std::make_unique<ExternalTextureSurfaceEGL>(
+            GetExternalTextureExtensionType(),
+            texture_info->gpu_surface_config.callback,
+            texture_info->gpu_surface_config.user_data);
+      }
+  }
 }
 
 bool TizenRendererEgl::CreateSurface(void* render_target,

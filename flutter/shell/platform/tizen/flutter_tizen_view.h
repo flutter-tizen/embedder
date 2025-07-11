@@ -27,6 +27,8 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
  public:
   FlutterTizenView(FlutterViewId view_id,
                    std::unique_ptr<TizenViewBase> tizen_view,
+                   std::unique_ptr<FlutterTizenEngine> engine,
+                   FlutterDesktopRendererType renderer_type,
                    double user_pixel_ratio = 0);
 
   virtual ~FlutterTizenView();
@@ -34,33 +36,14 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   // Get the view's unique identifier.
   FlutterViewId view_id() const { return view_id_; }
 
-  // Configures the window instance with an instance of a running Flutter
-  // engine.
-  void SetEngine(std::unique_ptr<FlutterTizenEngine> engine);
+  // Set up window dependent channels.
+  void SetupChannels();
 
   FlutterTizenEngine* engine() { return engine_.get(); }
 
   TizenViewBase* tizen_view() { return tizen_view_.get(); }
 
-  // Creates rendering surface for Flutter engine to draw into.
-  // Should be called before calling FlutterEngineRun using this view.
-  void CreateRenderSurface(FlutterDesktopRendererType renderer_type);
-
-  // Destroys current rendering surface if one has been allocated.
-  void DestroyRenderSurface();
-
   void Resize(int32_t width, int32_t height);
-
-  // Callbacks for clearing context, settings context and swapping buffers,
-  // these are typically called on an engine-controlled (non-platform) thread.
-  bool OnMakeCurrent();
-  bool OnClearCurrent();
-  bool OnMakeResourceCurrent();
-  bool OnPresent();
-
-  uint32_t OnGetFBO();
-
-  void* OnProcResolver(const char* name);
 
   void OnResize(int32_t left,
                 int32_t top,
@@ -172,14 +155,14 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
                                size_t timestamp,
                                PointerState* state);
 
-  // The engine associated with this view.
-  std::unique_ptr<FlutterTizenEngine> engine_;
-
   // The view's unique identifier.
   FlutterViewId view_id_;
 
   // The platform view associated with this Flutter view.
   std::unique_ptr<TizenViewBase> tizen_view_;
+
+  // The engine associated with this view.
+  std::unique_ptr<FlutterTizenEngine> engine_;
 
   // Keeps track of pointer states.
   std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;

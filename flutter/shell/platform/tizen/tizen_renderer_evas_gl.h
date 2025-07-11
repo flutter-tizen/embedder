@@ -9,24 +9,20 @@
 
 #include <Elementary.h>
 
+#include "flutter/shell/platform/tizen/external_texture.h"
 #include "flutter/shell/platform/tizen/tizen_renderer.h"
+#include "flutter/shell/platform/tizen/tizen_renderer_gl.h"
+#include "flutter/shell/platform/tizen/tizen_view_base.h"
 
 namespace flutter {
 
 using OnPixelsDirty = std::function<void()>;
 
-class TizenRendererEvasGL : public TizenRenderer {
+class TizenRendererEvasGL : public TizenRendererGL {
  public:
-  explicit TizenRendererEvasGL();
+  explicit TizenRendererEvasGL(TizenViewBase* view_base);
 
   virtual ~TizenRendererEvasGL();
-
-  bool CreateSurface(void* render_target,
-                     void* render_target_display,
-                     int32_t width,
-                     int32_t height) override;
-
-  void DestroySurface() override;
 
   bool OnMakeCurrent() override;
 
@@ -47,6 +43,17 @@ class TizenRendererEvasGL : public TizenRenderer {
   void MarkPixelsDirty();
 
   void ResizeSurface(int32_t width, int32_t height) override;
+
+  std::unique_ptr<ExternalTexture> CreateExternalTexture(
+      const FlutterDesktopTextureInfo* info) override;
+
+ protected:
+  bool CreateSurface(void* render_target,
+                     void* render_target_display,
+                     int32_t width,
+                     int32_t height) override;
+
+  void DestroySurface() override;
 
  private:
   Evas_GL* evas_gl_ = nullptr;
