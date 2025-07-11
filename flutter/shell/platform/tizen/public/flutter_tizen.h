@@ -100,6 +100,8 @@ typedef struct {
   // Array of Dart entrypoint arguments. This is deep copied during the call
   // to FlutterDesktopRunEngine.
   const char** dart_entrypoint_argv;
+  // Whether the UI isolate should run on the platform thread.
+  bool merged_platform_ui_thread;
 } FlutterDesktopEngineProperties;
 
 // ========== Engine ==========

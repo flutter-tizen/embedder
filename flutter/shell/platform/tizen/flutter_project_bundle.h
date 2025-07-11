@@ -67,6 +67,9 @@ class FlutterProjectBundle {
     return dart_entrypoint_arguments_;
   }
 
+  // Whether the UI isolate should be running on the platform thread.
+  bool merged_platform_ui_thread() const { return merged_platform_ui_thread_; }
+
  private:
   std::filesystem::path assets_path_;
   std::filesystem::path icu_path_;
@@ -80,6 +83,9 @@ class FlutterProjectBundle {
 
   // Dart entrypoint arguments.
   std::vector<std::string> dart_entrypoint_arguments_;
+
+  // Whether the UI isolate should be running on the platform thread.
+  bool merged_platform_ui_thread_;
 };
 
 }  // namespace flutter

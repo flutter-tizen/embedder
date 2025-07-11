@@ -174,6 +174,11 @@ bool FlutterTizenEngine::RunEngine() {
     custom_task_runners.render_task_runner = &render_task_runner;
   }
 
+  if (project_->merged_platform_ui_thread()) {
+    FT_LOG(Info) << "Running with merged platform and UI thread. Experimental.";
+    custom_task_runners.ui_task_runner = &platform_task_runner;
+  }
+
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
   args.assets_path = assets_path_string.c_str();
