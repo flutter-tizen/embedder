@@ -22,23 +22,23 @@ class TizenRendererEgl : public TizenRendererGL {
 
   virtual ~TizenRendererEgl();
 
-  bool OnMakeCurrent() override;
+  virtual bool OnMakeCurrent() override;
 
-  bool OnClearCurrent() override;
+  virtual bool OnClearCurrent() override;
 
-  bool OnMakeResourceCurrent() override;
+  virtual bool OnMakeResourceCurrent() override;
 
-  bool OnPresent() override;
+  virtual bool OnPresent() override;
 
-  uint32_t OnGetFBO() override;
+  virtual uint32_t OnGetFBO() override;
 
-  void* OnProcResolver(const char* name) override;
+  virtual void* OnProcResolver(const char* name) override;
 
-  bool IsSupportedExtension(const char* name) override;
+  virtual bool IsSupportedExtension(const char* name) override;
 
-  void ResizeSurface(int32_t width, int32_t height) override;
+  virtual void ResizeSurface(int32_t width, int32_t height) override;
 
-  std::unique_ptr<ExternalTexture> CreateExternalTexture(
+  virtual std::unique_ptr<ExternalTexture> CreateExternalTexture(
       const FlutterDesktopTextureInfo* texture_info) override;
 
  protected:
