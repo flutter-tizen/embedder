@@ -20,8 +20,7 @@ class FlutterTizenEngine;
 // Thread safety: All member methods are thread safe.
 class FlutterTizenTextureRegistrar {
  public:
-  explicit FlutterTizenTextureRegistrar(FlutterTizenEngine* engine,
-                                        bool enable_impeller);
+  explicit FlutterTizenTextureRegistrar(FlutterTizenEngine* engine);
 
   // Registers a texture described by the given |texture_info| object.
   //
@@ -47,17 +46,12 @@ class FlutterTizenTextureRegistrar {
                        size_t height,
                        FlutterOpenGLTexture* texture);
 
-  std::unique_ptr<ExternalTexture> CreateExternalTexture(
-      const FlutterDesktopTextureInfo* info,
-      FlutterDesktopRendererType renderer_type);
-
  private:
   FlutterTizenEngine* engine_ = nullptr;
 
   // All registered textures, keyed by their IDs.
   std::unordered_map<int64_t, std::unique_ptr<ExternalTexture>> textures_;
   std::mutex map_mutex_;
-  bool enable_impeller_ = false;
 };
 
 }  // namespace flutter

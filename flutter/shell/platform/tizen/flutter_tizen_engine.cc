@@ -19,6 +19,11 @@
 #include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_evas_gl.h"
 
+#ifdef NUI_SUPPORT
+#include "flutter/shell/platform/tizen/tizen_renderer_nui_gl.h"
+#include "flutter/shell/platform/tizen/tizen_view_nui.h"
+#endif
+
 namespace flutter {
 
 namespace {
@@ -79,23 +84,21 @@ FlutterTizenEngine::~FlutterTizenEngine() {
   StopEngine();
 }
 
-void FlutterTizenEngine::CreateRenderer(
+std::unique_ptr<TizenRenderer> FlutterTizenEngine::CreateRenderer(
     FlutterDesktopRendererType renderer_type) {
-  if (renderer_type == FlutterDesktopRendererType::kEvasGL) {
-    renderer_ = std::make_unique<TizenRendererEvasGL>();
-
-    render_loop_ = std::make_unique<TizenRenderEventLoop>(
-        std::this_thread::get_id(),  // main thread
-        embedder_api_.GetCurrentTime,
-        [this](const auto* task) {
-          if (embedder_api_.RunTask(this->engine_, task) != kSuccess) {
-            FT_LOG(Error) << "Could not post an engine task.";
-          }
-        },
-        renderer_.get());
-  } else {
-    renderer_ = std::make_unique<TizenRendererEgl>(
-        project_->HasArgument("--enable-impeller"));
+  switch (renderer_type) {
+    case FlutterDesktopRendererType::kEvasGL:
+      return std::make_unique<TizenRendererEvasGL>(view_->tizen_view());
+    case FlutterDesktopRendererType::kEGL:
+#ifdef NUI_SUPPORT
+      if (auto* nui_view =
+              dynamic_cast<flutter::TizenViewNui*>(view_->tizen_view())) {
+        return std::make_unique<TizenRendererNuiGL>(
+            nui_view, project_->HasArgument("--enable-impeller"));
+      }
+#endif
+      return std::make_unique<TizenRendererEgl>(
+          view_->tizen_view(), project_->HasArgument("--enable-impeller"));
   }
 }
 
@@ -244,8 +247,7 @@ bool FlutterTizenEngine::RunEngine() {
       internal_plugin_registrar_->messenger());
 
   if (IsHeaded()) {
-    texture_registrar_ = std::make_unique<FlutterTizenTextureRegistrar>(
-        this, project_->HasArgument("--enable-impeller"));
+    texture_registrar_ = std::make_unique<FlutterTizenTextureRegistrar>(this);
     keyboard_channel_ = std::make_unique<KeyboardChannel>(
         internal_plugin_registrar_->messenger(),
         [this](const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
@@ -294,8 +296,22 @@ bool FlutterTizenEngine::StopEngine() {
   return false;
 }
 
-void FlutterTizenEngine::SetView(FlutterTizenView* view) {
+void FlutterTizenEngine::SetView(FlutterTizenView* view,
+                                 FlutterDesktopRendererType renderer_type) {
   view_ = view;
+  renderer_ = CreateRenderer(renderer_type);
+
+  if (renderer_type == FlutterDesktopRendererType::kEvasGL) {
+    render_loop_ = std::make_unique<TizenRenderEventLoop>(
+        std::this_thread::get_id(),  // main thread
+        embedder_api_.GetCurrentTime,
+        [this](const auto* task) {
+          if (embedder_api_.RunTask(this->engine_, task) != kSuccess) {
+            FT_LOG(Error) << "Could not post an engine task.";
+          }
+        },
+        renderer_.get());
+  }
 }
 
 void FlutterTizenEngine::AddPluginRegistrarDestructionCallback(
@@ -435,79 +451,17 @@ FlutterDesktopMessage FlutterTizenEngine::ConvertToDesktopMessage(
 }
 
 FlutterRendererConfig FlutterTizenEngine::GetRendererConfig() {
-  FlutterRendererConfig config = {};
   if (IsHeaded()) {
-    config.type = kOpenGL;
-    config.open_gl.struct_size = sizeof(config.open_gl);
-    config.open_gl.make_current = [](void* user_data) -> bool {
-      auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-      if (!engine->view()) {
-        return false;
-      }
-      return engine->view()->OnMakeCurrent();
-    };
-    config.open_gl.make_resource_current = [](void* user_data) -> bool {
-      auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-      if (!engine->view()) {
-        return false;
-      }
-      return engine->view()->OnMakeResourceCurrent();
-    };
-    config.open_gl.clear_current = [](void* user_data) -> bool {
-      auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-      if (!engine->view()) {
-        return false;
-      }
-      return engine->view()->OnClearCurrent();
-    };
-    config.open_gl.present = [](void* user_data) -> bool {
-      auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-      if (!engine->view()) {
-        return false;
-      }
-      return engine->view()->OnPresent();
-    };
-    config.open_gl.fbo_callback = [](void* user_data) -> uint32_t {
-      auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-      if (!engine->view()) {
-        return false;
-      }
-      return engine->view()->OnGetFBO();
-    };
-    config.open_gl.surface_transformation =
-        [](void* user_data) -> FlutterTransformation {
-      auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-      if (!engine->view()) {
-        return FlutterTransformation();
-      }
-      return engine->view()->GetFlutterTransformation();
-    };
-    config.open_gl.gl_proc_resolver = [](void* user_data,
-                                         const char* name) -> void* {
-      auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-      if (!engine->view()) {
-        return nullptr;
-      }
-      return engine->view()->OnProcResolver(name);
-    };
-    config.open_gl.gl_external_texture_frame_callback =
-        [](void* user_data, int64_t texture_id, size_t width, size_t height,
-           FlutterOpenGLTexture* texture) -> bool {
-      auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-      if (!engine->texture_registrar()) {
-        return false;
-      }
-      return engine->texture_registrar()->PopulateTexture(texture_id, width,
-                                                          height, texture);
-    };
+    return renderer()->GetRendererConfig();
   } else {
+    FlutterRendererConfig config = {};
     config.type = kSoftware;
     config.software.struct_size = sizeof(config.software);
     config.software.surface_present_callback =
         [](void* user_data, const void* allocation, size_t row_bytes,
            size_t height) -> bool { return true; };
+    return config;
   }
-  return config;
 }
 
 void FlutterTizenEngine::DispatchAccessibilityAction(

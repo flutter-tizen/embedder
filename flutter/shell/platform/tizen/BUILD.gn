@@ -115,6 +115,7 @@ template("embedder") {
       "tizen_renderer.cc",
       "tizen_renderer_egl.cc",
       "tizen_renderer_evas_gl.cc",
+      "tizen_renderer_gl.cc",
       "tizen_view_elementary.cc",
       "tizen_vsync_waiter.cc",
       "tizen_window_ecore_wl2.cc",
@@ -171,6 +172,7 @@ template("embedder") {
       sources += [
         "flutter_tizen_nui.cc",
         "tizen_clipboard.cc",
+        "tizen_renderer_nui_gl.cc",
         "tizen_view_nui.cc",
       ]
 
@@ -229,7 +231,7 @@ embedder("flutter_tizen_common") {
 embedder("flutter_tizen_source") {
   target_type = "source_set"
 
-  defines = []
+  defines = [ "UNIT_TESTS" ]
 }
 
 executable("flutter_tizen_unittests") {
