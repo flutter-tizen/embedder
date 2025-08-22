@@ -53,8 +53,12 @@ TizenWindowEcoreWl2::TizenWindowEcoreWl2(TizenGeometry geometry,
                                          bool transparent,
                                          bool focusable,
                                          bool top_level,
+                                         bool pointing_device_support,
+                                         bool floating_menu_support,
                                          void* window_handle = nullptr)
-    : TizenWindow(geometry, transparent, focusable, top_level) {
+    : TizenWindow(geometry, transparent, focusable, top_level),
+      pointing_device_support_(pointing_device_support),
+      floating_menu_support_(floating_menu_support) {
   if (!CreateWindow(window_handle)) {
     FT_LOG(Error) << "Failed to create a platform window.";
     return;
@@ -155,9 +159,11 @@ void TizenWindowEcoreWl2::SetWindowOptions() {
 #endif
   ecore_wl2_window_available_rotations_set(ecore_wl2_window_, rotations,
                                            sizeof(rotations) / sizeof(int));
-
   EnableCursor();
 }
+#ifdef TV_PROFILE
+typedef enum _Device_Type { MOUSE_DEVICE = 3, TOUCH_DEVICE } Device_Type;
+#endif
 
 void TizenWindowEcoreWl2::EnableCursor() {
 #ifdef TV_PROFILE
@@ -223,6 +229,84 @@ void TizenWindowEcoreWl2::EnableCursor() {
 #endif
 }
 
+void TizenWindowEcoreWl2::SetPointingDeviceSupport() {
+#ifdef TV_PROFILE
+  // dlopen is used here because the TV-specific library libvd-win-util.so
+  // and the relevant headers are not present in the rootstrap.
+  void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
+  if (!handle) {
+    FT_LOG(Error) << "Could not open a shared library libvd-win-util.so.";
+    return;
+  }
+
+  // These functions are defined in vd-win-util's cursor_module.h.
+  int (*Mouse_Pointer_Support)(int type, void* ecore_wl2_win);
+  *(void**)(&Mouse_Pointer_Support) = dlsym(handle, "Mouse_Pointer_Support");
+
+  if (!Mouse_Pointer_Support) {
+    FT_LOG(Error) << "Could not load symbols from the library.";
+    dlclose(handle);
+    return;
+  }
+
+  Mouse_Pointer_Support(pointing_device_support_, ecore_wl2_window_);
+  dlclose(handle);
+#endif
+}
+
+void TizenWindowEcoreWl2::SetFloatingMenuSupport() {
+#ifdef TV_PROFILE
+  // dlopen is used here because the TV-specific library libvd-win-util.so
+  // and the relevant headers are not present in the rootstrap.
+  void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
+  if (!handle) {
+    FT_LOG(Error) << "Could not open a shared library libvd-win-util.so.";
+    return;
+  }
+
+  // These functions are defined in vd-win-util's cursor_module.h.
+  int (*Mouse_Pointer_Not_Allow)(int enable, void* ecore_wl2_win);
+  *(void**)(&Mouse_Pointer_Not_Allow) =
+      dlsym(handle, "Mouse_Pointer_Not_Allow");
+
+  if (!Mouse_Pointer_Not_Allow) {
+    FT_LOG(Error) << "Could not load symbols from the library.";
+    dlclose(handle);
+    return;
+  }
+
+  Mouse_Pointer_Not_Allow(!floating_menu_support_, ecore_wl2_window_);
+  dlclose(handle);
+#endif
+}
+
+void TizenWindowEcoreWl2::ShowUnsupportedToast() {
+#ifdef TV_PROFILE
+  // dlopen is used here because the TV-specific library libvd-win-util.so
+  // and the relevant headers are not present in the rootstrap.
+  void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
+  if (!handle) {
+    FT_LOG(Error) << "Could not open a shared library libvd-win-util.so.";
+    return;
+  }
+
+  // These functions are defined in vd-win-util's cursor_module.h.
+  void (*Unsupported_Toast_Launch)(Device_Type type, int show, int enable,
+                                   void* ecore_wl2_win);
+  *(void**)(&Unsupported_Toast_Launch) =
+      dlsym(handle, "Unsupported_Toast_Launch");
+
+  if (!Unsupported_Toast_Launch) {
+    FT_LOG(Error) << "Could not load symbols from the library.";
+    dlclose(handle);
+    return;
+  }
+
+  Unsupported_Toast_Launch(MOUSE_DEVICE, 1, 1, ecore_wl2_window_);
+  dlclose(handle);
+#endif
+}
+
 void TizenWindowEcoreWl2::RegisterEventHandlers() {
   ecore_event_handlers_.push_back(ecore_event_handler_add(
       ECORE_WL2_EVENT_WINDOW_ROTATE,
@@ -273,6 +357,20 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
       ECORE_EVENT_MOUSE_BUTTON_DOWN,
       [](void* data, int type, void* event) -> Eina_Bool {
         auto* self = static_cast<TizenWindowEcoreWl2*>(data);
+        if (!self->show_unsupported_toast_) {
+          if (!self->pointing_device_support_) {
+            // Toast popup should be called first to set up D-PAD.
+            self->ShowUnsupportedToast();
+            self->SetPointingDeviceSupport();
+          } else if (!self->floating_menu_support_) {
+            self->SetFloatingMenuSupport();
+            self->ShowUnsupportedToast();
+          }
+
+          self->show_unsupported_toast_ = true;
+          return ECORE_CALLBACK_PASS_ON;
+        }
+
         if (self->view_delegate_) {
           auto* button_event =
               reinterpret_cast<Ecore_Event_Mouse_Button*>(event);
@@ -440,8 +538,8 @@ bool TizenWindowEcoreWl2::SetGeometry(TizenGeometry geometry) {
                                          geometry.left, geometry.top,
                                          geometry.width, geometry.height);
   // FIXME: The changes set in `ecore_wl2_window_geometry_set` seems to apply
-  // only after calling `ecore_wl2_window_position_set`. Call a more appropriate
-  // API that flushes geometry settings to the compositor.
+  // only after calling `ecore_wl2_window_position_set`. Call a more
+  // appropriate API that flushes geometry settings to the compositor.
   ecore_wl2_window_position_set(ecore_wl2_window_, geometry.left, geometry.top);
   return true;
 }

@@ -23,6 +23,8 @@ class TizenWindowEcoreWl2 : public TizenWindow {
                       bool transparent,
                       bool focusable,
                       bool top_level,
+                      bool pointing_device_support,
+                      bool floating_menu_support,
                       void* window_handle);
 
   ~TizenWindowEcoreWl2();
@@ -64,6 +66,12 @@ class TizenWindowEcoreWl2 : public TizenWindow {
 
   void EnableCursor();
 
+  void SetPointingDeviceSupport();
+
+  void SetFloatingMenuSupport();
+
+  void ShowUnsupportedToast();
+
   void RegisterEventHandlers();
 
   void UnregisterEventHandlers();
@@ -81,6 +89,10 @@ class TizenWindowEcoreWl2 : public TizenWindow {
 
   tizen_policy* tizen_policy_ = nullptr;
   uint32_t resource_id_ = 0;
+
+  bool pointing_device_support_ = true;
+  bool floating_menu_support_ = true;
+  bool show_unsupported_toast_ = false;
 };
 
 }  // namespace flutter
