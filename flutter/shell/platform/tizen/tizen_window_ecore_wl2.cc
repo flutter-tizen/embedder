@@ -5,8 +5,12 @@
 #include "tizen_window_ecore_wl2.h"
 
 #ifdef TV_PROFILE
+#include <app.h>
+#include <app_preference.h>
 #include <dlfcn.h>
+#include <time.h>
 #include <vconf.h>
+#include <sstream>
 #endif
 
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -23,6 +27,8 @@ constexpr int kScrollDirectionHorizontal = 1;
 #ifdef TV_PROFILE
 constexpr char kSysMouseCursorPointerSizeVConfKey[] =
     "db/menu/system/mouse-pointer-size";
+constexpr char kSysPointingDeviceSupportToastSharedPreferenceKey[] =
+    "flutter-tizen/preference/pointing-device-support-toast";
 constexpr char kEcoreWL2InputCursorThemeName[] = "vd-cursors";
 #endif
 
@@ -47,6 +53,93 @@ FlutterPointerDeviceKind ToFlutterDeviceKind(const Ecore_Device* dev) {
   }
 }
 
+#ifdef TV_PROFILE
+time_t GetBootTimeEpoch() {
+  struct timespec now, boottime;
+  if (clock_gettime(CLOCK_REALTIME, &now) != 0) {
+    FT_LOG(Error) << "Fail to get clock_gettime(CLOCK_REALTIME).";
+    return -1;
+  }
+  if (clock_gettime(CLOCK_BOOTTIME, &boottime) != 0) {
+    FT_LOG(Error) << "Fail to get clock_gettime(CLOCK_BOOTTIME).";
+    return -1;
+  }
+  time_t boot_time_epoch = now.tv_sec - boottime.tv_sec;
+  return (boot_time_epoch / 10) * 10;
+}
+
+bool GetPointingDeviceToastPreference() {
+  bool show_unsupported_toast = false;
+  time_t boot_time = GetBootTimeEpoch();
+
+  if (boot_time != -1) {
+    char* app_id = nullptr;
+    int ret = app_get_id(&app_id);
+    if (ret != APP_CONTROL_ERROR_NONE || !app_id) {
+      FT_LOG(Error) << "Fail to get app id.";
+      return false;
+    }
+
+    std::ostringstream boot_time_buffer;
+    boot_time_buffer << boot_time;
+    std::string preference_key =
+        std::string(kSysPointingDeviceSupportToastSharedPreferenceKey) + "/" +
+        app_id + "/" + boot_time_buffer.str();
+
+    ret =
+        preference_get_boolean(preference_key.c_str(), &show_unsupported_toast);
+    if (ret != PREFERENCE_ERROR_NONE) {
+      FT_LOG(Error) << "Fail to get toasted preference. ("
+                    << get_error_message(ret) << ")";
+      return false;
+    }
+  }
+  return show_unsupported_toast;
+}
+
+bool PreferenceItemCallback(const char* key, void* user_data) {
+  char* app_id = (char*)user_data;
+  if (!app_id || !key) {
+    return true;
+  }
+
+  std::string preference_key =
+      std::string(kSysPointingDeviceSupportToastSharedPreferenceKey) + "/" +
+      app_id;
+  if (!strncmp(key, preference_key.c_str(), preference_key.length())) {
+    preference_remove(key);
+  }
+  return true;
+}
+
+void SetPointingDevicePreference() {
+  time_t boot_time = GetBootTimeEpoch();
+
+  if (boot_time != -1) {
+    char* app_id = nullptr;
+    int ret = app_get_id(&app_id);
+    if (ret != APP_CONTROL_ERROR_NONE || !app_id) {
+      FT_LOG(Error) << "Fail to get app id.";
+      return;
+    }
+
+    std::ostringstream boot_time_buffer;
+    boot_time_buffer << boot_time;
+    std::string preference_key =
+        std::string(kSysPointingDeviceSupportToastSharedPreferenceKey) + "/" +
+        app_id + "/" + boot_time_buffer.str();
+
+    preference_foreach_item(PreferenceItemCallback, app_id);
+
+    ret = preference_set_boolean(preference_key.c_str(), true);
+    if (ret != PREFERENCE_ERROR_NONE) {
+      FT_LOG(Error) << "Fail to set toasted preference.";
+      return;
+    }
+  }
+}
+#endif
+
 }  // namespace
 
 TizenWindowEcoreWl2::TizenWindowEcoreWl2(TizenGeometry geometry,
@@ -56,9 +149,13 @@ TizenWindowEcoreWl2::TizenWindowEcoreWl2(TizenGeometry geometry,
                                          bool pointing_device_support,
                                          bool floating_menu_support,
                                          void* window_handle = nullptr)
-    : TizenWindow(geometry, transparent, focusable, top_level),
+    : TizenWindow(geometry, transparent, focusable, top_level)
+#ifdef TV_PROFILE
+      ,
       pointing_device_support_(pointing_device_support),
-      floating_menu_support_(floating_menu_support) {
+      floating_menu_support_(floating_menu_support)
+#endif
+{
   if (!CreateWindow(window_handle)) {
     FT_LOG(Error) << "Failed to create a platform window.";
     return;
@@ -68,7 +165,7 @@ TizenWindowEcoreWl2::TizenWindowEcoreWl2(TizenGeometry geometry,
   RegisterEventHandlers();
   PrepareInputMethod();
   Show();
-}
+}  // namespace flutter
 
 TizenWindowEcoreWl2::~TizenWindowEcoreWl2() {
   UnregisterEventHandlers();
@@ -357,19 +454,31 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
       ECORE_EVENT_MOUSE_BUTTON_DOWN,
       [](void* data, int type, void* event) -> Eina_Bool {
         auto* self = static_cast<TizenWindowEcoreWl2*>(data);
-        if (!self->show_unsupported_toast_) {
+#ifdef TV_PROFILE
+        if ((!self->pointing_device_support_ ||
+             !self->floating_menu_support_) &&
+            !self->show_unsupported_toast_) {
+          bool shown = GetPointingDeviceToastPreference();
           if (!self->pointing_device_support_) {
-            // Toast popup should be called first to set up D-PAD.
-            self->ShowUnsupportedToast();
+            if (!shown) {
+              // Toast popup should be called first to set up D-PAD.
+              self->ShowUnsupportedToast();
+              SetPointingDevicePreference();
+            }
             self->SetPointingDeviceSupport();
+
           } else if (!self->floating_menu_support_) {
             self->SetFloatingMenuSupport();
-            self->ShowUnsupportedToast();
+            if (!shown) {
+              self->ShowUnsupportedToast();
+              SetPointingDevicePreference();
+            }
           }
 
           self->show_unsupported_toast_ = true;
           return ECORE_CALLBACK_PASS_ON;
         }
+#endif
 
         if (self->view_delegate_) {
           auto* button_event =

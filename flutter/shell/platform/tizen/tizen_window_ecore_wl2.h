@@ -90,9 +90,11 @@ class TizenWindowEcoreWl2 : public TizenWindow {
   tizen_policy* tizen_policy_ = nullptr;
   uint32_t resource_id_ = 0;
 
+#ifdef TV_PROFILE
   bool pointing_device_support_ = true;
   bool floating_menu_support_ = true;
   bool show_unsupported_toast_ = false;
+#endif
 };
 
 }  // namespace flutter

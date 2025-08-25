@@ -33,6 +33,8 @@ unified_packages = [
   'capi-appfw-app-common-devel',
   'capi-appfw-app-control',
   'capi-appfw-app-control-devel',
+  'capi-appfw-preference',
+  'capi-appfw-preference-devel',
   'capi-base-common',
   'capi-base-common-devel',
   'capi-base-utils',
