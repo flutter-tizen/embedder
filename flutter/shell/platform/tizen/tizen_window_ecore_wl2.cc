@@ -89,8 +89,6 @@ bool GetPointingDeviceToastPreference() {
     ret =
         preference_get_boolean(preference_key.c_str(), &show_unsupported_toast);
     if (ret != PREFERENCE_ERROR_NONE) {
-      FT_LOG(Error) << "Fail to get toasted preference. ("
-                    << get_error_message(ret) << ")";
       return false;
     }
   }
@@ -258,9 +256,6 @@ void TizenWindowEcoreWl2::SetWindowOptions() {
                                            sizeof(rotations) / sizeof(int));
   EnableCursor();
 }
-#ifdef TV_PROFILE
-typedef enum _Device_Type { MOUSE_DEVICE = 3, TOUCH_DEVICE } Device_Type;
-#endif
 
 void TizenWindowEcoreWl2::EnableCursor() {
 #ifdef TV_PROFILE
@@ -327,6 +322,8 @@ void TizenWindowEcoreWl2::EnableCursor() {
 }
 
 #ifdef TV_PROFILE
+typedef enum _Device_Type { MOUSE_DEVICE = 3, TOUCH_DEVICE } Device_Type;
+
 void TizenWindowEcoreWl2::SetPointingDeviceSupport() {
   // dlopen is used here because the TV-specific library libvd-win-util.so
   // and the relevant headers are not present in the rootstrap.
