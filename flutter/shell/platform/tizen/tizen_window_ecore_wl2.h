@@ -66,11 +66,13 @@ class TizenWindowEcoreWl2 : public TizenWindow {
 
   void EnableCursor();
 
+#ifdef TV_PROFILE
   void SetPointingDeviceSupport();
 
   void SetFloatingMenuSupport();
 
   void ShowUnsupportedToast();
+#endif
 
   void RegisterEventHandlers();
 

@@ -326,8 +326,8 @@ void TizenWindowEcoreWl2::EnableCursor() {
 #endif
 }
 
-void TizenWindowEcoreWl2::SetPointingDeviceSupport() {
 #ifdef TV_PROFILE
+void TizenWindowEcoreWl2::SetPointingDeviceSupport() {
   // dlopen is used here because the TV-specific library libvd-win-util.so
   // and the relevant headers are not present in the rootstrap.
   void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
@@ -348,11 +348,9 @@ void TizenWindowEcoreWl2::SetPointingDeviceSupport() {
 
   Mouse_Pointer_Support(pointing_device_support_, ecore_wl2_window_);
   dlclose(handle);
-#endif
 }
 
 void TizenWindowEcoreWl2::SetFloatingMenuSupport() {
-#ifdef TV_PROFILE
   // dlopen is used here because the TV-specific library libvd-win-util.so
   // and the relevant headers are not present in the rootstrap.
   void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
@@ -374,11 +372,9 @@ void TizenWindowEcoreWl2::SetFloatingMenuSupport() {
 
   Mouse_Pointer_Not_Allow(!floating_menu_support_, ecore_wl2_window_);
   dlclose(handle);
-#endif
 }
 
 void TizenWindowEcoreWl2::ShowUnsupportedToast() {
-#ifdef TV_PROFILE
   // dlopen is used here because the TV-specific library libvd-win-util.so
   // and the relevant headers are not present in the rootstrap.
   void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
@@ -401,8 +397,8 @@ void TizenWindowEcoreWl2::ShowUnsupportedToast() {
 
   Unsupported_Toast_Launch(MOUSE_DEVICE, 1, 1, ecore_wl2_window_);
   dlclose(handle);
-#endif
 }
+#endif
 
 void TizenWindowEcoreWl2::RegisterEventHandlers() {
   ecore_event_handlers_.push_back(ecore_event_handler_add(
