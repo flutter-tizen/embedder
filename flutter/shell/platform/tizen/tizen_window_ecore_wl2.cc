@@ -97,8 +97,11 @@ std::string GetPreferenceKey(bool clear_exist_key) {
   }
 
   std::string app_id = id;
+  free(id);
+
   std::ostringstream boot_time_buffer;
   boot_time_buffer << boot_time;
+
   std::string preference_key =
       std::string(kSysPointingDeviceSupportToastSharedPreferenceKey) + "/" +
       app_id + "/" + boot_time_buffer.str();
