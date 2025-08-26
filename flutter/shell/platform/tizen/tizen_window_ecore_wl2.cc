@@ -55,16 +55,16 @@ FlutterPointerDeviceKind ToFlutterDeviceKind(const Ecore_Device* dev) {
 
 #ifdef TV_PROFILE
 time_t GetBootTimeEpoch() {
-  struct timespec now, boottime;
+  struct timespec now, boot_time;
   if (clock_gettime(CLOCK_REALTIME, &now) != 0) {
     FT_LOG(Error) << "Fail to get clock_gettime(CLOCK_REALTIME).";
     return -1;
   }
-  if (clock_gettime(CLOCK_BOOTTIME, &boottime) != 0) {
+  if (clock_gettime(CLOCK_BOOTTIME, &boot_time) != 0) {
     FT_LOG(Error) << "Fail to get clock_gettime(CLOCK_BOOTTIME).";
     return -1;
   }
-  time_t boot_time_epoch = now.tv_sec - boottime.tv_sec;
+  time_t boot_time_epoch = now.tv_sec - boot_time.tv_sec;
   return (boot_time_epoch / 10) * 10;
 }
 
@@ -322,6 +322,7 @@ void TizenWindowEcoreWl2::EnableCursor() {
 }
 
 #ifdef TV_PROFILE
+typedef enum _MouseSupport { DISABLE = 0, ENABLE } MouseSupport;
 typedef enum _Device_Type { MOUSE_DEVICE = 3, TOUCH_DEVICE } Device_Type;
 
 void TizenWindowEcoreWl2::SetPointingDeviceSupport() {
@@ -334,7 +335,7 @@ void TizenWindowEcoreWl2::SetPointingDeviceSupport() {
   }
 
   // These functions are defined in vd-win-util's cursor_module.h.
-  int (*Mouse_Pointer_Support)(int type, void* ecore_wl2_win);
+  int (*Mouse_Pointer_Support)(MouseSupport type, void* ecore_wl2_win);
   *(void**)(&Mouse_Pointer_Support) = dlsym(handle, "Mouse_Pointer_Support");
 
   if (!Mouse_Pointer_Support) {
@@ -343,7 +344,8 @@ void TizenWindowEcoreWl2::SetPointingDeviceSupport() {
     return;
   }
 
-  Mouse_Pointer_Support(pointing_device_support_, ecore_wl2_window_);
+  Mouse_Pointer_Support(pointing_device_support_ ? ENABLE : DISABLE,
+                        ecore_wl2_window_);
   dlclose(handle);
 }
 
