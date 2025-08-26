@@ -85,6 +85,7 @@ bool GetPointingDeviceToastPreference() {
     std::string preference_key =
         std::string(kSysPointingDeviceSupportToastSharedPreferenceKey) + "/" +
         app_id + "/" + boot_time_buffer.str();
+    free(app_id);
 
     ret =
         preference_get_boolean(preference_key.c_str(), &show_unsupported_toast);
@@ -114,21 +115,20 @@ void SetPointingDevicePreference() {
   time_t boot_time = GetBootTimeEpoch();
 
   if (boot_time != -1) {
-    char* app_id = nullptr;
-    int ret = app_get_id(&app_id);
-    if (ret != APP_CONTROL_ERROR_NONE || !app_id) {
+    char* id = nullptr;
+    int ret = app_get_id(&id);
+    if (ret != APP_CONTROL_ERROR_NONE || !id) {
       FT_LOG(Error) << "Fail to get app id.";
       return;
     }
 
+    std::string app_id = id;
     std::ostringstream boot_time_buffer;
     boot_time_buffer << boot_time;
     std::string preference_key =
         std::string(kSysPointingDeviceSupportToastSharedPreferenceKey) + "/" +
         app_id + "/" + boot_time_buffer.str();
-
-    preference_foreach_item(PreferenceItemCallback, app_id);
-
+    preference_foreach_item(PreferenceItemCallback, (void*)app_id.c_str());
     ret = preference_set_boolean(preference_key.c_str(), true);
     if (ret != PREFERENCE_ERROR_NONE) {
       FT_LOG(Error) << "Fail to set toasted preference.";
@@ -454,23 +454,18 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
              !self->floating_menu_support_) &&
             !self->show_unsupported_toast_) {
           bool shown = GetPointingDeviceToastPreference();
-          if (!self->pointing_device_support_) {
-            if (!shown) {
-              // Toast popup should be called first to set up D-PAD.
-              self->ShowUnsupportedToast();
-              SetPointingDevicePreference();
-            }
-            self->SetPointingDeviceSupport();
-
-          } else if (!self->floating_menu_support_) {
+          if (!self->floating_menu_support_) {
             self->SetFloatingMenuSupport();
-            if (!shown) {
-              self->ShowUnsupportedToast();
-              SetPointingDevicePreference();
-            }
           }
-
+          if (!shown) {
+            // Toast popup should be called first to set up D-PAD.
+            self->ShowUnsupportedToast();
+            SetPointingDevicePreference();
+          }
           self->show_unsupported_toast_ = true;
+          if (self->floating_menu_support_ && !self->pointing_device_support_) {
+            self->SetPointingDeviceSupport();
+          }
           return ECORE_CALLBACK_PASS_ON;
         }
 #endif
