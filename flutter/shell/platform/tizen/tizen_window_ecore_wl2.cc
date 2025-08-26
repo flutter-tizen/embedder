@@ -68,34 +68,6 @@ time_t GetBootTimeEpoch() {
   return (boot_time_epoch / 10) * 10;
 }
 
-bool GetPointingDeviceToastPreference() {
-  bool show_unsupported_toast = false;
-  time_t boot_time = GetBootTimeEpoch();
-
-  if (boot_time != -1) {
-    char* app_id = nullptr;
-    int ret = app_get_id(&app_id);
-    if (ret != APP_CONTROL_ERROR_NONE || !app_id) {
-      FT_LOG(Error) << "Fail to get app id.";
-      return false;
-    }
-
-    std::ostringstream boot_time_buffer;
-    boot_time_buffer << boot_time;
-    std::string preference_key =
-        std::string(kSysPointingDeviceSupportToastSharedPreferenceKey) + "/" +
-        app_id + "/" + boot_time_buffer.str();
-    free(app_id);
-
-    ret =
-        preference_get_boolean(preference_key.c_str(), &show_unsupported_toast);
-    if (ret != PREFERENCE_ERROR_NONE) {
-      return false;
-    }
-  }
-  return show_unsupported_toast;
-}
-
 bool PreferenceItemCallback(const char* key, void* user_data) {
   char* app_id = (char*)user_data;
   if (!app_id || !key) {
@@ -111,29 +83,56 @@ bool PreferenceItemCallback(const char* key, void* user_data) {
   return true;
 }
 
-void SetPointingDevicePreference() {
+std::string GetPreferenceKey(bool clear_exist_key) {
   time_t boot_time = GetBootTimeEpoch();
+  if (boot_time == -1) {
+    return "";
+  }
 
-  if (boot_time != -1) {
-    char* id = nullptr;
-    int ret = app_get_id(&id);
-    if (ret != APP_CONTROL_ERROR_NONE || !id) {
-      FT_LOG(Error) << "Fail to get app id.";
-      return;
-    }
+  char* id = nullptr;
+  int ret = app_get_id(&id);
+  if (ret != APP_CONTROL_ERROR_NONE || !id) {
+    FT_LOG(Error) << "Fail to get app id.";
+    return std::string();
+  }
 
-    std::string app_id = id;
-    std::ostringstream boot_time_buffer;
-    boot_time_buffer << boot_time;
-    std::string preference_key =
-        std::string(kSysPointingDeviceSupportToastSharedPreferenceKey) + "/" +
-        app_id + "/" + boot_time_buffer.str();
+  std::string app_id = id;
+  std::ostringstream boot_time_buffer;
+  boot_time_buffer << boot_time;
+  std::string preference_key =
+      std::string(kSysPointingDeviceSupportToastSharedPreferenceKey) + "/" +
+      app_id + "/" + boot_time_buffer.str();
+
+  if (clear_exist_key) {
     preference_foreach_item(PreferenceItemCallback, (void*)app_id.c_str());
-    ret = preference_set_boolean(preference_key.c_str(), true);
-    if (ret != PREFERENCE_ERROR_NONE) {
-      FT_LOG(Error) << "Fail to set toasted preference.";
-      return;
-    }
+  }
+  return preference_key;
+}
+
+bool GetPointingDeviceToastPreference() {
+  bool show_unsupported_toast = false;
+  std::string preference_key = GetPreferenceKey(false);
+  if (preference_key.empty()) {
+    return false;
+  }
+
+  int ret =
+      preference_get_boolean(preference_key.c_str(), &show_unsupported_toast);
+  if (ret != PREFERENCE_ERROR_NONE) {
+    return false;
+  }
+  return show_unsupported_toast;
+}
+
+void SetPointingDevicePreference() {
+  std::string preference_key = GetPreferenceKey(true);
+  if (preference_key.empty()) {
+    return;
+  }
+
+  int ret = preference_set_boolean(preference_key.c_str(), true);
+  if (ret != PREFERENCE_ERROR_NONE) {
+    FT_LOG(Error) << "Fail to set toasted preference.";
   }
 }
 #endif
