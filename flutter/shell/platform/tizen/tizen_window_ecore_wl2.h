@@ -23,6 +23,8 @@ class TizenWindowEcoreWl2 : public TizenWindow {
                       bool transparent,
                       bool focusable,
                       bool top_level,
+                      bool pointing_device_support,
+                      bool floating_menu_support,
                       void* window_handle,
                       bool is_vulkan);
 
@@ -65,6 +67,14 @@ class TizenWindowEcoreWl2 : public TizenWindow {
 
   void EnableCursor();
 
+#ifdef TV_PROFILE
+  void SetPointingDeviceSupport();
+
+  void SetFloatingMenuSupport();
+
+  void ShowUnsupportedToast();
+#endif
+
   void RegisterEventHandlers();
 
   void UnregisterEventHandlers();
@@ -81,6 +91,12 @@ class TizenWindowEcoreWl2 : public TizenWindow {
   std::vector<Ecore_Event_Handler*> ecore_event_handlers_;
   tizen_policy* tizen_policy_ = nullptr;
   uint32_t resource_id_ = 0;
+
+#ifdef TV_PROFILE
+  bool pointing_device_support_ = true;
+  bool floating_menu_support_ = true;
+  bool show_unsupported_toast_ = false;
+#endif
   bool is_vulkan_ = false;
 };
 

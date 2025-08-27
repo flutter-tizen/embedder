@@ -130,6 +130,7 @@ template("embedder") {
       "capi-appfw-application",
       "capi-appfw-app-common",
       "capi-appfw-app-control",
+      "capi-appfw-preference",
       "capi-base-common",
       "capi-system-info",
       "capi-system-system-settings",

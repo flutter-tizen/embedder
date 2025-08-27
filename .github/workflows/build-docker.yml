@@ -20,6 +20,11 @@ jobs:
           wget -q ${REPO_URL}/${BUILD_ID}/images/standard/${IMAGE}/${BUILD_ID}_${IMAGE}.tar.gz
           tar -zxf ${BUILD_ID}_${IMAGE}.tar.gz
           mkdir rootfs
+
+          # TODO(jsuya) : vulkan-loader is not included in the image binary.
+          wget -q ${REPO_URL}/${BUILD_ID}/repos/standard/packages/armv7l/vulkan-loader-1.3.208-0.armv7l.rpm
+          rpm2cpio vulkan-loader-1.3.208-0.armv7l.rpm | cpio -idmv -D rootfs
+
           sudo mount rootfs.img rootfs
           sudo tar -cC rootfs . | docker import - ghcr.io/${{ github.repository_owner }}/${IMAGE}
           sudo umount rootfs
