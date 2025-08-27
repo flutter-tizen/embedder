@@ -30,6 +30,8 @@ typedef enum {
   kEvasGL,
   // The renderer based on EGL.
   kEGL,
+  // The renderer based on Vulkan.
+  kEcoreVulkan
 } FlutterDesktopRendererType;
 
 typedef enum {
