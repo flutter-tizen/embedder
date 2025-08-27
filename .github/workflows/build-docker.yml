@@ -13,8 +13,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push
         env:
-          REPO_URL: http://download.tizen.org/releases/milestone/tizen/unified
-          BUILD_ID: tizen-unified_20220517.1
+          REPO_URL: https://download.tizen.org/releases/milestone/TIZEN/Tizen/Tizen-Unified
+          BUILD_ID: tizen-unified_20221017.061100
           IMAGE: tizen-headed-armv7l
         run: |
           wget -q ${REPO_URL}/${BUILD_ID}/images/standard/${IMAGE}/${BUILD_ID}_${IMAGE}.tar.gz
