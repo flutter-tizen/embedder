@@ -67,6 +67,10 @@ typedef struct {
   double user_pixel_ratio;
   // The precreated window handle.
   void* window_handle;
+  // Whether the app should be supported pointing device(mouse) or not.
+  bool pointing_device_support;
+  // Whether the app should be supported floating menu or not.
+  bool floating_menu_support;
 } FlutterDesktopWindowProperties;
 
 // Properties for configuring the initial settings of a Flutter view.
