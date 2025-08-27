@@ -12,6 +12,7 @@
 #include <vulkan/vulkan.h>
 #include <algorithm>
 #include <limits>
+#include <memory>
 #include <vector>
 
 namespace flutter {

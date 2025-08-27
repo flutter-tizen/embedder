@@ -4,8 +4,6 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/tizen/tizen_renderer_vulkan.h"
-#include <Ecore_Wl2.h>
-#include <glob.h>
 #include <stddef.h>
 #include <vulkan/vulkan_wayland.h>
 #include <optional>
@@ -59,31 +57,31 @@ bool TizenRendererVulkan::InitVulkan(TizenViewBase* view) {
     return false;
   }
   if (!PickPhysicalDevice()) {
-    FT_LOG(Error) << "Filed to pick physical device";
+    FT_LOG(Error) << "Failed to pick physical device";
     return false;
   }
   if (!CreateLogicalDevice()) {
-    FT_LOG(Error) << "Filed to create logical device";
+    FT_LOG(Error) << "Failed to create logical device";
     return false;
   }
   if (!GetDeviceQueue()) {
-    FT_LOG(Error) << "Filed to get device queue";
+    FT_LOG(Error) << "Failed to get device queue";
     return false;
   }
   if (!CreateSemaphore()) {
-    FT_LOG(Error) << "Filed to create semaphore";
+    FT_LOG(Error) << "Failed to create semaphore";
     return false;
   }
   if (!CreateFence()) {
-    FT_LOG(Error) << "Filed to create fence";
+    FT_LOG(Error) << "Failed to create fence";
     return false;
   }
   if (!CreateCommandPool()) {
-    FT_LOG(Error) << "Filed to create command pool";
+    FT_LOG(Error) << "Failed to create command pool";
     return false;
   }
   if (!InitializeSwapchain()) {
-    FT_LOG(Error) << "Filed to initialize swapchain";
+    FT_LOG(Error) << "Failed to initialize swapchain";
     return false;
   }
   is_valid_ = true;
@@ -92,14 +90,13 @@ bool TizenRendererVulkan::InitVulkan(TizenViewBase* view) {
 
 void TizenRendererVulkan::Cleanup() {
   if (logical_device_) {
+    // Ensure all GPU work is complete before destroying anything.
+    vkDeviceWaitIdle(logical_device_);
+
     for (size_t i = 0; i < present_transition_buffers_.size(); ++i) {
       vkFreeCommandBuffers(logical_device_, swapchain_command_pool_, 1,
                            &present_transition_buffers_[i]);
     }
-    for (size_t i = 0; i < swapchain_images_.size(); ++i) {
-      vkDestroyImage(logical_device_, swapchain_images_[i], nullptr);
-    }
-
     if (swapchain_ != VK_NULL_HANDLE) {
       vkDestroySwapchainKHR(logical_device_, swapchain_, nullptr);
       swapchain_ = VK_NULL_HANDLE;
@@ -108,6 +105,7 @@ void TizenRendererVulkan::Cleanup() {
     vkDestroyFence(logical_device_, image_ready_fence_, nullptr);
     vkDestroySemaphore(logical_device_, present_transition_semaphore_, nullptr);
     vkDestroyDevice(logical_device_, nullptr);
+    logical_device_ = VK_NULL_HANDLE;
   }
   DestroySurface();
   if (enable_validation_layers_) {
@@ -115,6 +113,7 @@ void TizenRendererVulkan::Cleanup() {
   }
   if (instance_ != VK_NULL_HANDLE) {
     vkDestroyInstance(instance_, nullptr);
+    instance_ = VK_NULL_HANDLE;
   }
 }
 
@@ -402,17 +401,11 @@ bool TizenRendererVulkan::PickPhysicalDevice() {
                  available_extension.extensionName) == 0) {
         supports_swapchain = true;
         supported_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-      }
-      // The spec requires VK_KHR_portability_subset be enabled whenever it's
-      // available on a device. It's present on compatibility ICDs like
-      // MoltenVK.
-      else if (strcmp("VK_KHR_portability_subset",
-                      available_extension.extensionName) == 0) {
+      } else if (strcmp("VK_KHR_portability_subset",
+                        available_extension.extensionName) == 0) {
         supported_extensions.push_back("VK_KHR_portability_subset");
-      }
-      // Prefer GPUs that support VK_KHR_get_memory_requirements2.
-      else if (strcmp(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-                      available_extension.extensionName) == 0) {
+      } else if (strcmp(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+                        available_extension.extensionName) == 0) {
         score += 1 << 29;
         supported_extensions.push_back(
             VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
@@ -455,8 +448,7 @@ bool TizenRendererVulkan::CreateSurface(void* render_target,
                                         int32_t height) {
   width_ = width;
   height_ = height;
-  VkWaylandSurfaceCreateInfoKHR createInfo;
-  memset(&createInfo, 0, sizeof(createInfo));
+  VkWaylandSurfaceCreateInfoKHR createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
   createInfo.pNext = nullptr;
   createInfo.flags = 0;
@@ -824,7 +816,7 @@ void TizenRendererVulkan::ResizeSurface(int32_t width, int32_t height) {
   }
 }
 uint32_t TizenRendererVulkan::GetVersion() {
-  return VK_MAKE_VERSION(1, 0, 0);
+  return VK_API_VERSION_1_1;
 }
 
 FlutterVulkanInstanceHandle TizenRendererVulkan::GetInstanceHandle() {
@@ -941,20 +933,36 @@ VkCommandBuffer TizenRendererVulkan::BeginSingleTimeCommands() {
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-  vkBeginCommandBuffer(commandBuffer, &beginInfo);
+  if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+    vkFreeCommandBuffers(logical_device_, swapchain_command_pool_, 1,
+                         &commandBuffer);
+    FT_LOG(Error) << "Failed to begin one-time command buffer.";
+    return VK_NULL_HANDLE;
+  }
 
   return commandBuffer;
 }
 
 void TizenRendererVulkan::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
-  vkEndCommandBuffer(commandBuffer);
+  if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+    FT_LOG(Error) << "Failed to end one-time command buffer.";
+    vkFreeCommandBuffers(logical_device_, swapchain_command_pool_, 1,
+                         &commandBuffer);
+    return;
+  }
 
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = &commandBuffer;
 
-  vkQueueSubmit(graphics_queue_, 1, &submitInfo, VK_NULL_HANDLE);
+  if (vkQueueSubmit(graphics_queue_, 1, &submitInfo, VK_NULL_HANDLE) !=
+      VK_SUCCESS) {
+    FT_LOG(Error) << "Failed to submit one-time command buffer.";
+    vkFreeCommandBuffers(logical_device_, swapchain_command_pool_, 1,
+                         &commandBuffer);
+    return;
+  }
   vkQueueWaitIdle(graphics_queue_);
 
   vkFreeCommandBuffers(logical_device_, swapchain_command_pool_, 1,
