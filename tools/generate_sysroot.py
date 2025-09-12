@@ -134,12 +134,14 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
     tizen_arch = 'aarch64'
   elif arch == 'x86':
     tizen_arch = 'i686'
+  elif arch == 'x64':
+    tizen_arch = 'x86_64'
   else:
     sys.exit('Unknown arch: ' + arch)
 
   base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen-{}/Tizen-{}-Base/latest/repos/standard/packages'.format(
     api_version, api_version)
-  unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen-{}/Tizen-{}-Unified/latest/repos/standard/packages'.format(
+  unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen-{}/Tizen-{}-Unified/latest/repos/emulator/packages'.format(
     api_version, api_version)
 
   # Retrieve html documents.
@@ -189,13 +191,16 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
   # Create symbolic links.
   asm = sysroot / 'usr' / 'include' / 'asm'
   if not asm.exists():
-    os.symlink('asm-' + arch, asm)
+    if arch == 'x64':
+      os.symlink('asm-x86', asm)
+    else:
+      os.symlink('asm-' + arch, asm)
   pkgconfig = sysroot / 'usr' / 'lib' / 'pkgconfig'
-  if arch == 'arm64' and not pkgconfig.exists():
+  if (arch == 'arm64' or arch == 'x64') and not pkgconfig.exists():
     os.symlink('../lib64/pkgconfig', pkgconfig)
 
   # Copy objects required by the linker, such as crtbeginS.o and libgcc.a.
-  if arch == 'arm64':
+  if arch == 'arm64' or arch == 'x64':
     libpath = sysroot / 'usr' / 'lib64'
   else:
     libpath = sysroot / 'usr' / 'lib'
@@ -228,7 +233,7 @@ def main():
     outpath = Path(__file__).parent.parent / 'sysroot'
   outpath.mkdir(exist_ok=True)
 
-  for arch in ['arm', 'arm64', 'x86']:
+  for arch in ['x64']:
     sysroot = outpath / arch
     if args.force and sysroot.is_dir():
       shutil.rmtree(sysroot)
