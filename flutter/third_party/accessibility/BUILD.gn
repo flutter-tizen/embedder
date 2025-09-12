@@ -15,7 +15,7 @@ config("accessibility_config") {
     "${sysroot_path}/usr/include/glib-2.0",
   ]
 
-  if (target_cpu == "arm64") {
+  if (target_cpu == "arm64" || target_cpu == "x64") {
     include_dirs += [ "${sysroot_path}/usr/lib64/glib-2.0/include" ]
   } else {
     include_dirs += [ "${sysroot_path}/usr/lib/glib-2.0/include" ]
