@@ -200,6 +200,10 @@ bool TizenRendererEgl::ChooseEGLConfiguration() {
   }
 
   EGLConfig* configs = (EGLConfig*)calloc(config_size, sizeof(EGLConfig));
+  if (!configs) {
+    FT_LOG(Error) << "Failed to allocate memory for EGL configurations.";
+    return false;
+  }
   EGLint num_config;
   if (enable_impeller_) {
     EGLint impeller_config_attribs[] = {
