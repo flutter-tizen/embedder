@@ -8,8 +8,8 @@ jobs:
 
     strategy:
       matrix:
-        api-version: ['6.0', '6.5']
-        arch: [arm, arm64, x86]
+        api-version: ["6.0", "6.5", "8.0", "10.0"]
+        arch: [arm, arm64, x86, x64]
         include:
           - arch: arm
             triple: arm-linux-gnueabi
@@ -17,6 +17,8 @@ jobs:
             triple: aarch64-linux-gnu
           - arch: x86
             triple: i686-linux-gnu
+          - arch: x64
+            triple: x86-64-linux-gnu
 
     steps:
       - uses: actions/checkout@v4
@@ -43,56 +45,43 @@ jobs:
           gclient config --name=src --unmanaged https://github.com/${{ github.repository }}
           gclient sync -v --no-history --shallow
 
-      - name: Generate Tizen 6.0 sysroot
-        if: ${{ matrix.api-version == '6.0' }}
-        run: src/tools/generate_sysroot.py --out src/sysroot-6.0
+      - name: Generate Tizen ${{ matrix.api-version }} sysroot
+        run: src/tools/generate_sysroot.py --api-version ${{ matrix.api-version }} --out src/sysroot-${{ matrix.api-version }}
 
-      - name: Generate Tizen 6.5 sysroot
-        if: ${{ matrix.api-version == '6.5' }}
-        run: src/tools/generate_sysroot.py --api-version 6.5 --out src/sysroot-6.5
-
-      - name: Build for Tizen 6.0
-        if: ${{ matrix.api-version == '6.0' }}
+      - name: Build for Tizen ${{ matrix.api-version }}
+        if: ${{ !(matrix.api-version == '6.0' && matrix.arch == 'x64') && !(matrix.api-version == '6.5' && matrix.arch == 'x64') && !(matrix.api-version == '10.0' && matrix.arch == 'x86') }}
         run: |
           src/tools/gn \
             --target-cpu ${{ matrix.arch }} \
             --target-toolchain /usr/lib/llvm-17 \
-            --target-sysroot src/sysroot-6.0/${{ matrix.arch }} \
-            --target-dir build
-          ninja -C src/out/build
-
-      - name: Build for Tizen 6.5
-        if: ${{ matrix.api-version == '6.5' }}
-        run: |
-          src/tools/gn \
-            --target-cpu ${{ matrix.arch }} \
-            --target-toolchain /usr/lib/llvm-17 \
-            --target-sysroot src/sysroot-6.5/${{ matrix.arch }} \
-            --api-version 6.5 \
+            --target-sysroot src/sysroot-${{ matrix.api-version }}/${{ matrix.arch }} \
+            --api-version ${{ matrix.api-version }} \
             --target-dir build
           ninja -C src/out/build
 
       - uses: actions/upload-artifact@v4
+        if: ${{ !(matrix.api-version == '6.0' && matrix.arch == 'x64') && !(matrix.api-version == '6.5' && matrix.arch == 'x64') && !(matrix.api-version == '10.0' && matrix.arch == 'x86') }}
         with:
           name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}
           path: src/out/build/libflutter_tizen*.so
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
+        if: ${{ !(matrix.api-version == '6.0' && matrix.arch == 'x64') && !(matrix.api-version == '6.5' && matrix.arch == 'x64') && !(matrix.api-version == '10.0' && matrix.arch == 'x86') }}
         with:
           name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}_unittests
           path: src/out/build/flutter_tizen_unittests
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ !(matrix.api-version == '6.0' && matrix.arch == 'x64') && !(matrix.api-version == '6.5' && matrix.arch == 'x64') && !(matrix.api-version == '10.0' && matrix.arch == 'x86') && github.event_name == 'push' }}
         with:
           name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}_symbols
           path: src/out/build/so.unstripped/libflutter_tizen*.so
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
-        if: ${{ matrix.arch == 'arm' && matrix.api-version == '6.0' }}
+        if: ${{ !(matrix.api-version == '6.0' && matrix.arch == 'x64') && !(matrix.api-version == '6.5' && matrix.arch == 'x64') && !(matrix.api-version == '10.0' && matrix.arch == 'x86') && matrix.arch == 'arm' && matrix.api-version == '6.0' }}
         with:
           name: tizen-common
           path: |

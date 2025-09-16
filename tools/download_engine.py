@@ -41,8 +41,8 @@ def main():
     shutil.rmtree(engine_dir)
   engine_dir.mkdir()
 
-  names = ['tizen-arm-release.zip',
-           'tizen-arm64-release.zip', 'tizen-x86-debug.zip']
+  names = ['tizen-arm-release.zip', 'tizen-arm64-release.zip',
+           'tizen-x86-debug.zip', 'tizen-x64-release.zip']
   for filename in names:
     arch = filename.split('-')[1]
     print('Downloading libflutter_engine.so for {}...'.format(arch))
