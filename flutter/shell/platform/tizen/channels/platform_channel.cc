@@ -105,16 +105,29 @@ void PlatformChannel::HandleMethodCall(
     SystemNavigatorPop();
     result->Success();
   } else if (method == kPlaySoundMethod) {
+    if (!arguments) {
+      result->Error("Invalid arguments");
+      return;
+    }
     PlaySystemSound(arguments[0].GetString());
     result->Success();
   } else if (method == kHapticFeedbackVibrateMethod) {
     std::string type;
+    if (!arguments) {
+      result->Error("Invalid arguments");
+      return;
+    }
     if (arguments->IsString()) {
       type = arguments[0].GetString();
     }
     HapticFeedbackVibrate(type);
     result->Success();
   } else if (method == kGetClipboardDataMethod) {
+    if (!arguments) {
+      result->Error("Invalid arguments");
+      return;
+    }
+
     // https://api.flutter.dev/flutter/services/Clipboard/kTextPlain-constant.html
     // The API only supports the plain text format.
     if (strcmp(arguments[0].GetString(), kTextPlainFormat) != 0) {
@@ -144,6 +157,10 @@ void PlatformChannel::HandleMethodCall(
       delete result_ptr;
     };
   } else if (method == kSetClipboardDataMethod) {
+    if (!arguments) {
+      result->Error("Invalid arguments");
+      return;
+    }
     const rapidjson::Value& document = *arguments;
     auto iter = document.FindMember(kTextKey);
     if (iter == document.MemberEnd()) {
@@ -160,6 +177,10 @@ void PlatformChannel::HandleMethodCall(
                        rapidjson::Value(ClipboardHasStrings()), allocator);
     result->Success(document);
   } else if (method == kExitApplicationMethod) {
+    if (!arguments) {
+      result->Error("Invalid arguments");
+      return;
+    }
     rapidjson::Value::ConstMemberIterator iter =
         arguments->FindMember(kExitTypeKey);
     if (iter == arguments->MemberEnd()) {
@@ -190,6 +211,10 @@ void PlatformChannel::HandleMethodCall(
     RestoreSystemUiOverlays();
     result->Success();
   } else if (method == kSetEnabledSystemUiOverlaysMethod) {
+    if (!arguments) {
+      result->Error("Invalid arguments");
+      return;
+    }
     const rapidjson::Document& list = arguments[0];
     std::vector<std::string> overlays;
     for (auto iter = list.Begin(); iter != list.End(); ++iter) {
@@ -198,6 +223,10 @@ void PlatformChannel::HandleMethodCall(
     SetEnabledSystemUiOverlays(overlays);
     result->Success();
   } else if (method == kSetPreferredOrientationsMethod) {
+    if (!arguments) {
+      result->Error("Invalid arguments");
+      return;
+    }
     const rapidjson::Document& list = arguments[0];
     std::vector<std::string> orientations;
     for (auto iter = list.Begin(); iter != list.End(); ++iter) {
