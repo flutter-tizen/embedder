@@ -14,7 +14,7 @@ from zipfile import ZipFile
 # Downloads the latest engine artifacts for use by the linker.
 def main():
   engine_dir = Path(__file__).parent.parent / 'engine'
-  github_url = 'https://github.com/flutter-tizen/engine/releases'
+  github_url = 'https://github.com/flutter-tizen/flutter/releases'
 
   stamp = ''
   stamp_file = engine_dir / 'engine.stamp'

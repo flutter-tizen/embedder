@@ -8,7 +8,7 @@ jobs:
 
     strategy:
       matrix:
-        api-version: ["6.0", "6.5", "8.0", "10.0"]
+        api-version: ["6.0", "6.5", "8.0"]
         arch: [arm, arm64, x86, x64]
         include:
           - arch: arm
@@ -19,6 +19,17 @@ jobs:
             triple: i686-linux-gnu
           - arch: x64
             triple: x86-64-linux-gnu
+        exclude:
+          - api-version: "6.0"
+            arch: x64
+          - api-version: "6.5"
+            arch: x64
+          - api-version: "8.0"
+            arch: arm
+          - api-version: "8.0"
+            arch: arm64
+          - api-version: "8.0"
+            arch: x86
 
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +60,6 @@ jobs:
         run: src/tools/generate_sysroot.py --api-version ${{ matrix.api-version }} --out src/sysroot-${{ matrix.api-version }}
 
       - name: Build for Tizen ${{ matrix.api-version }}
-        if: ${{ !(matrix.api-version == '6.0' && matrix.arch == 'x64') && !(matrix.api-version == '6.5' && matrix.arch == 'x64') && !(matrix.api-version == '10.0' && matrix.arch == 'x86') }}
         run: |
           src/tools/gn \
             --target-cpu ${{ matrix.arch }} \
@@ -60,28 +70,26 @@ jobs:
           ninja -C src/out/build
 
       - uses: actions/upload-artifact@v4
-        if: ${{ !(matrix.api-version == '6.0' && matrix.arch == 'x64') && !(matrix.api-version == '6.5' && matrix.arch == 'x64') && !(matrix.api-version == '10.0' && matrix.arch == 'x86') }}
         with:
           name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}
           path: src/out/build/libflutter_tizen*.so
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
-        if: ${{ !(matrix.api-version == '6.0' && matrix.arch == 'x64') && !(matrix.api-version == '6.5' && matrix.arch == 'x64') && !(matrix.api-version == '10.0' && matrix.arch == 'x86') }}
         with:
           name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}_unittests
           path: src/out/build/flutter_tizen_unittests
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
-        if: ${{ !(matrix.api-version == '6.0' && matrix.arch == 'x64') && !(matrix.api-version == '6.5' && matrix.arch == 'x64') && !(matrix.api-version == '10.0' && matrix.arch == 'x86') && github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' }}
         with:
           name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}_symbols
           path: src/out/build/so.unstripped/libflutter_tizen*.so
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
-        if: ${{ !(matrix.api-version == '6.0' && matrix.arch == 'x64') && !(matrix.api-version == '6.5' && matrix.arch == 'x64') && !(matrix.api-version == '10.0' && matrix.arch == 'x86') && matrix.arch == 'arm' && matrix.api-version == '6.0' }}
+        if: ${{ matrix.arch == 'arm' && matrix.api-version == '6.0' }}
         with:
           name: tizen-common
           path: |
