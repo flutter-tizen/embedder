@@ -144,13 +144,13 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
     sys.exit('Unknown arch: ' + arch)
 
   if api_version >= 10.0:
-    base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base/latest/repos/standard/packages'
-    unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified/latest/repos/{}/packages'.format(
+    base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base/reference/repos/standard/packages/'
+    unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified/reference/repos//{}/packages'.format(
       target)
   else:
-    base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen-{}/Tizen-{}-Base/latest/repos/standard/packages'.format(
+    base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen-{}/Tizen-{}-Base/reference/repos/standard/packages'.format(
       api_version, api_version)
-    unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen-{}/Tizen-{}-Unified/latest/repos/{}/packages'.format(
+    unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen-{}/Tizen-{}-Unified/reference/repos/{}/packages'.format(
       api_version, api_version, target)
 
   # Retrieve html documents.
