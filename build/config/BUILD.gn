@@ -49,8 +49,12 @@ config("compiler") {
     cflags += [
       "-m64",
       "-march=x86-64",
+      "--target=x86_64-linux-gnu",
     ]
-    ldflags += [ "-m64" ]
+    ldflags += [
+      "-m64",
+      "--target=x86_64-linux-gnu",
+    ]
   } else if (target_cpu == "x86") {
     cflags += [
       "-m32",
@@ -115,7 +119,7 @@ config("no_system_cxx") {
 config("system_cxx") {
   assert(sysroot_path != "")
 
-  if (target_cpu == "arm64") {
+  if (target_cpu == "arm64" || target_cpu == "x64") {
     lib_path = "${sysroot_path}/usr/lib64"
   } else {
     lib_path = "${sysroot_path}/usr/lib"
@@ -127,6 +131,8 @@ config("system_cxx") {
     gcc_target_triple = "aarch64-tizen-linux-gnu"
   } else if (target_cpu == "x86") {
     gcc_target_triple = "i586-tizen-linux-gnu"
+  } else if (target_cpu == "x64") {
+    gcc_target_triple = "x86_64-tizen-linux-gnu"
   } else {
     assert(false, "Unknown target_cpu: " + target_cpu)
   }
