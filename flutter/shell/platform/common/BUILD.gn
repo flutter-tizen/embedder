@@ -32,7 +32,7 @@ source_set("common_cpp_library_headers") {
 
 copy("publish_headers") {
   sources = _public_headers
-  outputs = [ "$root_out_dir/public/{{source_file_part}}" ]
+  outputs = [ "$root_out_dir/{{source_file_part}}" ]
 }
 
 source_set("common_cpp_input") {
@@ -50,6 +50,13 @@ source_set("common_cpp_input") {
   configs += [ ":desktop_library_implementation" ]
 
   public_configs = [ "//flutter:config" ]
+
+  deps = [ "//flutter/fml:fml" ]
+}
+
+source_set("common_cpp_isolate_scope") {
+  public = [ "isolate_scope.h" ]
+  sources = [ "isolate_scope.cc" ]
 
   deps = [ "//flutter/fml:fml" ]
 }
@@ -116,6 +123,7 @@ source_set("common_cpp") {
   deps = [
     ":common_cpp_library_headers",
     "//flutter/shell/platform/common/client_wrapper:client_wrapper",
+    "//flutter/shell/platform/embedder:embedder_headers",
   ]
 
   public_deps = [
@@ -132,6 +140,7 @@ source_set("common_cpp_core") {
   public = [
     "geometry.h",
     "path_utils.h",
+    "windowing.h",
   ]
 
   sources = [ "path_utils.cc" ]
