@@ -23,6 +23,7 @@ class FlutterTizenEngineTest : public ::testing::Test {
     engine_prop.assets_path = "/foo/flutter_assets";
     engine_prop.icu_data_path = "/foo/icudtl.dat";
     engine_prop.aot_library_path = "/foo/libapp.so";
+    engine_prop.merged_platform_ui_thread = true;
 
     FlutterProjectBundle project(engine_prop);
     auto engine = std::make_unique<FlutterTizenEngine>(project);
@@ -64,6 +65,8 @@ TEST_F(FlutterTizenEngineTest, RunDoesExpectedInitialization) {
         EXPECT_EQ(args->dart_entrypoint_argc, 0);
         EXPECT_NE(args->platform_message_callback, nullptr);
         EXPECT_NE(args->custom_task_runners, nullptr);
+        EXPECT_EQ(args->custom_task_runners->platform_task_runner,
+                  args->custom_task_runners->ui_task_runner);
         EXPECT_EQ(args->custom_dart_entrypoint, nullptr);
 
         return kSuccess;
