@@ -32,7 +32,7 @@ source_set("common_cpp_library_headers") {
 
 copy("publish_headers") {
   sources = _public_headers
-  outputs = [ "$root_out_dir/{{source_file_part}}" ]
+  outputs = [ "$root_out_dir/public/{{source_file_part}}" ]
 }
 
 source_set("common_cpp_input") {
