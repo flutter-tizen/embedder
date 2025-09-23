@@ -41,6 +41,8 @@ def get_target_triple(target_cpu):
     return 'aarch64-linux-gnu'
   elif target_cpu == 'x86':
     return 'i686-linux-gnu'
+  elif target_cpu == 'x64':
+    return 'x86_64-linux-gnu'
   else:
     sys.exit('Unknown target CPU.')
 
@@ -95,7 +97,7 @@ def parse_args(args):
   parser.add_argument('--unoptimized', default=False, action='store_true')
 
   parser.add_argument('--target-cpu', type=str, required=True,
-                      choices=['arm', 'x86', 'arm64'])
+                      choices=['arm', 'x86', 'arm64', 'x64'])
 
   parser.add_argument('--target-toolchain', type=str, required=True)
   parser.add_argument('--target-sysroot', type=str)

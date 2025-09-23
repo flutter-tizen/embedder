@@ -171,7 +171,7 @@ template("embedder") {
     defines += invoker.defines
     defines += [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
 
-    if (api_version == "6.5") {
+    if (api_version != "6.0") {
       sources += [
         "flutter_tizen_nui.cc",
         "tizen_clipboard.cc",
@@ -205,6 +205,7 @@ template("embedder") {
       "//flutter/shell/platform/common:common_cpp",
       "//flutter/shell/platform/common:common_cpp_accessibility",
       "//flutter/shell/platform/common:common_cpp_input",
+      "//flutter/shell/platform/common:common_cpp_isolate_scope",
       "//flutter/shell/platform/common:common_cpp_library_headers",
       "//flutter/shell/platform/common/client_wrapper:client_wrapper",
       "//flutter/shell/platform/embedder:embedder_headers",

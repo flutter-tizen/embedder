@@ -14,7 +14,7 @@ from zipfile import ZipFile
 # Downloads the latest engine artifacts for use by the linker.
 def main():
   engine_dir = Path(__file__).parent.parent / 'engine'
-  github_url = 'https://github.com/flutter-tizen/engine/releases'
+  github_url = 'https://github.com/flutter-tizen/flutter/releases'
 
   stamp = ''
   stamp_file = engine_dir / 'engine.stamp'
@@ -41,8 +41,8 @@ def main():
     shutil.rmtree(engine_dir)
   engine_dir.mkdir()
 
-  names = ['tizen-arm-release.zip',
-           'tizen-arm64-release.zip', 'tizen-x86-debug.zip']
+  names = ['tizen-arm-release.zip', 'tizen-arm64-release.zip',
+           'tizen-x86-debug.zip', 'tizen-x64-release.zip']
   for filename in names:
     arch = filename.split('-')[1]
     print('Downloading libflutter_engine.so for {}...'.format(arch))

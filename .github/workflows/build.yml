@@ -8,8 +8,8 @@ jobs:
 
     strategy:
       matrix:
-        api-version: ['6.0', '6.5']
-        arch: [arm, arm64, x86]
+        api-version: ["6.0", "6.5", "8.0"]
+        arch: [arm, arm64, x86, x64]
         include:
           - arch: arm
             triple: arm-linux-gnueabi
@@ -17,6 +17,19 @@ jobs:
             triple: aarch64-linux-gnu
           - arch: x86
             triple: i686-linux-gnu
+          - arch: x64
+            triple: x86-64-linux-gnu
+        exclude:
+          - api-version: "6.0"
+            arch: x64
+          - api-version: "6.5"
+            arch: x64
+          - api-version: "8.0"
+            arch: arm
+          - api-version: "8.0"
+            arch: arm64
+          - api-version: "8.0"
+            arch: x86
 
     steps:
       - uses: actions/checkout@v4
@@ -43,32 +56,16 @@ jobs:
           gclient config --name=src --unmanaged https://github.com/${{ github.repository }}
           gclient sync -v --no-history --shallow
 
-      - name: Generate Tizen 6.0 sysroot
-        if: ${{ matrix.api-version == '6.0' }}
-        run: src/tools/generate_sysroot.py --out src/sysroot-6.0
+      - name: Generate Tizen ${{ matrix.api-version }} sysroot
+        run: src/tools/generate_sysroot.py --api-version ${{ matrix.api-version }} --out src/sysroot-${{ matrix.api-version }}
 
-      - name: Generate Tizen 6.5 sysroot
-        if: ${{ matrix.api-version == '6.5' }}
-        run: src/tools/generate_sysroot.py --api-version 6.5 --out src/sysroot-6.5
-
-      - name: Build for Tizen 6.0
-        if: ${{ matrix.api-version == '6.0' }}
+      - name: Build for Tizen ${{ matrix.api-version }}
         run: |
           src/tools/gn \
             --target-cpu ${{ matrix.arch }} \
             --target-toolchain /usr/lib/llvm-17 \
-            --target-sysroot src/sysroot-6.0/${{ matrix.arch }} \
-            --target-dir build
-          ninja -C src/out/build
-
-      - name: Build for Tizen 6.5
-        if: ${{ matrix.api-version == '6.5' }}
-        run: |
-          src/tools/gn \
-            --target-cpu ${{ matrix.arch }} \
-            --target-toolchain /usr/lib/llvm-17 \
-            --target-sysroot src/sysroot-6.5/${{ matrix.arch }} \
-            --api-version 6.5 \
+            --target-sysroot src/sysroot-${{ matrix.api-version }}/${{ matrix.arch }} \
+            --api-version ${{ matrix.api-version }} \
             --target-dir build
           ninja -C src/out/build
 
