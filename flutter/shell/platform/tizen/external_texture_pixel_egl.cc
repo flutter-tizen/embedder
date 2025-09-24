@@ -11,7 +11,7 @@
 
 namespace flutter {
 
-bool ExternalTexturePixelEGL::PopulateTexture(
+bool ExternalTexturePixelEGL::PopulateOpenGLTexture(
     size_t width,
     size_t height,
     FlutterOpenGLTexture* opengl_texture) {
@@ -33,7 +33,7 @@ bool ExternalTexturePixelEGL::PopulateTexture(
 ExternalTexturePixelEGL::ExternalTexturePixelEGL(
     FlutterDesktopPixelBufferTextureCallback texture_callback,
     void* user_data)
-    : ExternalTexture(),
+    : ExternalGLTexture(),
       texture_callback_(texture_callback),
       user_data_(user_data) {}
 

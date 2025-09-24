@@ -118,7 +118,7 @@ TEST_F(FlutterTizenTextureRegistrarTest, RegisterUnknownTextureType) {
 TEST_F(FlutterTizenTextureRegistrarTest, PopulateInvalidTexture) {
   FlutterTizenTextureRegistrar registrar(engine_);
 
-  bool result = registrar.PopulateTexture(1, 640, 480, nullptr);
+  bool result = registrar.PopulateOpenGLTexture(1, 640, 480, nullptr);
   EXPECT_FALSE(result);
 }
 

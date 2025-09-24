@@ -41,10 +41,15 @@ class FlutterTizenTextureRegistrar {
   // contents of the texture identified by |texture_id|.
   //
   // Returns true on success.
-  bool PopulateTexture(int64_t texture_id,
-                       size_t width,
-                       size_t height,
-                       FlutterOpenGLTexture* texture);
+  bool PopulateOpenGLTexture(int64_t texture_id,
+                             size_t width,
+                             size_t height,
+                             FlutterOpenGLTexture* texture);
+
+  bool PopulateVulkanTexture(int64_t texture_id,
+                             size_t width,
+                             size_t height,
+                             FlutterVulkanTexture* texture);
 
  private:
   FlutterTizenEngine* engine_ = nullptr;
