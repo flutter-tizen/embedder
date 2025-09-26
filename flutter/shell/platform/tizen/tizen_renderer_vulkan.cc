@@ -1,12 +1,13 @@
-
-// Copyright 2024 Samsung Electronics Co., Ltd. All rights reserved.
+// Copyright 2025 Samsung Electronics Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/tizen/tizen_renderer_vulkan.h"
+
 #include <stddef.h>
 #include <vulkan/vulkan_wayland.h>
 #include <optional>
+
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/logger.h"
 
