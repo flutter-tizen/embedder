@@ -25,7 +25,9 @@ class ExternalTexturePixelVulkan : public ExternalVulkanTexture {
                              FlutterVulkanTexture* flutter_texture) override;
 
  private:
-  bool AllocateMemory(const VkMemoryRequirements& memory_requirements, VkDeviceMemory& memory, VkMemoryPropertyFlags properties); 
+  bool AllocateMemory(const VkMemoryRequirements& memory_requirements,
+                      VkDeviceMemory& memory,
+                      VkMemoryPropertyFlags properties);
   bool CreateBuffer(VkDeviceSize required_size);
   bool CreateImage(size_t width, size_t height);
   bool CreateOrUpdateBuffer(VkDeviceSize required_size);

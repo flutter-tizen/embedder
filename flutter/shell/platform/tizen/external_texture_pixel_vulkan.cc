@@ -69,8 +69,8 @@ bool ExternalTexturePixelVulkan::CreateOrUpdateBuffer(
     VkDeviceSize required_size) {
   if (staging_buffer_ == VK_NULL_HANDLE) {
     return CreateBuffer(required_size);
-  } 
-  
+  }
+
   if (required_size > staging_buffer_size_) {
     ReleaseBuffer();
     return CreateBuffer(required_size);
@@ -203,7 +203,8 @@ void ExternalTexturePixelVulkan::ReleaseBuffer() {
   staging_buffer_size_ = 0;
 }
 
-void ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer, VkDeviceSize size) {
+void ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
+                                                   VkDeviceSize size) {
   void* data;
   vkMapMemory(static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()),
               staging_buffer_memory_, 0, size, 0, &data);
