@@ -100,7 +100,7 @@ std::unique_ptr<TizenRenderer> FlutterTizenEngine::CreateRenderer(
 #endif
       return std::make_unique<TizenRendererEgl>(
           view_->tizen_view(), project_->HasArgument("--enable-impeller"));
-    case FlutterDesktopRendererType::kEcoreVulkan:
+    case FlutterDesktopRendererType::kEVulkan:
       return std::make_unique<TizenRendererVulkan>(view_->tizen_view());
   }
 }
