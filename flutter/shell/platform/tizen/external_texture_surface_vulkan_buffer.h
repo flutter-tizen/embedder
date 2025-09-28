@@ -41,4 +41,4 @@ class ExternalTextureSurfaceVulkanBuffer {
 };
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_TIZEN_EXTERNAL_TEXTURE_SURFACE_VULKAN_H_
+#endif  // FLUTTER_SHELL_PLATFORM_TIZEN_EXTERNAL_TEXTURE_SURFACE_VULKAN_BUFFER_H_

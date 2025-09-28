@@ -31,7 +31,8 @@ bool ExternalTextureSurfaceVulkan::CreateOrUpdateImage(
       reinterpret_cast<tbm_surface_h>(descriptor->handle);
   if (!vulkan_buffer_) {
     if (IsSupportDisjoint(tbm_surface)) {
-      /**
+      /** TODO as I konw, skia doesn't support disjoint,we need consider to
+       *  implement buffer map solution.
       vulkan_buffer_ = std::make_unique<ExternalTextureSurfaceVulkanBufferMap>(
           vulkan_renderer_);
       */
@@ -53,17 +54,17 @@ bool ExternalTextureSurfaceVulkan::CreateOrUpdateImage(
     }
     if (!vulkan_buffer_->CreateImage(tbm_surface)) {
       FT_LOG(Error) << "Fail to create image";
-      vulkan_buffer_->ReleaseImage();
+      vulkan_buffer_.reset();
       return false;
     }
     if (!vulkan_buffer_->AllocateMemory(tbm_surface)) {
       FT_LOG(Error) << "Fail to allocate memory";
-      vulkan_buffer_->ReleaseImage();
+      vulkan_buffer_.reset();
       return false;
     }
     if (!vulkan_buffer_->BindImageMemory(tbm_surface)) {
       FT_LOG(Error) << "Fail to bind image memory";
-      vulkan_buffer_->ReleaseImage();
+      vulkan_buffer_.reset();
       return false;
     }
     last_surface_handle_ = handle;
