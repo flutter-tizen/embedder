@@ -25,14 +25,12 @@ class ExternalTexturePixelVulkan : public ExternalVulkanTexture {
                              FlutterVulkanTexture* flutter_texture) override;
 
  private:
-  bool CreateBuffer(size_t width, size_t height);
+  bool AllocateMemory(const VkMemoryRequirements& memory_requirements, VkDeviceMemory& memory, VkMemoryPropertyFlags properties); 
+  bool CreateBuffer(VkDeviceSize required_size);
   bool CreateImage(size_t width, size_t height);
-  bool CreateOrUpdateImage(const FlutterDesktopPixelBuffer* pixel_buffer);
-  void CopyBufferToImage(VkBuffer dst_buffer,
-                         VkImage image,
-                         uint32_t width,
-                         uint32_t height,
-                         const uint8_t* src_buffer);
+  bool CreateOrUpdateBuffer(VkDeviceSize required_size);
+  bool CreateOrUpdateImage(size_t width, size_t height);
+  void CopyBufferToImage(const uint8_t* src_buffer, VkDeviceSize size);
   void ReleaseBuffer();
   void ReleaseImage();
   bool FindMemoryType(uint32_t typeFilter,
@@ -47,6 +45,7 @@ class ExternalTexturePixelVulkan : public ExternalVulkanTexture {
   VkDeviceMemory vk_image_memory_ = VK_NULL_HANDLE;
   VkBuffer staging_buffer_ = VK_NULL_HANDLE;
   VkDeviceMemory staging_buffer_memory_ = VK_NULL_HANDLE;
+  VkDeviceSize staging_buffer_size_ = 0;
 };
 }  // namespace flutter
 
