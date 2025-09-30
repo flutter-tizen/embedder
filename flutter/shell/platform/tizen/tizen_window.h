@@ -30,6 +30,12 @@ class TizenWindow : public TizenViewBase {
 
   virtual void BindKeys(const std::vector<std::string>& keys) = 0;
 
+  virtual void activateWindow() = 0;
+
+  virtual void raiseWindow() = 0;
+
+  virtual void lowerWindow() = 0;
+
  protected:
   explicit TizenWindow(TizenGeometry geometry,
                        bool transparent,

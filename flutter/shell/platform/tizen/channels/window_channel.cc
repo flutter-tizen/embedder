@@ -7,6 +7,8 @@
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
 #include "flutter/shell/platform/tizen/channels/encodable_value_holder.h"
 #include "flutter/shell/platform/tizen/logger.h"
+#include "flutter/shell/platform/tizen/tizen_window.h"
+#include "flutter/shell/platform/tizen/tizen_window_ecore_wl2.h"
 
 namespace flutter {
 
@@ -72,6 +74,15 @@ void WindowChannel::HandleMethodCall(
     result->Success(EncodableValue(map));
   } else if (method_name == "getRotation") {
     result->Success(EncodableValue(window_->GetRotation()));
+  } else if (method_name == "activateWindow") {
+    window_->activateWindow();
+    result->Success();
+  } else if (method_name == "raiseWindow") {
+    window_->raiseWindow();
+    result->Success();
+  } else if (method_name == "lowerWindow") {
+    window_->lowerWindow();
+    result->Success();
   } else {
     result->NotImplemented();
   }

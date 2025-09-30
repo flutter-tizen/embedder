@@ -54,6 +54,12 @@ class TizenWindowElementary : public TizenWindow {
 
   void UpdateFlutterCursor(const std::string& kind) override;
 
+  void activateWindow() override;
+
+  void raiseWindow() override;
+
+  void lowerWindow() override;
+
  private:
   bool CreateWindow();
 
