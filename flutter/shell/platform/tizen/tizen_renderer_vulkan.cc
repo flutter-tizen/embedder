@@ -924,10 +924,11 @@ bool TizenRendererVulkan::Present(const FlutterVulkanImage* image) {
   VkResult result = vkQueuePresentKHR(graphics_queue_, &present_info);
 
   if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR) {
-    RecreateSwapChain();
+    return RecreateSwapChain();
+  } else {
+    vkDeviceWaitIdle(logical_device_);
+    return result == VK_SUCCESS;
   }
-  vkDeviceWaitIdle(logical_device_);
-  return result == VK_SUCCESS;
 }
 
 size_t TizenRendererVulkan::GetEnabledInstanceExtensionCount() {
