@@ -862,16 +862,34 @@ FlutterVulkanImage TizenRendererVulkan::GetNextImage(
     RecreateSwapChain();
   }
   VkResult result;
-  do {
+  while (true) {
     result = vkAcquireNextImageKHR(logical_device_, swapchain_, UINT64_MAX,
                                    VK_NULL_HANDLE, image_ready_fence_,
                                    &last_image_index_);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+    if (result == VK_SUCCESS) {
+      // Image successfully acquired.
+      break;
+    } else if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+      // Swapchain is out of date, recreate it and try again.
       RecreateSwapChain();
+      continue;
     } else if (result == VK_SUBOPTIMAL_KHR) {
+      // Swapchain is suboptimal, but we can present with it. Break to proceed.
+      break;
+    } else {
+      // An unexpected error occurred. Log it and break to avoid an infinite
+      // loop.
+      FT_LOG(Error) << "vkAcquireNextImageKHR failed with critical error: "
+                    << result;
       break;
     }
-  } while (result != VK_SUCCESS);
+  }
+
+  // Check if the acquisition was successful or suboptimal.
+  // If not, return an empty image to signal failure to the Flutter engine.
+  if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+    return FlutterVulkanImage{};
+  }
 
   vkWaitForFences(logical_device_, 1, &image_ready_fence_, VK_TRUE, UINT64_MAX);
   vkResetFences(logical_device_, 1, &image_ready_fence_);
