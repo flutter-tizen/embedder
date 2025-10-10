@@ -116,7 +116,6 @@ template("embedder") {
       "tizen_renderer_egl.cc",
       "tizen_renderer_evas_gl.cc",
       "tizen_renderer_gl.cc",
-      "tizen_renderer_vulkan.cc",
       "tizen_view_elementary.cc",
       "tizen_vsync_waiter.cc",
       "tizen_window_ecore_wl2.cc",
@@ -153,13 +152,13 @@ template("embedder") {
       "tdm-client",
       "tizen-extension-client",
       "vconf",
-      "vulkan",
       "wayland-client",
       "EGL",
       "GLESv2",
     ]
 
-    if (target_name == "flutter_tizen_common") {
+    if (target_name == "flutter_tizen_common" ||
+        target_name == "flutter_tizen_common_experimental") {
       sources += [ "channels/tizen_shell.cc" ]
 
       libs += [
@@ -170,6 +169,14 @@ template("embedder") {
 
     defines += invoker.defines
     defines += [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
+
+    if (target_name == "flutter_tizen_mobile_experimental" ||
+        target_name == "flutter_tizen_tv_experimental" ||
+        target_name == "flutter_tizen_common_experimental") {
+      defines += [ "FLUTTER_TIZEN_EXPERIMENTAL" ]
+      sources += [ "tizen_renderer_vulkan.cc" ]
+      libs += [ "vulkan" ]
+    }
 
     if (api_version != "6.0") {
       sources += [
@@ -220,13 +227,31 @@ embedder("flutter_tizen_mobile") {
   defines = [ "MOBILE_PROFILE" ]
 }
 
+embedder("flutter_tizen_mobile_experimental") {
+  target_type = "shared_library"
+
+  defines = [ "MOBILE_PROFILE" ]
+}
+
 embedder("flutter_tizen_tv") {
   target_type = "shared_library"
 
   defines = [ "TV_PROFILE" ]
 }
 
+embedder("flutter_tizen_tv_experimental") {
+  target_type = "shared_library"
+
+  defines = [ "TV_PROFILE" ]
+}
+
 embedder("flutter_tizen_common") {
+  target_type = "shared_library"
+
+  defines = [ "COMMON_PROFILE" ]
+}
+
+embedder("flutter_tizen_common_experimental") {
   target_type = "shared_library"
 
   defines = [ "COMMON_PROFILE" ]
@@ -276,8 +301,11 @@ copy("publish_headers_tizen") {
 group("flutter_tizen") {
   deps = [
     ":flutter_tizen_common",
+    ":flutter_tizen_common_experimental",
     ":flutter_tizen_mobile",
+    ":flutter_tizen_mobile_experimental",
     ":flutter_tizen_tv",
+    ":flutter_tizen_tv_experimental",
     ":publish_cpp_client_wrapper",
     ":publish_headers_tizen",
   ]
