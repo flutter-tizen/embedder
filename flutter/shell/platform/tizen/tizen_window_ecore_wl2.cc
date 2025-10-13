@@ -848,4 +848,16 @@ void TizenWindowEcoreWl2::PrepareInputMethod() {
       [this](std::string str) { view_delegate_->OnCommit(str); });
 }
 
+void TizenWindowEcoreWl2::ActivateWindow() {
+  ecore_wl2_window_activate(ecore_wl2_window_);
+}
+
+void TizenWindowEcoreWl2::RaiseWindow() {
+  ecore_wl2_window_raise(ecore_wl2_window_);
+}
+
+void TizenWindowEcoreWl2::LowerWindow() {
+  ecore_wl2_window_lower(ecore_wl2_window_);
+}
+
 }  // namespace flutter
