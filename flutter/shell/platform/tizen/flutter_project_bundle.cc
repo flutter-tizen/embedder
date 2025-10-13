@@ -50,7 +50,8 @@ FlutterProjectBundle::FlutterProjectBundle(
         std::string(properties.dart_entrypoint_argv[i]));
   }
 
-  merged_platform_ui_thread_ = properties.merged_platform_ui_thread;
+  ui_thread_policy_ =
+      static_cast<FlutterUIThreadPolicy>(properties.ui_thread_policy);
 
   // Resolve any relative paths.
   if (assets_path_.is_relative() || icu_path_.is_relative() ||

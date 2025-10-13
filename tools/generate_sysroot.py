@@ -144,8 +144,8 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
     sys.exit('Unknown arch: ' + arch)
 
   if api_version >= 10.0:
-    base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base/reference/repos/standard/packages/'
-    unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified/reference/repos//{}/packages'.format(
+    base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base/reference/repos/standard/packages'
+    unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified/reference/repos/{}/packages'.format(
       target)
   else:
     base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen-{}/Tizen-{}-Base/reference/repos/standard/packages'.format(

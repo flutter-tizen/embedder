@@ -177,9 +177,12 @@ bool FlutterTizenEngine::RunEngine() {
     custom_task_runners.render_task_runner = &render_task_runner;
   }
 
-  if (project_->merged_platform_ui_thread()) {
-    FT_LOG(Info) << "Running with merged platform and UI thread. Experimental.";
+  if (project_->ui_thread_policy() !=
+      FlutterUIThreadPolicy::kRunOnSeparateThread) {
+    FT_LOG(Info) << "Running with merged platform and UI threads.";
     custom_task_runners.ui_task_runner = &platform_task_runner;
+  } else {
+    FT_LOG(Info) << "Running with unmerged platform and UI threads.";
   }
 
   FlutterProjectArgs args = {};

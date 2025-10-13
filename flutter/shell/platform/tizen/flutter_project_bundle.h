@@ -18,6 +18,12 @@ namespace flutter {
 using UniqueAotDataPtr =
     std::unique_ptr<_FlutterEngineAOTData, FlutterEngineCollectAOTDataFnPtr>;
 
+enum class FlutterUIThreadPolicy {
+  kDefault,
+  kRunOnPlatformThread,
+  kRunOnSeparateThread,
+};
+
 // The data associated with a Flutter project needed to run it in an engine.
 class FlutterProjectBundle {
  public:
@@ -67,8 +73,8 @@ class FlutterProjectBundle {
     return dart_entrypoint_arguments_;
   }
 
-  // Whether the UI isolate should be running on the platform thread.
-  bool merged_platform_ui_thread() const { return merged_platform_ui_thread_; }
+  // Returns thread policy for running the UI isolate.
+  FlutterUIThreadPolicy ui_thread_policy() { return ui_thread_policy_; }
 
  private:
   std::filesystem::path assets_path_;
@@ -84,8 +90,8 @@ class FlutterProjectBundle {
   // Dart entrypoint arguments.
   std::vector<std::string> dart_entrypoint_arguments_;
 
-  // Whether the UI isolate should be running on the platform thread.
-  bool merged_platform_ui_thread_;
+  // Thread policy for running the UI isolate.
+  FlutterUIThreadPolicy ui_thread_policy_;
 };
 
 }  // namespace flutter
