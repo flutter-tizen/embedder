@@ -57,11 +57,11 @@ class TizenWindowEcoreWl2 : public TizenWindow {
 
   void UpdateFlutterCursor(const std::string& kind) override;
 
-  void activateWindow() override;
+  void ActivateWindow() override;
 
-  void raiseWindow() override;
+  void RaiseWindow() override;
 
-  void lowerWindow() override;
+  void LowerWindow() override;
 
  private:
   bool CreateWindow(void* window_handle);

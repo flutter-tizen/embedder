@@ -75,13 +75,13 @@ void WindowChannel::HandleMethodCall(
   } else if (method_name == "getRotation") {
     result->Success(EncodableValue(window_->GetRotation()));
   } else if (method_name == "activateWindow") {
-    window_->activateWindow();
+    window_->ActivateWindow();
     result->Success();
   } else if (method_name == "raiseWindow") {
-    window_->raiseWindow();
+    window_->RaiseWindow();
     result->Success();
   } else if (method_name == "lowerWindow") {
-    window_->lowerWindow();
+    window_->LowerWindow();
     result->Success();
   } else {
     result->NotImplemented();
