@@ -425,4 +425,16 @@ void TizenWindowElementary::PrepareInputMethod() {
       [this](std::string str) { view_delegate_->OnCommit(str); });
 }
 
+void TizenWindowElementary::ActivateWindow() {
+  elm_win_activate(elm_win_);
+}
+
+void TizenWindowElementary::RaiseWindow() {
+  elm_win_raise(elm_win_);
+}
+
+void TizenWindowElementary::LowerWindow() {
+  elm_win_lower(elm_win_);
+}
+
 }  // namespace flutter
