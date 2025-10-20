@@ -177,6 +177,11 @@ bool FlutterTizenEngine::RunEngine() {
     custom_task_runners.render_task_runner = &render_task_runner;
   }
 
+  if (project_->ui_thread_policy() !=
+      FlutterUIThreadPolicy::kRunOnSeparateThread) {
+    custom_task_runners.ui_task_runner = &platform_task_runner;
+  }
+
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
   args.assets_path = assets_path_string.c_str();

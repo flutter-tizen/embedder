@@ -45,6 +45,16 @@ typedef enum {
   kHDMI,
 } FlutterDesktopExternalOutputType;
 
+// Configures the thread policy for running the UI isolate.
+typedef enum {
+  // Default value. Currently run the UI isolate on platform thread.
+  kDefault,
+  // Run the UI isolate on platform thread.
+  kRunOnPlatformThread,
+  // Run the UI isolate on a separate thread.
+  kRunOnSeparateThread,
+} FlutterDesktopUIThreadPolicy;
+
 // Properties for configuring the initial settings of a Flutter window.
 typedef struct {
   // The x-coordinate of the top left corner of the window.
@@ -104,6 +114,8 @@ typedef struct {
   // Array of Dart entrypoint arguments. This is deep copied during the call
   // to FlutterDesktopRunEngine.
   const char** dart_entrypoint_argv;
+  // Policy for the thread that runs UI isolate.
+  FlutterDesktopUIThreadPolicy ui_thread_policy;
 } FlutterDesktopEngineProperties;
 
 // ========== Engine ==========
