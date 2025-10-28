@@ -7,8 +7,6 @@
 
 #include <utility>
 
-#include "flutter/shell/platform/tizen/tizen_renderer_evas_gl.h"
-
 namespace flutter {
 
 TizenEventLoop::TizenEventLoop(std::thread::id main_thread_id,
@@ -106,34 +104,6 @@ void TizenPlatformEventLoop::OnTaskExpired() {
     on_task_expired_(&task.task);
   }
   expired_tasks_.clear();
-}
-
-TizenRenderEventLoop::TizenRenderEventLoop(std::thread::id main_thread_id,
-                                           CurrentTimeProc get_current_time,
-                                           TaskExpiredCallback on_task_expired,
-                                           TizenRenderer* renderer)
-    : TizenEventLoop(main_thread_id, get_current_time, on_task_expired),
-      renderer_(renderer) {
-  static_cast<TizenRendererEvasGL*>(renderer_)->SetOnPixelsDirty([this]() {
-    {
-      std::lock_guard<std::mutex> lock(expired_tasks_mutex_);
-      for (const Task& task : expired_tasks_) {
-        on_task_expired_(&task.task);
-      }
-      expired_tasks_.clear();
-    }
-    has_pending_renderer_callback_ = false;
-  });
-}
-
-TizenRenderEventLoop::~TizenRenderEventLoop() {}
-
-void TizenRenderEventLoop::OnTaskExpired() {
-  std::lock_guard<std::mutex> lock(expired_tasks_mutex_);
-  if (!has_pending_renderer_callback_ && !expired_tasks_.empty()) {
-    static_cast<TizenRendererEvasGL*>(renderer_)->MarkPixelsDirty();
-    has_pending_renderer_callback_ = true;
-  }
 }
 
 }  // namespace flutter

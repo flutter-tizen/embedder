@@ -17,7 +17,6 @@
 #include "flutter/shell/platform/tizen/system_utils.h"
 #include "flutter/shell/platform/tizen/tizen_input_method_context.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
-#include "flutter/shell/platform/tizen/tizen_renderer_evas_gl.h"
 
 #ifdef NUI_SUPPORT
 #include "flutter/shell/platform/tizen/tizen_renderer_nui_gl.h"
@@ -30,7 +29,6 @@ namespace {
 
 // Unique number associated with platform tasks.
 constexpr size_t kPlatformTaskRunnerIdentifier = 1;
-constexpr size_t kRenderTaskRunnerIdentifier = 2;
 
 // Converts a LanguageInfo struct to a FlutterLocale struct. |info| must outlive
 // the returned value, since the returned FlutterLocale has pointers into it.
@@ -87,8 +85,6 @@ FlutterTizenEngine::~FlutterTizenEngine() {
 std::unique_ptr<TizenRenderer> FlutterTizenEngine::CreateRenderer(
     FlutterDesktopRendererType renderer_type) {
   switch (renderer_type) {
-    case FlutterDesktopRendererType::kEvasGL:
-      return std::make_unique<TizenRendererEvasGL>(view_->tizen_view());
     case FlutterDesktopRendererType::kEGL:
 #ifdef NUI_SUPPORT
       if (auto* nui_view =
@@ -159,23 +155,6 @@ bool FlutterTizenEngine::RunEngine() {
   FlutterCustomTaskRunners custom_task_runners = {};
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
-
-  FlutterTaskRunnerDescription render_task_runner = {};
-
-  if (IsHeaded() && dynamic_cast<TizenRendererEvasGL*>(renderer_.get())) {
-    render_task_runner.struct_size = sizeof(FlutterTaskRunnerDescription);
-    render_task_runner.user_data = render_loop_.get();
-    render_task_runner.runs_task_on_current_thread_callback =
-        [](void* data) -> bool {
-      return static_cast<TizenEventLoop*>(data)->RunsTasksOnCurrentThread();
-    };
-    render_task_runner.post_task_callback =
-        [](FlutterTask task, uint64_t target_time_nanos, void* data) -> void {
-      static_cast<TizenEventLoop*>(data)->PostTask(task, target_time_nanos);
-    };
-    render_task_runner.identifier = kRenderTaskRunnerIdentifier;
-    custom_task_runners.render_task_runner = &render_task_runner;
-  }
 
   if (project_->ui_thread_policy() !=
       FlutterUIThreadPolicy::kRunOnSeparateThread) {
@@ -305,18 +284,6 @@ void FlutterTizenEngine::SetView(FlutterTizenView* view,
                                  FlutterDesktopRendererType renderer_type) {
   view_ = view;
   renderer_ = CreateRenderer(renderer_type);
-
-  if (renderer_type == FlutterDesktopRendererType::kEvasGL) {
-    render_loop_ = std::make_unique<TizenRenderEventLoop>(
-        std::this_thread::get_id(),  // main thread
-        embedder_api_.GetCurrentTime,
-        [this](const auto* task) {
-          if (embedder_api_.RunTask(this->engine_, task) != kSuccess) {
-            FT_LOG(Error) << "Could not post an engine task.";
-          }
-        },
-        renderer_.get());
-  }
 }
 
 void FlutterTizenEngine::AddPluginRegistrarDestructionCallback(
