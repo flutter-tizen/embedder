@@ -6,7 +6,6 @@
 #define EMBEDDER_TIZEN_INPUT_METHOD_CONTEXT_H_
 
 #include <Ecore_IMF.h>
-#include <Ecore_IMF_Evas.h>
 #include <Ecore_Input.h>
 
 #include <functional>
@@ -30,10 +29,6 @@ class TizenInputMethodContext {
   ~TizenInputMethodContext();
 
   bool HandleEcoreEventKey(Ecore_Event_Key* event, bool is_down);
-
-  bool HandleEvasEventKeyDown(Evas_Event_Key_Down* event);
-
-  bool HandleEvasEventKeyUp(Evas_Event_Key_Up* event);
 
 #ifdef NUI_SUPPORT
   bool HandleNuiKeyEvent(const char* device_name,

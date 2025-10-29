@@ -26,8 +26,6 @@ struct FlutterDesktopView;
 typedef struct FlutterDesktopView* FlutterDesktopViewRef;
 
 typedef enum {
-  // The renderer based on EvasGL.
-  kEvasGL,
   // The renderer based on EGL.
   kEGL,
 } FlutterDesktopRendererType;
@@ -187,15 +185,6 @@ FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindow(
 
 // Creates a view that hosts and displays the given engine instance.
 //
-// The type of |parent| must be Evas_Object*.
-// @warning This API is a work-in-progress and may change.
-FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopViewCreateFromElmParent(
-    const FlutterDesktopViewProperties& view_properties,
-    FlutterDesktopEngineRef engine,
-    void* parent);
-
-// Creates a view that hosts and displays the given engine instance.
-//
 // The type of |image_view| must be Dali::Toolkit::ImageView*.
 // The type of |native_image_queue| must be Dali::NativeImageSourceQueue*.
 // @warning This API is a work-in-progress and may change.
@@ -215,8 +204,6 @@ FLUTTER_EXPORT void FlutterDesktopViewDestroy(FlutterDesktopViewRef view);
 // Returns a native UI toolkit handle for manipulation in host application.
 //
 // Cast the returned void*
-// - view elementary    : to Evas_Object*.
-// - window elementary  : to Evas_Object*
 // - window ecore wl2   : to Ecore_Wl2_Window*
 // @warning This API is a work-in-progress and may change.
 FLUTTER_EXPORT void* FlutterDesktopViewGetNativeHandle(
