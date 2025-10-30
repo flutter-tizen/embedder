@@ -18,6 +18,10 @@
 #include "flutter/shell/platform/tizen/tizen_input_method_context.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
 
+#ifdef FLUTTER_TIZEN_EXPERIMENTAL
+#include "flutter/shell/platform/tizen/tizen_renderer_vulkan.h"
+#endif
+
 #ifdef NUI_SUPPORT
 #include "flutter/shell/platform/tizen/tizen_renderer_nui_gl.h"
 #include "flutter/shell/platform/tizen/tizen_view_nui.h"
@@ -95,6 +99,12 @@ std::unique_ptr<TizenRenderer> FlutterTizenEngine::CreateRenderer(
 #endif
       return std::make_unique<TizenRendererEgl>(
           view_->tizen_view(), project_->HasArgument("--enable-impeller"));
+    case FlutterDesktopRendererType::kEVulkan:
+#ifdef FLUTTER_TIZEN_EXPERIMENTAL
+      return std::make_unique<TizenRendererVulkan>(view_->tizen_view());
+#else
+      return nullptr;
+#endif
   }
 }
 

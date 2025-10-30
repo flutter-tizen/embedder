@@ -72,7 +72,17 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}
-          path: src/out/build/libflutter_tizen*.so
+          path: |
+            src/out/build/libflutter_tizen_common.so
+            src/out/build/libflutter_tizen_mobile.so
+            src/out/build/libflutter_tizen_tv.so
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}_experimental
+          path: |
+            src/out/build/libflutter_tizen*_experimental.so
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
@@ -85,7 +95,17 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         with:
           name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}_symbols
-          path: src/out/build/so.unstripped/libflutter_tizen*.so
+          path: |
+            src/out/build/so.unstripped/libflutter_tizen_common.so
+            src/out/build/so.unstripped/libflutter_tizen_mobile.so
+            src/out/build/so.unstripped/libflutter_tizen_tv.so
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ github.event_name == 'push' }}
+        with:
+          name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}_experimental_symbols
+          path: src/out/build/so.unstripped/libflutter_tizen*_experimental.so
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
