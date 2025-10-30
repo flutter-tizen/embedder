@@ -21,7 +21,6 @@
 #endif
 #include "flutter/shell/platform/tizen/tizen_window.h"
 #include "flutter/shell/platform/tizen/tizen_window_ecore_wl2.h"
-#include "flutter/shell/platform/tizen/tizen_window_elementary.h"
 
 namespace {
 
@@ -201,19 +200,13 @@ FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindow(
       window_properties.height};
 
   std::unique_ptr<flutter::TizenWindow> window;
-  if (window_properties.renderer_type == FlutterDesktopRendererType::kEvasGL) {
-    window = std::make_unique<flutter::TizenWindowElementary>(
-        window_geometry, window_properties.transparent,
-        window_properties.focusable, window_properties.top_level);
-  } else {
-    window = std::make_unique<flutter::TizenWindowEcoreWl2>(
-        window_geometry, window_properties.transparent,
-        window_properties.focusable, window_properties.top_level,
-        window_properties.pointing_device_support,
-        window_properties.floating_menu_support,
-        window_properties.window_handle,
-        window_properties.renderer_type == kEVulkan);
-  }
+
+  window = std::make_unique<flutter::TizenWindowEcoreWl2>(
+      window_geometry, window_properties.transparent,
+      window_properties.focusable, window_properties.top_level,
+      window_properties.pointing_device_support,
+      window_properties.floating_menu_support, window_properties.window_handle,
+      window_properties.renderer_type == kEVulkan);
 
   auto view = std::make_unique<flutter::FlutterTizenView>(
       flutter::kImplicitViewId, std::move(window),

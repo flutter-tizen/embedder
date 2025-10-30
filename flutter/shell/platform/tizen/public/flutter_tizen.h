@@ -26,8 +26,6 @@ struct FlutterDesktopView;
 typedef struct FlutterDesktopView* FlutterDesktopViewRef;
 
 typedef enum {
-  // The renderer based on EvasGL.
-  kEvasGL,
   // The renderer based on EGL.
   kEGL,
   // The renderer based on Vulkan.
@@ -46,6 +44,16 @@ typedef enum {
   // Display to the HDMI external output.
   kHDMI,
 } FlutterDesktopExternalOutputType;
+
+// Configures the thread policy for running the UI isolate.
+typedef enum {
+  // Default value. Currently run the UI isolate on platform thread.
+  kDefault,
+  // Run the UI isolate on platform thread.
+  kRunOnPlatformThread,
+  // Run the UI isolate on a separate thread.
+  kRunOnSeparateThread,
+} FlutterDesktopUIThreadPolicy;
 
 // Properties for configuring the initial settings of a Flutter window.
 typedef struct {
@@ -106,6 +114,8 @@ typedef struct {
   // Array of Dart entrypoint arguments. This is deep copied during the call
   // to FlutterDesktopRunEngine.
   const char** dart_entrypoint_argv;
+  // Policy for the thread that runs UI isolate.
+  FlutterDesktopUIThreadPolicy ui_thread_policy;
 } FlutterDesktopEngineProperties;
 
 // ========== Engine ==========
@@ -177,15 +187,6 @@ FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindow(
 
 // Creates a view that hosts and displays the given engine instance.
 //
-// The type of |parent| must be Evas_Object*.
-// @warning This API is a work-in-progress and may change.
-FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopViewCreateFromElmParent(
-    const FlutterDesktopViewProperties& view_properties,
-    FlutterDesktopEngineRef engine,
-    void* parent);
-
-// Creates a view that hosts and displays the given engine instance.
-//
 // The type of |image_view| must be Dali::Toolkit::ImageView*.
 // The type of |native_image_queue| must be Dali::NativeImageSourceQueue*.
 // @warning This API is a work-in-progress and may change.
@@ -205,8 +206,6 @@ FLUTTER_EXPORT void FlutterDesktopViewDestroy(FlutterDesktopViewRef view);
 // Returns a native UI toolkit handle for manipulation in host application.
 //
 // Cast the returned void*
-// - view elementary    : to Evas_Object*.
-// - window elementary  : to Evas_Object*
 // - window ecore wl2   : to Ecore_Wl2_Window*
 // @warning This API is a work-in-progress and may change.
 FLUTTER_EXPORT void* FlutterDesktopViewGetNativeHandle(

@@ -180,21 +180,6 @@ bool TizenInputMethodContext::HandleEcoreEventKey(Ecore_Event_Key* event,
   }
 }
 
-bool TizenInputMethodContext::HandleEvasEventKeyDown(
-    Evas_Event_Key_Down* event) {
-  Ecore_IMF_Event imf_event;
-  ecore_imf_evas_event_key_down_wrap(event, &imf_event.key_down);
-  return ecore_imf_context_filter_event(imf_context_, ECORE_IMF_EVENT_KEY_DOWN,
-                                        &imf_event);
-}
-
-bool TizenInputMethodContext::HandleEvasEventKeyUp(Evas_Event_Key_Up* event) {
-  Ecore_IMF_Event imf_event;
-  ecore_imf_evas_event_key_up_wrap(event, &imf_event.key_up);
-  return ecore_imf_context_filter_event(imf_context_, ECORE_IMF_EVENT_KEY_UP,
-                                        &imf_event);
-}
-
 #ifdef NUI_SUPPORT
 bool TizenInputMethodContext::HandleNuiKeyEvent(const char* device_name,
                                                 uint32_t device_class,

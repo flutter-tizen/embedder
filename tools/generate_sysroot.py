@@ -50,13 +50,9 @@ unified_packages = [
   'ecore-con-devel',
   'ecore-core',
   'ecore-core-devel',
-  'ecore-evas',
-  'ecore-evas-devel',
   'ecore-file-devel',
   'ecore-imf',
   'ecore-imf-devel',
-  'ecore-imf-evas',
-  'ecore-imf-evas-devel',
   'ecore-input',
   'ecore-input-devel',
   'ecore-wayland',
@@ -67,21 +63,15 @@ unified_packages = [
   'eet',
   'eet-devel',
   'efl-devel',
-  'efl-extension',
-  'efl-extension-devel',
   'efreet-devel',
   'eina',
   'eina-devel',
   'eina-tools',
   'eldbus',
   'eldbus-devel',
-  'elementary',
-  'elementary-devel',
   'emile-devel',
   'eo-devel',
   'ethumb-devel',
-  'evas',
-  'evas-devel',
   'glib2-devel',
   'jsoncpp',
   'jsoncpp-devel',
@@ -144,8 +134,8 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
     sys.exit('Unknown arch: ' + arch)
 
   if api_version >= 10.0:
-    base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base/reference/repos/standard/packages/'
-    unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified/reference/repos//{}/packages'.format(
+    base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base/reference/repos/standard/packages'
+    unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified/reference/repos/{}/packages'.format(
       target)
   else:
     base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen-{}/Tizen-{}-Base/reference/repos/standard/packages'.format(
