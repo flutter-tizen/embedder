@@ -28,6 +28,8 @@ typedef struct FlutterDesktopView* FlutterDesktopViewRef;
 typedef enum {
   // The renderer based on EGL.
   kEGL,
+  // The renderer based on Vulkan.
+  kEVulkan
 } FlutterDesktopRendererType;
 
 typedef enum {

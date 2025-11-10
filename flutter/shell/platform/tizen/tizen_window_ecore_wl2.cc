@@ -148,14 +148,16 @@ TizenWindowEcoreWl2::TizenWindowEcoreWl2(TizenGeometry geometry,
                                          bool top_level,
                                          bool pointing_device_support,
                                          bool floating_menu_support,
-                                         void* window_handle = nullptr)
+                                         void* window_handle = nullptr,
+                                         bool is_vulkan = false)
     : TizenWindow(geometry, transparent, focusable, top_level)
 #ifdef TV_PROFILE
       ,
       pointing_device_support_(pointing_device_support),
       floating_menu_support_(floating_menu_support)
 #endif
-{
+      ,
+      is_vulkan_(is_vulkan) {
   if (!CreateWindow(window_handle)) {
     FT_LOG(Error) << "Failed to create a platform window.";
     return;
@@ -210,9 +212,14 @@ bool TizenWindowEcoreWl2::CreateWindow(void* window_handle) {
     ecore_wl2_window_ = static_cast<Ecore_Wl2_Window*>(window_handle);
   }
 
-  ecore_wl2_egl_window_ = ecore_wl2_egl_window_create(
-      ecore_wl2_window_, initial_geometry_.width, initial_geometry_.height);
-  return ecore_wl2_egl_window_ && wl2_display_;
+  if (is_vulkan_) {
+    wl2_surface_ = ecore_wl2_window_surface_get(ecore_wl2_window_);
+    return wl2_surface_ && wl2_display_;
+  } else {
+    ecore_wl2_egl_window_ = ecore_wl2_egl_window_create(
+        ecore_wl2_window_, initial_geometry_.width, initial_geometry_.height);
+    return ecore_wl2_egl_window_ && wl2_display_;
+  }
 }
 
 void TizenWindowEcoreWl2::SetWindowOptions() {
@@ -423,30 +430,30 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
         return ECORE_CALLBACK_PASS_ON;
       },
       this));
+  if (!is_vulkan_) {
+    ecore_event_handlers_.push_back(ecore_event_handler_add(
+        ECORE_WL2_EVENT_WINDOW_CONFIGURE,
+        [](void* data, int type, void* event) -> Eina_Bool {
+          auto* self = static_cast<TizenWindowEcoreWl2*>(data);
+          if (self->view_delegate_) {
+            auto* configure_event =
+                reinterpret_cast<Ecore_Wl2_Event_Window_Configure*>(event);
+            if (configure_event->win == self->GetWindowId()) {
+              ecore_wl2_egl_window_resize_with_rotation(
+                  self->ecore_wl2_egl_window_, configure_event->x,
+                  configure_event->y, configure_event->w, configure_event->h,
+                  self->GetRotation());
 
-  ecore_event_handlers_.push_back(ecore_event_handler_add(
-      ECORE_WL2_EVENT_WINDOW_CONFIGURE,
-      [](void* data, int type, void* event) -> Eina_Bool {
-        auto* self = static_cast<TizenWindowEcoreWl2*>(data);
-        if (self->view_delegate_) {
-          auto* configure_event =
-              reinterpret_cast<Ecore_Wl2_Event_Window_Configure*>(event);
-          if (configure_event->win == self->GetWindowId()) {
-            ecore_wl2_egl_window_resize_with_rotation(
-                self->ecore_wl2_egl_window_, configure_event->x,
-                configure_event->y, configure_event->w, configure_event->h,
-                self->GetRotation());
-
-            self->view_delegate_->OnResize(
-                configure_event->x, configure_event->y, configure_event->w,
-                configure_event->h);
-            return ECORE_CALLBACK_DONE;
+              self->view_delegate_->OnResize(
+                  configure_event->x, configure_event->y, configure_event->w,
+                  configure_event->h);
+              return ECORE_CALLBACK_DONE;
+            }
           }
-        }
-        return ECORE_CALLBACK_PASS_ON;
-      },
-      this));
-
+          return ECORE_CALLBACK_PASS_ON;
+        },
+        this));
+  }
   ecore_event_handlers_.push_back(ecore_event_handler_add(
       ECORE_EVENT_MOUSE_BUTTON_DOWN,
       [](void* data, int type, void* event) -> Eina_Bool {
@@ -846,6 +853,14 @@ void TizenWindowEcoreWl2::PrepareInputMethod() {
       [this]() { view_delegate_->OnComposeEnd(); });
   input_method_context_->SetOnCommit(
       [this](std::string str) { view_delegate_->OnCommit(str); });
+}
+
+void* TizenWindowEcoreWl2::GetRenderTarget() {
+  if (is_vulkan_) {
+    return wl2_surface_;
+  } else {
+    return ecore_wl2_egl_window_;
+  }
 }
 
 void TizenWindowEcoreWl2::ActivateWindow() {
