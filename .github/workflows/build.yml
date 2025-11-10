@@ -44,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-17 rpm2cpio cpio binutils-${{ matrix.triple }}
+          sudo apt-get install -y clang-17 rpm2cpio cpio binutils-${{ matrix.triple }} patchelf
 
       - name: Install depot_tools
         run: |
@@ -68,6 +68,14 @@ jobs:
             --api-version ${{ matrix.api-version }} \
             --target-dir build
           ninja -C src/out/build
+
+          #Note: Change experimental so's soname(https://github.com/flutter-tizen/embedder/issues/110)
+          patchelf --set-soname libflutter_tizen_common.so src/out/build/libflutter_tizen_common_experimental.so
+          patchelf --set-soname libflutter_tizen_mobile.so src/out/build/libflutter_tizen_mobile_experimental.so
+          patchelf --set-soname libflutter_tizen_tv.so src/out/build/libflutter_tizen_tv_experimental.so
+          patchelf --set-soname libflutter_tizen_common.so src/out/build/so.unstripped/libflutter_tizen_common_experimental.so
+          patchelf --set-soname libflutter_tizen_mobile.so src/out/build/so.unstripped/libflutter_tizen_mobile_experimental.so
+          patchelf --set-soname libflutter_tizen_tv.so src/out/build/so.unstripped/libflutter_tizen_tv_experimental.so
 
       - uses: actions/upload-artifact@v4
         with:
