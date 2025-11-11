@@ -4,6 +4,7 @@
 
 #include "accessibility_bridge.h"
 
+#include <cstring>
 #include <functional>
 #include <utility>
 
@@ -607,6 +608,16 @@ AccessibilityBridge::FromFlutterSemanticsNode(
   }
   if (flutter_node.tooltip) {
     result.tooltip = std::string(flutter_node.tooltip);
+    // Tooltips are not announced when a node is focused, resulting in no
+    // message. In current Tizen, if a node doesn't have a label, hint, and
+    // value, then the screen reader announces the node's type (ex. 'Button').
+    // To be consistent with Android and prevent the screen reader from
+    // announcing the node as unlabeled, tooltips should be used as the message.
+    if ((!flutter_node.label || strlen(flutter_node.label) == 0) &&
+        (!flutter_node.hint || strlen(flutter_node.hint) == 0) &&
+        (!flutter_node.value || strlen(flutter_node.value) == 0)) {
+      result.value = std::string(flutter_node.tooltip);
+    }
   }
   result.text_direction = flutter_node.text_direction;
   result.rect = flutter_node.rect;
