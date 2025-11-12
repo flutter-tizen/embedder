@@ -27,10 +27,11 @@ class ExternalTextureSurfaceVulkanBufferDma
 
  private:
   bool GetFdMemoryTypeIndex(int fd, uint32_t& index_out);
-  TizenRendererVulkan* vulkan_renderer_ = nullptr;
   VkFormat texture_format_ = VK_FORMAT_UNDEFINED;
   VkImage texture_image_ = VK_NULL_HANDLE;
   VkDeviceMemory texture_device_memory_ = VK_NULL_HANDLE;
+  PFN_vkGetMemoryFdPropertiesKHR getMemoryFdPropertiesKHR_ = nullptr;
+  VkDevice device_;
 };
 }  // namespace flutter
 

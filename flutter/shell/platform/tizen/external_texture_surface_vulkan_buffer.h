@@ -32,7 +32,7 @@ class ExternalTextureSurfaceVulkanBuffer {
 
  protected:
   VkFormat ConvertFormat(tbm_format& format);
-  bool FindProperties(uint32_t memory_type_bits_requirement,
+  bool FindMemoryType(uint32_t memory_type_bits_requirement,
                       VkMemoryPropertyFlags required_properties,
                       uint32_t& index_out);
 

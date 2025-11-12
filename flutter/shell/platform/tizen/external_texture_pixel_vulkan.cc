@@ -222,7 +222,8 @@ void ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
   region.imageSubresource.baseArrayLayer = 0;
   region.imageSubresource.layerCount = 1;
   region.imageOffset = {0, 0, 0};
-  region.imageExtent = {width_, height_, 1};
+  region.imageExtent = {static_cast<uint32_t>(width_),
+                        static_cast<uint32_t>(height_), 1};
 
   vkCmdCopyBufferToImage(command_buffer, staging_buffer_, vk_image_,
                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);

@@ -33,9 +33,9 @@ VkFormat ExternalTextureSurfaceVulkanBuffer::ConvertFormat(tbm_format& format) {
   }
 }
 
-bool ExternalTextureSurfaceVulkanBuffer::FindProperties(
-    uint32_t memory_type_bits_requirement,
-    VkMemoryPropertyFlags required_properties,
+bool ExternalTextureSurfaceVulkanBuffer::FindMemoryType(
+    uint32_t type_filter,
+    VkMemoryPropertyFlags properties,
     uint32_t& index_out) {
   VkPhysicalDeviceMemoryProperties memory_properties;
   vkGetPhysicalDeviceMemoryProperties(
@@ -44,14 +44,9 @@ bool ExternalTextureSurfaceVulkanBuffer::FindProperties(
       &memory_properties);
 
   for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
-    const uint32_t memory_type_bits = (1 << i);
-    const bool isRequiredMemoryType =
-        memory_type_bits_requirement & memory_type_bits;
-    const VkMemoryPropertyFlags properties =
-        memory_properties.memoryTypes[i].propertyFlags;
-    const bool has_required_properties =
-        (properties & required_properties) == required_properties;
-    if (isRequiredMemoryType && has_required_properties) {
+    if ((type_filter & (1 << i)) &&
+        (memory_properties.memoryTypes[i].propertyFlags & properties) ==
+            properties) {
       index_out = i;
       return true;
     }
