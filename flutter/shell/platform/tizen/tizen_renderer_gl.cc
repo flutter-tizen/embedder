@@ -77,8 +77,8 @@ FlutterRendererConfig TizenRendererGL::GetRendererConfig() {
     if (!engine->texture_registrar()) {
       return false;
     }
-    return engine->texture_registrar()->PopulateTexture(texture_id, width,
-                                                        height, texture);
+    return engine->texture_registrar()->PopulateOpenGLTexture(texture_id, width,
+                                                              height, texture);
   };
   return config;
 }

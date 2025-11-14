@@ -14,7 +14,7 @@
 
 namespace flutter {
 
-class ExternalTextureSurfaceEGLImpeller : public ExternalTexture {
+class ExternalTextureSurfaceEGLImpeller : public ExternalGLTexture {
  public:
   ExternalTextureSurfaceEGLImpeller(
       ExternalTextureExtensionType gl_extension,
@@ -30,9 +30,9 @@ class ExternalTextureSurfaceEGLImpeller : public ExternalTexture {
   // texture object.
   //
   // Returns true on success, false on failure.
-  bool PopulateTexture(size_t width,
-                       size_t height,
-                       FlutterOpenGLTexture* opengl_texture) override;
+  bool PopulateOpenGLTexture(size_t width,
+                             size_t height,
+                             FlutterOpenGLTexture* opengl_texture) override;
 
  private:
   static bool OnBindCallback(void* user_data);

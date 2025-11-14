@@ -11,7 +11,7 @@
 
 namespace flutter {
 
-class ExternalTexturePixelEGLImpeller : public ExternalTexture {
+class ExternalTexturePixelEGLImpeller : public ExternalGLTexture {
  public:
   ExternalTexturePixelEGLImpeller(
       FlutterDesktopPixelBufferTextureCallback texture_callback,
@@ -19,9 +19,9 @@ class ExternalTexturePixelEGLImpeller : public ExternalTexture {
 
   ~ExternalTexturePixelEGLImpeller() = default;
 
-  bool PopulateTexture(size_t width,
-                       size_t height,
-                       FlutterOpenGLTexture* opengl_texture) override;
+  bool PopulateOpenGLTexture(size_t width,
+                             size_t height,
+                             FlutterOpenGLTexture* opengl_texture) override;
 
  private:
   FlutterDesktopPixelBufferTextureCallback texture_callback_ = nullptr;
