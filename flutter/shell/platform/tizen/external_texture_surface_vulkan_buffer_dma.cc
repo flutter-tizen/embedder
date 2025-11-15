@@ -75,7 +75,7 @@ VkResult ExternalTextureSurfaceVulkanBufferDma::GetMemoryFdPropertiesKHR(
           GetDevice(), "vkGetMemoryFdPropertiesKHR");
   if (!pfn_memory_fd_properties) {
     FT_LOG(Error) << "Fail to get vkGetMemoryFdPropertiesKHR";
-    return VK_ERROR_UNKNOWN;
+    return VK_ERROR_EXTENSION_NOT_PRESENT;
   }
   return pfn_memory_fd_properties(device, handleType, fd, pMemoryFdProperties);
 }
