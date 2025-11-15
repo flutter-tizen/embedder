@@ -58,7 +58,7 @@ bool ExternalTexturePixelVulkan::PopulateVulkanTexture(
 
   FlutterVulkanTexture* vulkan_texture =
       static_cast<FlutterVulkanTexture*>(flutter_texture);
-  vulkan_texture->image = reinterpret_cast<uint64_t>(vk_image_);
+  vulkan_texture->image = reinterpret_cast<uint64_t>(image_);
   vulkan_texture->format = VK_FORMAT_R8G8B8A8_UNORM;
   vulkan_texture->width = width_;
   vulkan_texture->height = height_;
@@ -80,7 +80,7 @@ bool ExternalTexturePixelVulkan::CreateOrUpdateBuffer(
 
 bool ExternalTexturePixelVulkan::CreateOrUpdateImage(size_t width,
                                                      size_t height) {
-  if (vk_image_ == VK_NULL_HANDLE) {
+  if (image_ == VK_NULL_HANDLE) {
     return CreateImage(width, height);
   }
 
@@ -107,25 +107,20 @@ bool ExternalTexturePixelVulkan::CreateImage(size_t width, size_t height) {
       VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
   image_info.samples = VK_SAMPLE_COUNT_1_BIT;
   image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  if (vkCreateImage(static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()),
-                    &image_info, nullptr, &vk_image_) != VK_SUCCESS) {
+  if (vkCreateImage(GetDevice(), &image_info, nullptr, &image_) != VK_SUCCESS) {
     FT_LOG(Error) << "Fail to create VkImage";
     return false;
   }
   VkMemoryRequirements memory_requirements;
-  vkGetImageMemoryRequirements(
-      static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()), vk_image_,
-      &memory_requirements);
+  vkGetImageMemoryRequirements(GetDevice(), image_, &memory_requirements);
 
-  if (!AllocateMemory(memory_requirements, vk_image_memory_,
+  if (!AllocateMemory(memory_requirements, image_memory_,
                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
     FT_LOG(Error) << "Fail to allocate image memory";
     return false;
   }
 
-  if (vkBindImageMemory(
-          static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()), vk_image_,
-          vk_image_memory_, 0) != VK_SUCCESS) {
+  if (vkBindImageMemory(GetDevice(), image_, image_memory_, 0) != VK_SUCCESS) {
     FT_LOG(Error) << "Fail to bind image memory";
     return false;
   }
@@ -160,16 +155,15 @@ bool ExternalTexturePixelVulkan::CreateBuffer(VkDeviceSize required_size) {
   buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
   buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-  if (vkCreateBuffer(static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()),
-                     &buffer_info, nullptr, &staging_buffer_) != VK_SUCCESS) {
+  if (vkCreateBuffer(GetDevice(), &buffer_info, nullptr, &staging_buffer_) !=
+      VK_SUCCESS) {
     FT_LOG(Error) << "Fail to create vkBuffer";
     return false;
   }
 
   VkMemoryRequirements memory_requirements;
-  vkGetBufferMemoryRequirements(
-      static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()),
-      staging_buffer_, &memory_requirements);
+  vkGetBufferMemoryRequirements(GetDevice(), staging_buffer_,
+                                &memory_requirements);
 
   if (!AllocateMemory(memory_requirements, staging_buffer_memory_,
                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
@@ -178,9 +172,8 @@ bool ExternalTexturePixelVulkan::CreateBuffer(VkDeviceSize required_size) {
     return false;
   }
 
-  if (vkBindBufferMemory(
-          static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()),
-          staging_buffer_, staging_buffer_memory_, 0) != VK_SUCCESS) {
+  if (vkBindBufferMemory(GetDevice(), staging_buffer_, staging_buffer_memory_,
+                         0) != VK_SUCCESS) {
     FT_LOG(Error) << "Fail to bind buffer memory";
     return false;
   }
@@ -190,13 +183,11 @@ bool ExternalTexturePixelVulkan::CreateBuffer(VkDeviceSize required_size) {
 
 void ExternalTexturePixelVulkan::ReleaseBuffer() {
   if (staging_buffer_ != VK_NULL_HANDLE) {
-    vkDestroyBuffer(static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()),
-                    staging_buffer_, nullptr);
+    vkDestroyBuffer(GetDevice(), staging_buffer_, nullptr);
     staging_buffer_ = VK_NULL_HANDLE;
   }
   if (staging_buffer_memory_ != VK_NULL_HANDLE) {
-    vkFreeMemory(static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()),
-                 staging_buffer_memory_, nullptr);
+    vkFreeMemory(GetDevice(), staging_buffer_memory_, nullptr);
 
     staging_buffer_memory_ = VK_NULL_HANDLE;
   }
@@ -206,11 +197,9 @@ void ExternalTexturePixelVulkan::ReleaseBuffer() {
 void ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
                                                    VkDeviceSize size) {
   void* data;
-  vkMapMemory(static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()),
-              staging_buffer_memory_, 0, size, 0, &data);
+  vkMapMemory(GetDevice(), staging_buffer_memory_, 0, size, 0, &data);
   memcpy(data, src_buffer, static_cast<size_t>(size));
-  vkUnmapMemory(static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()),
-                staging_buffer_memory_);
+  vkUnmapMemory(GetDevice(), staging_buffer_memory_);
   VkCommandBuffer command_buffer = vulkan_renderer_->BeginSingleTimeCommands();
 
   VkBufferImageCopy region{};
@@ -225,23 +214,21 @@ void ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
   region.imageExtent = {static_cast<uint32_t>(width_),
                         static_cast<uint32_t>(height_), 1};
 
-  vkCmdCopyBufferToImage(command_buffer, staging_buffer_, vk_image_,
+  vkCmdCopyBufferToImage(command_buffer, staging_buffer_, image_,
                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
   vulkan_renderer_->EndSingleTimeCommands(command_buffer);
 }
 
 void ExternalTexturePixelVulkan::ReleaseImage() {
-  if (vk_image_ != VK_NULL_HANDLE) {
-    vkDestroyImage(static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()),
-                   vk_image_, nullptr);
-    vk_image_ = VK_NULL_HANDLE;
+  if (image_ != VK_NULL_HANDLE) {
+    vkDestroyImage(GetDevice(), image_, nullptr);
+    image_ = VK_NULL_HANDLE;
   }
 
-  if (vk_image_memory_ != VK_NULL_HANDLE) {
-    vkFreeMemory(static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()),
-                 vk_image_memory_, nullptr);
-    vk_image_memory_ = VK_NULL_HANDLE;
+  if (image_memory_ != VK_NULL_HANDLE) {
+    vkFreeMemory(GetDevice(), image_memory_, nullptr);
+    image_memory_ = VK_NULL_HANDLE;
   }
 }
 
@@ -260,13 +247,16 @@ bool ExternalTexturePixelVulkan::AllocateMemory(
   alloc_info.allocationSize = memory_requirements.size;
   alloc_info.memoryTypeIndex = memory_type_index;
 
-  if (vkAllocateMemory(
-          static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle()),
-          &alloc_info, nullptr, &memory) != VK_SUCCESS) {
+  if (vkAllocateMemory(GetDevice(), &alloc_info, nullptr, &memory) !=
+      VK_SUCCESS) {
     FT_LOG(Error) << "Fail to allocate memory";
     return false;
   }
   return true;
+}
+
+VkDevice ExternalTexturePixelVulkan::GetDevice() {
+  return static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle());
 }
 
 }  // namespace flutter

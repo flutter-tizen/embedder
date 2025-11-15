@@ -54,4 +54,8 @@ bool ExternalTextureSurfaceVulkanBuffer::FindMemoryType(
   return false;
 }
 
+VkDevice ExternalTextureSurfaceVulkanBuffer::GetDevice() {
+  return static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle());
+}
+
 }  // namespace flutter

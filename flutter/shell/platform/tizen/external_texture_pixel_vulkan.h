@@ -1,4 +1,4 @@
-// Copyright 2024 Samsung Electronics Co., Ltd. All rights reserved.
+// Copyright 2025 Samsung Electronics Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -33,6 +33,7 @@ class ExternalTexturePixelVulkan : public ExternalVulkanTexture {
   bool CreateOrUpdateBuffer(VkDeviceSize required_size);
   bool CreateOrUpdateImage(size_t width, size_t height);
   void CopyBufferToImage(const uint8_t* src_buffer, VkDeviceSize size);
+  VkDevice GetDevice();
   void ReleaseBuffer();
   void ReleaseImage();
   bool FindMemoryType(uint32_t typeFilter,
@@ -43,8 +44,8 @@ class ExternalTexturePixelVulkan : public ExternalVulkanTexture {
   size_t height_ = 0;
   void* user_data_ = nullptr;
   TizenRendererVulkan* vulkan_renderer_ = nullptr;
-  VkImage vk_image_ = VK_NULL_HANDLE;
-  VkDeviceMemory vk_image_memory_ = VK_NULL_HANDLE;
+  VkImage image_ = VK_NULL_HANDLE;
+  VkDeviceMemory image_memory_ = VK_NULL_HANDLE;
   VkBuffer staging_buffer_ = VK_NULL_HANDLE;
   VkDeviceMemory staging_buffer_memory_ = VK_NULL_HANDLE;
   VkDeviceSize staging_buffer_size_ = 0;

@@ -1,4 +1,4 @@
-// Copyright 2024 Samsung Electronics Co., Ltd. All rights reserved.
+// Copyright 2025 Samsung Electronics Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -32,6 +32,7 @@ class ExternalTextureSurfaceVulkanBuffer {
 
  protected:
   VkFormat ConvertFormat(tbm_format& format);
+  VkDevice GetDevice();
   bool FindMemoryType(uint32_t memory_type_bits_requirement,
                       VkMemoryPropertyFlags required_properties,
                       uint32_t& index_out);

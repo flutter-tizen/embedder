@@ -1,4 +1,4 @@
-// Copyright 2024 Samsung Electronics Co., Ltd. All rights reserved.
+// Copyright 2025 Samsung Electronics Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -27,11 +27,14 @@ class ExternalTextureSurfaceVulkanBufferDma
 
  private:
   bool GetFdMemoryTypeIndex(int fd, uint32_t& index_out);
+  VkResult GetMemoryFdPropertiesKHR(
+      VkDevice device,
+      VkExternalMemoryHandleTypeFlagBits handleType,
+      int fd,
+      VkMemoryFdPropertiesKHR* pMemoryFdProperties);
   VkFormat texture_format_ = VK_FORMAT_UNDEFINED;
   VkImage texture_image_ = VK_NULL_HANDLE;
   VkDeviceMemory texture_device_memory_ = VK_NULL_HANDLE;
-  PFN_vkGetMemoryFdPropertiesKHR getMemoryFdPropertiesKHR_ = nullptr;
-  VkDevice device_;
 };
 }  // namespace flutter
 

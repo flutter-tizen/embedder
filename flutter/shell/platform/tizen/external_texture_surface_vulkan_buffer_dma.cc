@@ -5,23 +5,11 @@
 #include "flutter/shell/platform/tizen/external_texture_surface_vulkan_buffer_dma.h"
 #include "flutter/shell/platform/tizen/logger.h"
 
-#ifndef DRM_FORMAT_MOD_LINEAR
-#define DRM_FORMAT_MOD_LINEAR 0
-#endif
-
 namespace flutter {
 
 ExternalTextureSurfaceVulkanBufferDma::ExternalTextureSurfaceVulkanBufferDma(
     TizenRendererVulkan* vulkan_renderer)
-    : ExternalTextureSurfaceVulkanBuffer(vulkan_renderer) {
-  device_ = static_cast<VkDevice>(vulkan_renderer->GetDeviceHandle());
-  getMemoryFdPropertiesKHR_ =
-      (PFN_vkGetMemoryFdPropertiesKHR)vkGetDeviceProcAddr(
-          device_, "vkGetMemoryFdPropertiesKHR");
-  if (!getMemoryFdPropertiesKHR_) {
-    FT_LOG(Error) << "Fail to get vkGetMemoryFdPropertiesKHR";
-  }
-}
+    : ExternalTextureSurfaceVulkanBuffer(vulkan_renderer) {}
 
 ExternalTextureSurfaceVulkanBufferDma::
     ~ExternalTextureSurfaceVulkanBufferDma() {
@@ -69,27 +57,38 @@ bool ExternalTextureSurfaceVulkanBufferDma::CreateImage(
   image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
   image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
   image_create_info.pNext = &external_image_create_info;
-  if (vkCreateImage(device_, &image_create_info, nullptr, &texture_image_) !=
-      VK_SUCCESS) {
+  if (vkCreateImage(GetDevice(), &image_create_info, nullptr,
+                    &texture_image_) != VK_SUCCESS) {
     FT_LOG(Error) << "Fail to create VkImage";
     return false;
   }
   return true;
 }
 
+VkResult ExternalTextureSurfaceVulkanBufferDma::GetMemoryFdPropertiesKHR(
+    VkDevice device,
+    VkExternalMemoryHandleTypeFlagBits handleType,
+    int fd,
+    VkMemoryFdPropertiesKHR* pMemoryFdProperties) {
+  PFN_vkGetMemoryFdPropertiesKHR pfn_memory_fd_properties =
+      (PFN_vkGetMemoryFdPropertiesKHR)vkGetDeviceProcAddr(
+          GetDevice(), "vkGetMemoryFdPropertiesKHR");
+  if (!pfn_memory_fd_properties) {
+    FT_LOG(Error) << "Fail to get vkGetMemoryFdPropertiesKHR";
+    return VK_ERROR_UNKNOWN;
+  }
+  return pfn_memory_fd_properties(device, handleType, fd, pMemoryFdProperties);
+}
+
 bool ExternalTextureSurfaceVulkanBufferDma::GetFdMemoryTypeIndex(
     int fd,
     uint32_t& index_out) {
-  if (!getMemoryFdPropertiesKHR_) {
-    return false;
-  }
-
   VkMemoryFdPropertiesKHR memory_fd_properties = {};
   memory_fd_properties.sType = VK_STRUCTURE_TYPE_MEMORY_FD_PROPERTIES_KHR;
 
-  if (getMemoryFdPropertiesKHR_(device_,
-                                VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
-                                fd, &memory_fd_properties) != VK_SUCCESS) {
+  if (GetMemoryFdPropertiesKHR(GetDevice(),
+                               VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
+                               fd, &memory_fd_properties) != VK_SUCCESS) {
     FT_LOG(Error) << "Fail to get memory fd properties";
     return false;
   }
@@ -127,7 +126,7 @@ bool ExternalTextureSurfaceVulkanBufferDma::AllocateMemory(
   alloc_info.pNext = &import_memory_fd_info;
   alloc_info.allocationSize = static_cast<uint64_t>(bo_size);
   alloc_info.memoryTypeIndex = memory_type_index;
-  if (vkAllocateMemory(device_, &alloc_info, nullptr,
+  if (vkAllocateMemory(GetDevice(), &alloc_info, nullptr,
                        &texture_device_memory_) != VK_SUCCESS) {
     FT_LOG(Error) << "Fail to allocate memory";
     return false;
@@ -137,8 +136,8 @@ bool ExternalTextureSurfaceVulkanBufferDma::AllocateMemory(
 
 bool ExternalTextureSurfaceVulkanBufferDma::BindImageMemory(
     tbm_surface_h tbm_surface) {
-  if (vkBindImageMemory(device_, texture_image_, texture_device_memory_, 0u) !=
-      VK_SUCCESS) {
+  if (vkBindImageMemory(GetDevice(), texture_image_, texture_device_memory_,
+                        0u) != VK_SUCCESS) {
     FT_LOG(Error) << "Fail to bind image memory";
     return false;
   }
@@ -147,12 +146,13 @@ bool ExternalTextureSurfaceVulkanBufferDma::BindImageMemory(
 
 void ExternalTextureSurfaceVulkanBufferDma::ReleaseImage() {
   if (texture_image_ != VK_NULL_HANDLE) {
-    vkDestroyImage(device_, texture_image_, nullptr);
+    vkDestroyImage(GetDevice(), texture_image_, nullptr);
     texture_image_ = VK_NULL_HANDLE;
   }
   if (texture_device_memory_ != VK_NULL_HANDLE) {
-    vkFreeMemory(device_, texture_device_memory_, nullptr);
+    vkFreeMemory(GetDevice(), texture_device_memory_, nullptr);
     texture_device_memory_ = VK_NULL_HANDLE;
   }
 }
+
 }  // namespace flutter
