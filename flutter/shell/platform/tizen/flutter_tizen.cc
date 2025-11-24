@@ -206,12 +206,12 @@ FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindow(
       window_properties.focusable, window_properties.top_level,
       window_properties.pointing_device_support,
       window_properties.floating_menu_support, window_properties.window_handle,
-      window_properties.renderer_type == kEVulkan);
+      true);
 
   auto view = std::make_unique<flutter::FlutterTizenView>(
       flutter::kImplicitViewId, std::move(window),
       std::unique_ptr<flutter::FlutterTizenEngine>(EngineFromHandle(engine)),
-      window_properties.renderer_type, window_properties.user_pixel_ratio);
+      kEVulkan, window_properties.user_pixel_ratio);
 
   if (!view->engine()->IsRunning()) {
     if (!view->engine()->RunEngine()) {

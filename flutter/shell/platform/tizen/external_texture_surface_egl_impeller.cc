@@ -30,7 +30,7 @@ ExternalTextureSurfaceEGLImpeller::ExternalTextureSurfaceEGLImpeller(
     ExternalTextureExtensionType gl_extension,
     FlutterDesktopGpuSurfaceTextureCallback texture_callback,
     void* user_data)
-    : ExternalTexture(gl_extension),
+    : ExternalGLTexture(gl_extension),
       texture_callback_(texture_callback),
       user_data_(user_data) {}
 
@@ -38,7 +38,7 @@ ExternalTextureSurfaceEGLImpeller::~ExternalTextureSurfaceEGLImpeller() {
   ReleaseImage();
 }
 
-bool ExternalTextureSurfaceEGLImpeller::PopulateTexture(
+bool ExternalTextureSurfaceEGLImpeller::PopulateOpenGLTexture(
     size_t width,
     size_t height,
     FlutterOpenGLTexture* opengl_texture) {
