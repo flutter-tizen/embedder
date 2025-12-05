@@ -157,7 +157,10 @@ template("embedder") {
         target_name == "flutter_tizen_tv_experimental" ||
         target_name == "flutter_tizen_common_experimental") {
       defines += [ "FLUTTER_TIZEN_EXPERIMENTAL" ]
-      sources += [ "tizen_renderer_vulkan.cc" ]
+      sources += [
+        "tizen_renderer_vulkan.cc",
+        "volk.c",
+      ]
       libs += [ "vulkan" ]
     }
 
