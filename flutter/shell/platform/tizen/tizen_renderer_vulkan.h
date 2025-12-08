@@ -8,10 +8,9 @@
 #if defined(__linux__) || defined(__unix__)
 #define VK_USE_PLATFORM_WAYLAND_KHR
 #endif
-#define VK_NO_PROTOTYPES
 #include "flutter/shell/platform/tizen/tizen_renderer.h"
 #include "flutter/shell/platform/tizen/tizen_view_base.h"
-#include "flutter/shell/platform/tizen/volk.h"
+#include "flutter/third_party/volk/volk.h"
 
 #include <algorithm>
 #include <limits>
