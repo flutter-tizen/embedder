@@ -158,7 +158,7 @@ template("embedder") {
         target_name == "flutter_tizen_common_experimental") {
       defines += [ "FLUTTER_TIZEN_EXPERIMENTAL" ]
       sources += [ "tizen_renderer_vulkan.cc" ]
-      libs += [ "vulkan" ]
+      deps += [ "//flutter/third_party/volk" ]
     }
 
     if (api_version != "6.0") {
