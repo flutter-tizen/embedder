@@ -4,15 +4,11 @@
 
 source_set("volk") {
   sources = [
-    "volk.c",
+    "volk.cc",
     "volk.h",
   ]
 
-  include_dirs = [
-    "//flutter/third_party/volk",
-  ]
+  include_dirs = [ "//flutter/third_party/volk" ]
 
-  defines = [
-    "VK_NO_PROTOTYPES",
-  ]
+  defines = [ "VK_NO_PROTOTYPES" ]
 }
