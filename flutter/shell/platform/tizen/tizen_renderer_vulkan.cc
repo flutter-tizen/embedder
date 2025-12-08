@@ -5,7 +5,6 @@
 #include "flutter/shell/platform/tizen/tizen_renderer_vulkan.h"
 
 #include <stddef.h>
-#include <vulkan/vulkan_wayland.h>
 #include <optional>
 
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"

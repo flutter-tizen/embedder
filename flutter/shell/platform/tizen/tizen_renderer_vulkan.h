@@ -5,13 +5,8 @@
 #ifndef EMBEDDER_TIZEN_RENDERER_VULKAN_H_
 #define EMBEDDER_TIZEN_RENDERER_VULKAN_H_
 
-#if defined(_WIN32)
-#define VK_USE_PLATFORM_WIN32_KHR
-#elif defined(__linux__) || defined(__unix__)
-#define VK_USE_PLATFORM_XLIB_KHR
-#elif defined(__APPLE__)
-#define VK_USE_PLATFORM_MACOS_MVK
-#else
+#if defined(__linux__) || defined(__unix__)
+#define VK_USE_PLATFORM_WAYLAND_KHR
 #endif
 #define VK_NO_PROTOTYPES
 #include "flutter/shell/platform/tizen/tizen_renderer.h"
