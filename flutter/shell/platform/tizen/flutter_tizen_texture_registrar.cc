@@ -100,7 +100,7 @@ bool FlutterTizenTextureRegistrar::PopulateOpenGLTexture(
     }
     texture = iter->second.get();
   }
-  return dynamic_cast<ExternalGLTexture*>(texture)->PopulateOpenGLTexture(
+  return dynamic_cast<ExternalGLTexture*>(texture)->PopulateGLTexture(
       width, height, opengl_texture);
 }
 

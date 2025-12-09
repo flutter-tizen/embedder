@@ -19,9 +19,9 @@ class ExternalTexturePixelEGL : public ExternalGLTexture {
 
   ~ExternalTexturePixelEGL() = default;
 
-  bool PopulateOpenGLTexture(size_t width,
-                             size_t height,
-                             FlutterOpenGLTexture* opengl_texture) override;
+  bool PopulateGLTexture(size_t width,
+                         size_t height,
+                         FlutterOpenGLTexture* opengl_texture) override;
 
   bool CopyPixelBuffer(size_t& width, size_t& height);
 

@@ -27,9 +27,9 @@ class ExternalTextureSurfaceEGL : public ExternalGLTexture {
   // texture object.
   //
   // Returns true on success, false on failure.
-  bool PopulateOpenGLTexture(size_t width,
-                             size_t height,
-                             FlutterOpenGLTexture* opengl_texture) override;
+  bool PopulateGLTexture(size_t width,
+                         size_t height,
+                         FlutterOpenGLTexture* opengl_texture) override;
 
  private:
   FlutterDesktopGpuSurfaceTextureCallback texture_callback_ = nullptr;

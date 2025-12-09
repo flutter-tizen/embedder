@@ -43,9 +43,9 @@ class ExternalGLTexture : public ExternalTexture {
     state_->gl_extension = gl_extension;
   }
 
-  virtual bool PopulateOpenGLTexture(size_t width,
-                                     size_t height,
-                                     FlutterOpenGLTexture* opengl_texture) = 0;
+  virtual bool PopulateGLTexture(size_t width,
+                                 size_t height,
+                                 FlutterOpenGLTexture* opengl_texture) = 0;
 
  protected:
   std::unique_ptr<ExternalTextureGLState> state_;

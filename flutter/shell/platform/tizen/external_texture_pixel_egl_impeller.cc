@@ -11,7 +11,7 @@
 
 namespace flutter {
 
-bool ExternalTexturePixelEGLImpeller::PopulateOpenGLTexture(
+bool ExternalTexturePixelEGLImpeller::PopulateGLTexture(
     size_t width,
     size_t height,
     FlutterOpenGLTexture* opengl_texture) {

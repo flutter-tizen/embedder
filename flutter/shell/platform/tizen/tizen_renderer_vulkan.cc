@@ -180,14 +180,14 @@ FlutterRendererConfig TizenRendererVulkan::GetRendererConfig() {
         ->Present(image);
   };
   config.vulkan.external_texture_frame_callback =
-      [](void* user_data, int64_t texture_identifier, size_t width,
-         size_t height, FlutterVulkanTexture* texture) -> bool {
+      [](void* user_data, int64_t texture_id, size_t width, size_t height,
+         FlutterVulkanTexture* texture) -> bool {
     auto* engine = reinterpret_cast<FlutterTizenEngine*>(user_data);
     if (!engine->view()) {
       return false;
     }
-    return engine->texture_registrar()->PopulateVulkanTexture(
-        texture_identifier, width, height, texture);
+    return engine->texture_registrar()->PopulateVulkanTexture(texture_id, width,
+                                                              height, texture);
   };
   return config;
 }

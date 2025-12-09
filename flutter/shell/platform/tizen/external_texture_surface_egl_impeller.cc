@@ -38,7 +38,7 @@ ExternalTextureSurfaceEGLImpeller::~ExternalTextureSurfaceEGLImpeller() {
   ReleaseImage();
 }
 
-bool ExternalTextureSurfaceEGLImpeller::PopulateOpenGLTexture(
+bool ExternalTextureSurfaceEGLImpeller::PopulateGLTexture(
     size_t width,
     size_t height,
     FlutterOpenGLTexture* opengl_texture) {

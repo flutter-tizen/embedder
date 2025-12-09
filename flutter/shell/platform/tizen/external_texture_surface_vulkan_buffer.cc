@@ -17,15 +17,13 @@ VkFormat ExternalTextureSurfaceVulkanBuffer::ConvertFormat(tbm_format& format) {
     case TBM_FORMAT_NV21:
       return VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     case TBM_FORMAT_RGBA8888:
-    case TBM_FORMAT_ARGB8888:
+    case TBM_FORMAT_ABGR8888:
     case TBM_FORMAT_RGBX8888:
     case TBM_FORMAT_XRGB8888:
-    case TBM_FORMAT_RGB888:
       return VK_FORMAT_R8G8B8A8_UNORM;
-    case TBM_FORMAT_BGR888:
     case TBM_FORMAT_XBGR8888:
     case TBM_FORMAT_BGRX8888:
-    case TBM_FORMAT_ABGR8888:
+    case TBM_FORMAT_ARGB8888:
     case TBM_FORMAT_BGRA8888:
       return VK_FORMAT_B8G8R8A8_UNORM;
     default:

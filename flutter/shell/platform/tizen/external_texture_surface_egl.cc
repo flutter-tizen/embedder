@@ -39,7 +39,7 @@ ExternalTextureSurfaceEGL::~ExternalTextureSurfaceEGL() {
   }
 }
 
-bool ExternalTextureSurfaceEGL::PopulateOpenGLTexture(
+bool ExternalTextureSurfaceEGL::PopulateGLTexture(
     size_t width,
     size_t height,
     FlutterOpenGLTexture* opengl_texture) {

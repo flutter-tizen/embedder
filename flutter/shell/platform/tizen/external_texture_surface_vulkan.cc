@@ -88,8 +88,9 @@ bool ExternalTextureSurfaceVulkan::IsSupportDisjoint(
   for (int i = 0; i < num_bos; i++) {
     tbm_bo bo = tbm_surface_internal_get_bo(tbm_surface, i);
     tfd[i] = tbm_bo_get_handle(bo, TBM_DEVICE_3D).u32;
-    if (tfd[i] != tfd[0])
+    if (tfd[i] != tfd[0]) {
       is_disjoint = true;
+    }
   }
   return is_disjoint;
 }
@@ -98,7 +99,7 @@ bool ExternalTextureSurfaceVulkan::PopulateVulkanTexture(
     size_t width,
     size_t height,
     FlutterVulkanTexture* vulkan_texture) {
-  if (!texture_callback_) {
+  if (!texture_callback_ || !vulkan_texture) {
     return false;
   }
   const FlutterDesktopGpuSurfaceDescriptor* gpu_surface =
