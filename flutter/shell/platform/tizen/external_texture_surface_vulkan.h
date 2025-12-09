@@ -5,13 +5,13 @@
 #ifndef FLUTTER_SHELL_PLATFORM_TIZEN_EXTERNAL_TEXTURE_SURFACE_VULKAN_H_
 #define FLUTTER_SHELL_PLATFORM_TIZEN_EXTERNAL_TEXTURE_SURFACE_VULKAN_H_
 
-#include <vulkan/vulkan.h>
 #include <memory>
 #include "flutter/shell/platform/common/public/flutter_texture_registrar.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/tizen/external_texture.h"
 #include "flutter/shell/platform/tizen/external_texture_surface_vulkan_buffer.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_vulkan.h"
+#include "flutter/third_party/volk/volk.h"
 
 #include <tbm_bufmgr.h>
 #include <tbm_surface.h>

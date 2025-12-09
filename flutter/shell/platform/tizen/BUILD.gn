@@ -164,7 +164,7 @@ template("embedder") {
         "external_texture_surface_vulkan_buffer_dma.cc",
         "tizen_renderer_vulkan.cc",
       ]
-      libs += [ "vulkan" ]
+      deps += [ "//flutter/third_party/volk" ]
     }
 
     if (api_version != "6.0") {

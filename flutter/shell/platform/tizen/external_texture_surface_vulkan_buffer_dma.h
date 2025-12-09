@@ -5,9 +5,9 @@
 #ifndef FLUTTER_SHELL_PLATFORM_TIZEN_EXTERNAL_TEXTURE_SURFACE_VULKAN_BUFFER_DMA_H_
 #define FLUTTER_SHELL_PLATFORM_TIZEN_EXTERNAL_TEXTURE_SURFACE_VULKAN_BUFFER_DMA_H_
 
-#include <vulkan/vulkan.h>
 #include "flutter/shell/platform/tizen/external_texture_surface_vulkan_buffer.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_vulkan.h"
+#include "flutter/third_party/volk/volk.h"
 
 #include <tbm_surface.h>
 

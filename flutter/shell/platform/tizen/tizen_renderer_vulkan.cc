@@ -5,7 +5,6 @@
 #include "flutter/shell/platform/tizen/tizen_renderer_vulkan.h"
 
 #include <stddef.h>
-#include <vulkan/vulkan_wayland.h>
 #include <optional>
 #include "flutter/shell/platform/tizen/external_texture_pixel_vulkan.h"
 #include "flutter/shell/platform/tizen/external_texture_surface_vulkan.h"
@@ -42,6 +41,14 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance,
 }
 
 TizenRendererVulkan::TizenRendererVulkan(TizenViewBase* view) {
+  if (volkInitialize() != VK_SUCCESS) {
+    FT_LOG(Error) << "Failed to initialize volk";
+    return;
+  }
+  uint32_t version = volkGetInstanceVersion();
+  FT_LOG(Info) << "Vulkan version: " << VK_VERSION_MAJOR(version) << "."
+               << VK_VERSION_MINOR(version) << "." << VK_VERSION_PATCH(version);
+
   InitVulkan(view);
 }
 
@@ -50,6 +57,8 @@ bool TizenRendererVulkan::InitVulkan(TizenViewBase* view) {
     FT_LOG(Error) << "Failed to create Vulkan instance";
     return false;
   }
+  volkLoadInstance(instance_);
+
   if (enable_validation_layers_) {
     SetupDebugMessenger();
   }
@@ -66,6 +75,8 @@ bool TizenRendererVulkan::InitVulkan(TizenViewBase* view) {
     FT_LOG(Error) << "Failed to create logical device";
     return false;
   }
+  volkLoadDevice(logical_device_);
+
   if (!GetDeviceQueue()) {
     FT_LOG(Error) << "Failed to get device queue";
     return false;
@@ -463,6 +474,7 @@ bool TizenRendererVulkan::PickPhysicalDevice() {
 
 TizenRendererVulkan::~TizenRendererVulkan() {
   Cleanup();
+  volkFinalize();
 }
 bool TizenRendererVulkan::CreateSurface(void* render_target,
                                         void* render_target_display,

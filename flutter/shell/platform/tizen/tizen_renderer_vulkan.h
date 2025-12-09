@@ -5,10 +5,13 @@
 #ifndef EMBEDDER_TIZEN_RENDERER_VULKAN_H_
 #define EMBEDDER_TIZEN_RENDERER_VULKAN_H_
 
+#if defined(__linux__) || defined(__unix__)
+#define VK_USE_PLATFORM_WAYLAND_KHR
+#endif
 #include "flutter/shell/platform/tizen/tizen_renderer.h"
 #include "flutter/shell/platform/tizen/tizen_view_base.h"
+#include "flutter/third_party/volk/volk.h"
 
-#include <vulkan/vulkan.h>
 #include <algorithm>
 #include <limits>
 #include <memory>
