@@ -244,7 +244,7 @@ void KeyboardChannel::SendEmbedderEvent(const char* key,
           .synthesized = false,
       };
       send_event_(empty_event, nullptr, nullptr);
-      ResolvePendingEvent(sequence_id, true);
+      ResolvePendingEvent(sequence_id, false);
       return;
     } else {
       type = kFlutterKeyEventTypeUp;
