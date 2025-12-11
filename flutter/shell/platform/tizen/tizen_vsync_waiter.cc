@@ -102,6 +102,7 @@ void TizenVsyncWaiter::RunVblankLoop(void* data, Ecore_Thread* thread) {
 
   if (vblank_thread_queue) {
     eina_thread_queue_free(vblank_thread_queue);
+    self->vblank_thread_queue_ = nullptr;
   }
 }
 
