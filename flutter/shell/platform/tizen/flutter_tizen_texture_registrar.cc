@@ -86,7 +86,7 @@ bool FlutterTizenTextureRegistrar::MarkTextureFrameAvailable(
   return engine_->MarkExternalTextureFrameAvailable(texture_id);
 }
 
-bool FlutterTizenTextureRegistrar::PopulateOpenGLTexture(
+bool FlutterTizenTextureRegistrar::PopulateGLTexture(
     int64_t texture_id,
     size_t width,
     size_t height,
