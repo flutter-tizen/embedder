@@ -17,55 +17,61 @@ ExternalTextureSurfaceVulkan::ExternalTextureSurfaceVulkan(
       user_data_(user_data),
       vulkan_renderer_(vulkan_renderer) {}
 
-ExternalTextureSurfaceVulkan::~ExternalTextureSurfaceVulkan() {}
+ExternalTextureSurfaceVulkan::~ExternalTextureSurfaceVulkan() {
+  ReleaseBuffer();
+}
+
+bool ExternalTextureSurfaceVulkan::CreateBuffer(
+    const tbm_surface_h tbm_surface) {
+  if (IsSupportDisjoint(tbm_surface)) {
+    /** TODO as I konw, skia doesn't support disjoint,we need consider to
+     *  implement buffer map solution.
+    vulkan_buffer_ = std::make_unique<ExternalTextureSurfaceVulkanBufferMap>(
+        vulkan_renderer_);
+    */
+  } else {
+    vulkan_buffer_ = std::make_unique<ExternalTextureSurfaceVulkanBufferDma>(
+        vulkan_renderer_);
+  }
+
+  if (!vulkan_buffer_) {
+    FT_LOG(Error) << "Fail to create ExternalTextureSurfaceVulkanBufferDma";
+    return false;
+  }
+
+  if (!vulkan_buffer_->CreateImage(tbm_surface)) {
+    FT_LOG(Error) << "Fail to create image";
+    return false;
+  }
+  if (!vulkan_buffer_->AllocateAndBindMemory(tbm_surface)) {
+    FT_LOG(Error) << "Fail to allocate memory";
+    return false;
+  }
+
+  return true;
+}
+
+void ExternalTextureSurfaceVulkan::ReleaseBuffer() {
+  if (vulkan_buffer_) {
+    vulkan_buffer_->ReleaseImage();
+    vulkan_buffer_.reset();
+  }
+}
 
 bool ExternalTextureSurfaceVulkan::CreateOrUpdateImage(
     const FlutterDesktopGpuSurfaceDescriptor* descriptor) {
   if (descriptor == nullptr || descriptor->handle == nullptr) {
-    if (vulkan_buffer_) {
-      vulkan_buffer_->ReleaseImage();
-    }
+    ReleaseBuffer();
     return false;
   }
 
   void* handle = descriptor->handle;
   const tbm_surface_h tbm_surface = reinterpret_cast<tbm_surface_h>(handle);
-  if (!vulkan_buffer_) {
-    if (IsSupportDisjoint(tbm_surface)) {
-      /** TODO as I konw, skia doesn't support disjoint,we need consider to
-       *  implement buffer map solution.
-      vulkan_buffer_ = std::make_unique<ExternalTextureSurfaceVulkanBufferMap>(
-          vulkan_renderer_);
-      */
-    } else {
-      vulkan_buffer_ = std::make_unique<ExternalTextureSurfaceVulkanBufferDma>(
-          vulkan_renderer_);
-    }
-  }
-
   if (handle != last_surface_handle_) {
-    vulkan_buffer_->ReleaseImage();
-    tbm_surface_info_s tbm_surface_info;
-    if (tbm_surface_get_info(tbm_surface, &tbm_surface_info) !=
-        TBM_SURFACE_ERROR_NONE) {
-      if (descriptor->release_callback) {
-        descriptor->release_callback(descriptor->release_context);
-      }
-      return false;
-    }
-    if (!vulkan_buffer_->CreateImage(tbm_surface)) {
-      FT_LOG(Error) << "Fail to create image";
-      vulkan_buffer_.reset();
-      return false;
-    }
-    if (!vulkan_buffer_->AllocateMemory(tbm_surface)) {
-      FT_LOG(Error) << "Fail to allocate memory";
-      vulkan_buffer_.reset();
-      return false;
-    }
-    if (!vulkan_buffer_->BindImageMemory(tbm_surface)) {
-      FT_LOG(Error) << "Fail to bind image memory";
-      vulkan_buffer_.reset();
+    ReleaseBuffer();
+    if (!CreateBuffer(tbm_surface)) {
+      ReleaseBuffer();
+      FT_LOG(Error) << "Fail to create buffer";
       return false;
     }
     last_surface_handle_ = handle;

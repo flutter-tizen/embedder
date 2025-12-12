@@ -24,8 +24,7 @@ class ExternalTextureSurfaceVulkanBuffer {
   virtual ~ExternalTextureSurfaceVulkanBuffer() = default;
   virtual bool CreateImage(tbm_surface_h tbm_surface) = 0;
   virtual void ReleaseImage() = 0;
-  virtual bool AllocateMemory(tbm_surface_h tbm_surface) = 0;
-  virtual bool BindImageMemory(tbm_surface_h tbm_surface) = 0;
+  virtual bool AllocateAndBindMemory(tbm_surface_h tbm_surface) = 0;
   virtual VkFormat GetFormat() = 0;
   virtual VkImage GetImage() = 0;
   virtual VkDeviceMemory GetMemory() = 0;

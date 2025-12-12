@@ -102,7 +102,7 @@ bool ExternalTextureSurfaceVulkanBufferDma::GetFdMemoryTypeIndex(
   return false;
 }
 
-bool ExternalTextureSurfaceVulkanBufferDma::AllocateMemory(
+bool ExternalTextureSurfaceVulkanBufferDma::AllocateAndBindMemory(
     tbm_surface_h tbm_surface) {
   tbm_bo bo = tbm_surface_internal_get_bo(tbm_surface, 0);
   int bo_fd = tbm_bo_export_fd(bo);
@@ -131,16 +131,13 @@ bool ExternalTextureSurfaceVulkanBufferDma::AllocateMemory(
     FT_LOG(Error) << "Fail to allocate memory";
     return false;
   }
-  return true;
-}
 
-bool ExternalTextureSurfaceVulkanBufferDma::BindImageMemory(
-    tbm_surface_h tbm_surface) {
   if (vkBindImageMemory(GetDevice(), texture_image_, texture_device_memory_,
                         0u) != VK_SUCCESS) {
     FT_LOG(Error) << "Fail to bind image memory";
     return false;
   }
+  close(bo_fd);
   return true;
 }
 

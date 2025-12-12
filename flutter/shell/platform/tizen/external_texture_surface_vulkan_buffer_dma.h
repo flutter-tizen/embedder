@@ -19,8 +19,7 @@ class ExternalTextureSurfaceVulkanBufferDma
   virtual ~ExternalTextureSurfaceVulkanBufferDma();
   bool CreateImage(tbm_surface_h tbm_surface) override;
   void ReleaseImage() override;
-  bool AllocateMemory(tbm_surface_h tbm_surface) override;
-  bool BindImageMemory(tbm_surface_h tbm_surface) override;
+  bool AllocateAndBindMemory(tbm_surface_h tbm_surface) override;
   VkFormat GetFormat() override;
   VkImage GetImage() override;
   VkDeviceMemory GetMemory() override;

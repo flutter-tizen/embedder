@@ -35,6 +35,9 @@ class ExternalTextureSurfaceVulkan : public ExternalVulkanTexture {
  private:
   bool CreateOrUpdateImage(
       const FlutterDesktopGpuSurfaceDescriptor* descriptor);
+
+  bool CreateBuffer(const tbm_surface_h tbm_surface);
+  void ReleaseBuffer();
   bool IsSupportDisjoint(tbm_surface_h tbm_surface);
   FlutterDesktopGpuSurfaceTextureCallback texture_callback_ = nullptr;
   void* user_data_ = nullptr;
