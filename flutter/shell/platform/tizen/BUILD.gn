@@ -197,7 +197,7 @@ template("embedder") {
       "//flutter/shell/platform/common:common_cpp_input",
       "//flutter/shell/platform/common:common_cpp_isolate_scope",
       "//flutter/shell/platform/common:common_cpp_library_headers",
-      "//flutter/shell/platform/common/client_wrapper:client_wrapper",
+      "//flutter/shell/platform/common/client_wrapper",
       "//flutter/shell/platform/embedder:embedder_headers",
       "//third_party/rapidjson",
     ]
@@ -265,7 +265,7 @@ executable("flutter_tizen_unittests") {
     ":flutter_tizen_source",
     "//flutter/shell/platform/common:common_cpp",
     "//flutter/shell/platform/common:common_cpp_accessibility",
-    "//flutter/shell/platform/common/client_wrapper:client_wrapper",
+    "//flutter/shell/platform/common/client_wrapper",
     "//third_party/googletest:gtest_main",
     "//third_party/rapidjson",
   ]

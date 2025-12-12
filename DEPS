@@ -7,12 +7,12 @@ deps = {
   'src/third_party/libcxx': 'https://llvm.googlesource.com/llvm-project/libcxx@bd557f6f764d1e40b62528a13b124ce740624f8f',
   'src/third_party/libcxxabi': 'https://llvm.googlesource.com/llvm-project/libcxxabi@a4dda1589d37a7e4b4f7a81ebad01b1083f2e726',
   'src/third_party/googletest': 'https://github.com/google/googletest@7f036c5563af7d0329f20e8bb42effb04629f0c0',
-  'src/third_party/dart': 'https://dart.googlesource.com/sdk.git@a29e08c72e2ce21813c1edf50cbcdfcac7a7acdd',
+  'src/third_party/dart': 'https://dart.googlesource.com/sdk.git@13d929085afa86e5902ed7293cca8509f099ee97',
   'src/third_party/clang': {
     'packages': [
       {
         'package': 'fuchsia/third_party/clang/linux-amd64',
-        'version': 'git_revision:725656bdd885483c39f482a01ea25d67acf39c46'
+        'version': 'git_revision:8c7a2ce01a77c96028fe2c8566f65c45ad9408d3'
       }
     ],
     'dep_type': 'cipd',
@@ -21,7 +21,7 @@ deps = {
     'packages': [
       {
         'package': 'gn/gn/${{platform}}',
-        'version': 'git_revision:7a8aa3a08a13521336853a28c46537ec04338a2d',
+        'version': 'git_revision:81b24e01531ecf0eff12ec9359a555ec3944ec4e',
       },
     ],
     'dep_type': 'cipd',
