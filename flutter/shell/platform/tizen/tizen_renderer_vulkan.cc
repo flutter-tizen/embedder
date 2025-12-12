@@ -6,7 +6,8 @@
 
 #include <stddef.h>
 #include <optional>
-
+#include "flutter/shell/platform/tizen/external_texture_pixel_vulkan.h"
+#include "flutter/shell/platform/tizen/external_texture_surface_vulkan.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/logger.h"
 
@@ -131,6 +132,16 @@ void TizenRendererVulkan::Cleanup() {
 
 std::unique_ptr<ExternalTexture> TizenRendererVulkan::CreateExternalTexture(
     const FlutterDesktopTextureInfo* texture_info) {
+  switch (texture_info->type) {
+    case kFlutterDesktopPixelBufferTexture:
+      return std::make_unique<ExternalTexturePixelVulkan>(
+          texture_info->pixel_buffer_config.callback,
+          texture_info->pixel_buffer_config.user_data, this);
+    case kFlutterDesktopGpuSurfaceTexture:
+      return std::make_unique<ExternalTextureSurfaceVulkan>(
+          texture_info->gpu_surface_config.callback,
+          texture_info->gpu_surface_config.user_data, this);
+  }
   return nullptr;
 }
 
@@ -178,6 +189,16 @@ FlutterRendererConfig TizenRendererVulkan::GetRendererConfig() {
 
     return dynamic_cast<TizenRendererVulkan*>(engine->renderer())
         ->Present(image);
+  };
+  config.vulkan.external_texture_frame_callback =
+      [](void* user_data, int64_t texture_id, size_t width, size_t height,
+         FlutterVulkanTexture* texture) -> bool {
+    auto* engine = reinterpret_cast<FlutterTizenEngine*>(user_data);
+    if (!engine->view()) {
+      return false;
+    }
+    return engine->texture_registrar()->PopulateVulkanTexture(texture_id, width,
+                                                              height, texture);
   };
   return config;
 }
