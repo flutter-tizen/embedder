@@ -72,6 +72,9 @@ bool ExternalTextureSurfaceVulkan::CreateOrUpdateImage(
     if (!CreateBuffer(tbm_surface)) {
       ReleaseBuffer();
       FT_LOG(Error) << "Fail to create buffer";
+      if (descriptor->release_callback) {
+        descriptor->release_callback(descriptor->release_context);
+      }
       return false;
     }
     last_surface_handle_ = handle;
