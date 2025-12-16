@@ -53,7 +53,6 @@ bool ExternalTextureSurfaceVulkan::CreateBuffer(
 
 void ExternalTextureSurfaceVulkan::ReleaseBuffer() {
   if (vulkan_buffer_) {
-    vulkan_buffer_->ReleaseImage();
     vulkan_buffer_.reset();
   }
 }
