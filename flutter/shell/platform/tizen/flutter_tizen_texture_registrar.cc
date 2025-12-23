@@ -86,7 +86,7 @@ bool FlutterTizenTextureRegistrar::MarkTextureFrameAvailable(
   return engine_->MarkExternalTextureFrameAvailable(texture_id);
 }
 
-bool FlutterTizenTextureRegistrar::PopulateTexture(
+bool FlutterTizenTextureRegistrar::PopulateGLTexture(
     int64_t texture_id,
     size_t width,
     size_t height,
@@ -100,7 +100,26 @@ bool FlutterTizenTextureRegistrar::PopulateTexture(
     }
     texture = iter->second.get();
   }
-  return texture->PopulateTexture(width, height, opengl_texture);
+  return dynamic_cast<ExternalGLTexture*>(texture)->PopulateGLTexture(
+      width, height, opengl_texture);
+}
+
+bool FlutterTizenTextureRegistrar::PopulateVulkanTexture(
+    int64_t texture_id,
+    size_t width,
+    size_t height,
+    FlutterVulkanTexture* vulkan_texture) {
+  ExternalTexture* texture;
+  {
+    std::lock_guard<std::mutex> lock(map_mutex_);
+    auto iter = textures_.find(texture_id);
+    if (iter == textures_.end()) {
+      return false;
+    }
+    texture = iter->second.get();
+  }
+  return dynamic_cast<ExternalVulkanTexture*>(texture)->PopulateVulkanTexture(
+      width, height, vulkan_texture);
 }
 
 }  // namespace flutter
