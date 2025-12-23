@@ -42,7 +42,7 @@ DART_EXPORT FLUTTER_EXPORT bool NativeAttachAppControl(int32_t id,
 namespace flutter {
 
 struct AppControlResult {
-  AppControlResult() : error_code(APP_CONTROL_ERROR_NONE){};
+  AppControlResult() : error_code(APP_CONTROL_ERROR_NONE) {};
   AppControlResult(int code) : error_code(code) {}
 
   // Returns false on error.
