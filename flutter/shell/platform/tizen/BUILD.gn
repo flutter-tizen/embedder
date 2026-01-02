@@ -112,7 +112,6 @@ template("embedder") {
       "capi-base-common",
       "capi-system-info",
       "capi-system-system-settings",
-      "capi-ui-efl-util",
       "dlog",
       "ecore",
       "ecore_imf",

@@ -43,8 +43,6 @@ unified_packages = [
   'capi-system-info-devel',
   'capi-system-system-settings',
   'capi-system-system-settings-devel',
-  'capi-ui-efl-util',
-  'capi-ui-efl-util-devel',
   'coregl',
   'coregl-devel',
   'ecore-core',
