@@ -7,10 +7,8 @@
 #include <iostream>
 #include <mutex>
 
-#include "flutter/shell/platform/tizen/external_texture_pixel_egl.h"
-#include "flutter/shell/platform/tizen/external_texture_pixel_egl_impeller.h"
+#include "flutter/shell/platform/tizen/external_texture.h"
 #include "flutter/shell/platform/tizen/external_texture_surface_egl.h"
-#include "flutter/shell/platform/tizen/external_texture_surface_egl_impeller.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/logger.h"
 
