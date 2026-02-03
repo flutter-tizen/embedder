@@ -69,6 +69,7 @@ template("embedder") {
       "channels/app_control_channel.cc",
       "channels/feedback_manager.cc",
       "channels/input_device_channel.cc",
+      "channels/input_panel_channel.cc",
       "channels/key_mapping.cc",
       "channels/keyboard_channel.cc",
       "channels/lifecycle_channel.cc",
