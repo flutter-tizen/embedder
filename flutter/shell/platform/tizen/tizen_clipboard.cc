@@ -140,7 +140,6 @@ bool TizenClipboard::HasStrings() {
   selection_offer_ = ecore_wl2_dnd_selection_get(input);
 
   if (!selection_offer_) {
-    FT_LOG(Error) << "ecore_wl2_dnd_selection_get() failed.";
     return false;
   }
 
