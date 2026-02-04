@@ -1,7 +1,7 @@
 # Flutter Style Guide
 
 This style guide outlines the coding conventions for contributions to the
-flutter-tizen/flutter-tizen repository. It is based on the more comprehensive official
+flutter-tizen/embedder repository. It is based on the more comprehensive official
 [style guide for the Flutter repository](https://github.com/flutter/flutter/blob/main/docs/contributing/Style-guide-for-Flutter-repo.md).
 
 ## Best Practices
