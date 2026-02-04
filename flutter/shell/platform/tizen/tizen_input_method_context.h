@@ -78,8 +78,6 @@ class TizenInputMethodContext {
   void RegisterInputPanelEventCallback();
   void UnregisterInputPanelEventCallback();
 
-  Ecore_IMF_Context* GetImfContext() { return imf_context_; }
-
  private:
   static void InputPanelStateChangedCallback(void* data,
                                              Ecore_IMF_Context* ctx,

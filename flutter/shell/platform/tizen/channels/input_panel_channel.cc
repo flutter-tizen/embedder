@@ -44,6 +44,8 @@ InputPanelChannel::InputPanelChannel(BinaryMessenger* messenger,
 }
 
 InputPanelChannel::~InputPanelChannel() {
+  event_channel_->SetStreamHandler(nullptr);
+
   imf_context_->SetOnInputPanelStateChanged(nullptr);
 }
 
