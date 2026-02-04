@@ -143,9 +143,11 @@ TizenInputMethodContext::TizenInputMethodContext(uintptr_t window_id) {
   SetContextOptions();
   SetInputPanelOptions();
   RegisterEventCallbacks();
+  RegisterInputPanelEventCallback();
 }
 
 TizenInputMethodContext::~TizenInputMethodContext() {
+  UnregisterInputPanelEventCallback();
   UnregisterEventCallbacks();
 
 #ifdef NUI_SUPPORT
@@ -384,6 +386,51 @@ void TizenInputMethodContext::SetInputPanelOptions() {
       imf_context_, ECORE_IMF_INPUT_PANEL_RETURN_KEY_TYPE_DEFAULT);
   ecore_imf_context_input_panel_language_set(
       imf_context_, ECORE_IMF_INPUT_PANEL_LANG_AUTOMATIC);
+}
+
+void TizenInputMethodContext::InputPanelStateChangedCallback(
+    void* data,
+    Ecore_IMF_Context* ctx,
+    int value) {
+  auto* self = static_cast<TizenInputMethodContext*>(data);
+  Ecore_IMF_Input_Panel_State state =
+      static_cast<Ecore_IMF_Input_Panel_State>(value);
+
+  std::string state_str;
+  switch (state) {
+    case ECORE_IMF_INPUT_PANEL_STATE_SHOW:
+      state_str = "show";
+      break;
+    case ECORE_IMF_INPUT_PANEL_STATE_HIDE:
+      state_str = "hide";
+      break;
+    case ECORE_IMF_INPUT_PANEL_STATE_WILL_SHOW:
+      state_str = "will_show";
+      break;
+    default:
+      state_str = "unknown";
+      break;
+  }
+
+  if (self->on_input_panel_state_changed_) {
+    self->on_input_panel_state_changed_(state_str);
+  }
+}
+
+void TizenInputMethodContext::RegisterInputPanelEventCallback() {
+  FT_ASSERT(imf_context_);
+
+  ecore_imf_context_input_panel_event_callback_add(
+      imf_context_, ECORE_IMF_INPUT_PANEL_STATE_EVENT,
+      InputPanelStateChangedCallback, this);
+}
+
+void TizenInputMethodContext::UnregisterInputPanelEventCallback() {
+  FT_ASSERT(imf_context_);
+
+  ecore_imf_context_input_panel_event_callback_del(
+      imf_context_, ECORE_IMF_INPUT_PANEL_STATE_EVENT,
+      InputPanelStateChangedCallback);
 }
 
 }  // namespace flutter
