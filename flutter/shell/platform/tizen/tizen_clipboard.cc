@@ -127,6 +127,11 @@ bool TizenClipboard::GetData(ClipboardCallback on_data_callback) {
 
   if (!selection_offer_) {
     FT_LOG(Error) << "ecore_wl2_dnd_selection_get() failed.";
+
+    if (on_data_callback_) {
+      on_data_callback_(std::nullopt);
+      on_data_callback_ = nullptr;
+    }
     return false;
   }
 
