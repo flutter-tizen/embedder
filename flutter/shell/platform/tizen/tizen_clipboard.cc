@@ -52,11 +52,17 @@ void TizenClipboard::SendData(void* event) {
   auto* send_event = reinterpret_cast<Ecore_Wl2_Event_Data_Source_Send*>(event);
   if (!send_event->type || strcmp(send_event->type, kMimeTypeTextPlain)) {
     FT_LOG(Error) << "Invaild mime type.";
+    if (send_event->fd >= 0) {
+      close(send_event->fd);
+    }
     return;
   }
 
   if (send_event->serial != selection_serial_) {
     FT_LOG(Error) << "The serial doesn't match.";
+    if (send_event->fd >= 0) {
+      close(send_event->fd);
+    }
     return;
   }
 
