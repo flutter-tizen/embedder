@@ -120,9 +120,24 @@ void TizenClipboard::SetData(const std::string& data) {
 }
 
 bool TizenClipboard::GetData(ClipboardCallback on_data_callback) {
+  // Cancel any pending request to avoid leaving a previous callback hanging.
+  if (on_data_callback_) {
+    on_data_callback_(std::nullopt);
+    on_data_callback_ = nullptr;
+  }
+
   on_data_callback_ = std::move(on_data_callback);
 
   Ecore_Wl2_Input* input = ecore_wl2_input_default_input_get(display_);
+  if (!input) {
+    FT_LOG(Error) << "ecore_wl2_input_default_input_get() failed.";
+    if (on_data_callback_) {
+      on_data_callback_(std::nullopt);
+      on_data_callback_ = nullptr;
+    }
+    return false;
+  }
+
   selection_offer_ = ecore_wl2_dnd_selection_get(input);
 
   if (!selection_offer_) {
