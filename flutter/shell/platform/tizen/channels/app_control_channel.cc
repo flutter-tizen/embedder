@@ -5,6 +5,7 @@
 #include "app_control_channel.h"
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <variant>
 #include <vector>
@@ -169,15 +170,24 @@ void AppControlChannel::SendLaunchRequest(
     std::unique_ptr<MethodResult<EncodableValue>> result) {
   EncodableValueHolder<bool> wait_for_reply(arguments, "waitForReply");
   if (wait_for_reply && *wait_for_reply) {
-    auto* result_ptr = result.release();
-    auto on_reply = [result_ptr](const EncodableValue& response) {
-      result_ptr->Success(response);
-      delete result_ptr;
+    auto result_box =
+        std::make_shared<std::unique_ptr<MethodResult<EncodableValue>>>(
+            std::move(result));
+
+    auto on_reply = [result_box](const EncodableValue& response) {
+      if (!(*result_box)) {
+        return;
+      }
+      (*result_box)->Success(response);
+      result_box->reset();
     };
+
     AppControlResult ret = app_control->SendLaunchRequestWithReply(on_reply);
     if (!ret) {
-      result_ptr->Error(ret.code(), ret.message());
-      delete result_ptr;
+      if (*result_box) {
+        (*result_box)->Error(ret.code(), ret.message());
+        result_box->reset();
+      }
     }
   } else {
     AppControlResult ret = app_control->SendLaunchRequest();
