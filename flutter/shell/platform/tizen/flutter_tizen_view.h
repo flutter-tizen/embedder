@@ -13,6 +13,7 @@
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/tizen/channels/input_device_channel.h"
+#include "flutter/shell/platform/tizen/channels/input_panel_channel.h"
 #include "flutter/shell/platform/tizen/channels/mouse_cursor_channel.h"
 #include "flutter/shell/platform/tizen/channels/platform_channel.h"
 #include "flutter/shell/platform/tizen/channels/text_input_channel.h"
@@ -187,6 +188,9 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   // A plugin to report input device information.
   std::unique_ptr<InputDeviceChannel> input_device_channel_;
+
+  // A plugin to report input panel information.
+  std::unique_ptr<InputPanelChannel> input_panel_channel_;
 
   // The current view rotation degree.
   int32_t rotation_degree_ = 0;

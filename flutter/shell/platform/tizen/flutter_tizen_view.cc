@@ -96,6 +96,8 @@ void FlutterTizenView::SetupChannels() {
       tizen_view_->input_method_context());
 
   input_device_channel_ = std::make_unique<InputDeviceChannel>(messenger);
+  input_panel_channel_ = std::make_unique<InputPanelChannel>(
+      messenger, tizen_view_->input_method_context());
 }
 
 void FlutterTizenView::Resize(int32_t width, int32_t height) {

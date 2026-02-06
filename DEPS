@@ -7,7 +7,7 @@ deps = {
   'src/third_party/libcxx': 'https://llvm.googlesource.com/llvm-project/libcxx@bd557f6f764d1e40b62528a13b124ce740624f8f',
   'src/third_party/libcxxabi': 'https://llvm.googlesource.com/llvm-project/libcxxabi@a4dda1589d37a7e4b4f7a81ebad01b1083f2e726',
   'src/third_party/googletest': 'https://github.com/google/googletest@7f036c5563af7d0329f20e8bb42effb04629f0c0',
-  'src/third_party/dart': 'https://dart.googlesource.com/sdk.git@13d929085afa86e5902ed7293cca8509f099ee97',
+  'src/third_party/dart': 'https://dart.googlesource.com/sdk.git@2da4111d8d0cbf2a83c0662251508f017000da8a',
   'src/third_party/clang': {
     'packages': [
       {
