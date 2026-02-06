@@ -49,6 +49,9 @@ TizenClipboard::~TizenClipboard() {
 }
 
 void TizenClipboard::SendData(void* event) {
+  if (!event) {
+    return;
+  }
   auto* send_event = reinterpret_cast<Ecore_Wl2_Event_Data_Source_Send*>(event);
   if (!send_event->type || strcmp(send_event->type, kMimeTypeTextPlain)) {
     FT_LOG(Error) << "Invaild mime type.";
@@ -71,6 +74,9 @@ void TizenClipboard::SendData(void* event) {
 }
 
 void TizenClipboard::ReceiveData(void* event) {
+  if (!event) {
+    return;
+  }
   auto* ready_event =
       reinterpret_cast<Ecore_Wl2_Event_Offer_Data_Ready*>(event);
   if (ready_event->data == nullptr || ready_event->len < 1) {
