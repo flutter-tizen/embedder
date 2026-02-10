@@ -25,13 +25,14 @@ config("flutter_tizen_config") {
     "${sysroot_path}/usr/include/efl-1",
     "${sysroot_path}/usr/include/eina-1",
     "${sysroot_path}/usr/include/eina-1/eina",
-    "${sysroot_path}/usr/include/eldbus-1",
     "${sysroot_path}/usr/include/eo-1",
     "${sysroot_path}/usr/include/feedback",
     "${sysroot_path}/usr/include/system",
     "${sysroot_path}/usr/include/tzsh",
     "${sysroot_path}/usr/include/vconf",
     "${sysroot_path}/usr/include/wayland-extension",
+    "${sysroot_path}/usr/include/glib-2.0",
+    "${sysroot_path}/usr/lib/glib-2.0/include",
   ]
 
   cflags_cc = [
@@ -117,7 +118,7 @@ template("embedder") {
       "ecore_input",
       "ecore_wl2",
       "eina",
-      "eldbus",
+      "gio-2.0",
       "feedback",
       "flutter_engine",
       "tbm",
