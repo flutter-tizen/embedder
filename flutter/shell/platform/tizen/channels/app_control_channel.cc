@@ -171,15 +171,13 @@ void AppControlChannel::SendLaunchRequest(
   EncodableValueHolder<bool> wait_for_reply(arguments, "waitForReply");
   if (wait_for_reply && *wait_for_reply) {
     std::shared_ptr<MethodResult<EncodableValue>> result_box{std::move(result)};
-    auto on_reply = [&result_box](const EncodableValue& response) {
+    auto on_reply = [result_box](const EncodableValue& response) {
       result_box->Success(response);
-      result_box = nullptr;
     };
 
     AppControlResult ret = app_control->SendLaunchRequestWithReply(on_reply);
     if (!ret) {
       result_box->Error(ret.code(), ret.message());
-      result_box = nullptr;
     }
   } else {
     AppControlResult ret = app_control->SendLaunchRequest();
