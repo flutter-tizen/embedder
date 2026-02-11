@@ -44,6 +44,8 @@ TizenClipboard::TizenClipboard(TizenViewBase* view) {
 }
 
 TizenClipboard::~TizenClipboard() {
+  on_data_callback_ = nullptr;
+
   ecore_event_handler_del(send_handler);
   ecore_event_handler_del(receive_handler);
 }
