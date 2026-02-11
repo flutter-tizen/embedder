@@ -60,7 +60,8 @@ void TizenClipboard::SendData(void* event) {
   // is assumed to be "text/plain".
   if (!send_event->type || (strlen(send_event->type) != 0 &&
                             strcmp(send_event->type, kMimeTypeTextPlain))) {
-    FT_LOG(Error) << "Invaild mime type(" << send_event->type << ").";
+    FT_LOG(Error) << "Invaild mime type("
+                  << (send_event->type ? send_event->type : "null") << ").";
     if (send_event->fd >= 0) {
       close(send_event->fd);
     }
