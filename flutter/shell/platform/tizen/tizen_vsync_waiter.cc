@@ -74,7 +74,14 @@ TizenVsyncWaiter::~TizenVsyncWaiter() {
 }
 
 void TizenVsyncWaiter::AsyncWaitForVsync(intptr_t baton) {
-  message_loop_->PostTask([this, baton]() { tdm_client_->AwaitVblank(baton); });
+  std::weak_ptr<TdmClient> tdm_client = tdm_client_;
+  message_loop_->PostTask([tdm_client_weak = std::move(tdm_client), baton]() {
+    if (auto tdm_client = tdm_client_weak.lock()) {
+      tdm_client->AwaitVblank(baton);
+    } else {
+      FT_LOG(Error) << "tdm client is null, task cancelled";
+    }
+  });
 }
 
 TdmClient::TdmClient(FlutterTizenEngine* engine) {
