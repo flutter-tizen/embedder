@@ -132,7 +132,6 @@ void TizenClipboard::SetData(const std::string& data) {
 }
 
 bool TizenClipboard::GetData(ClipboardCallback on_data_callback) {
-  // Cancel any pending request to avoid leaving a previous callback hanging.
   if (on_data_callback_) {
     on_data_callback_(std::nullopt);
     on_data_callback_ = nullptr;
