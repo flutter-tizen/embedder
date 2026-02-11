@@ -53,8 +53,12 @@ void TizenClipboard::SendData(void* event) {
     return;
   }
   auto* send_event = reinterpret_cast<Ecore_Wl2_Event_Data_Source_Send*>(event);
-  if (!send_event->type || strcmp(send_event->type, kMimeTypeTextPlain)) {
-    FT_LOG(Error) << "Invaild mime type.";
+
+  // TODO(jsuya): If the type of Ecore_Wl2_Event_Data_Source_Send is empty, it
+  // is assumed to be "text/plain".
+  if (!send_event->type || (strlen(send_event->type) != 0 &&
+                            strcmp(send_event->type, kMimeTypeTextPlain))) {
+    FT_LOG(Error) << "Invaild mime type(" << send_event->type << ").";
     if (send_event->fd >= 0) {
       close(send_event->fd);
     }
