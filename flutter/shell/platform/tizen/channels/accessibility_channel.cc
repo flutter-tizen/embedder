@@ -25,8 +25,8 @@ constexpr char kAtspiDirectReadInterface[] = "org.tizen.DirectReading";
 static void _accessibilityBusAddressGet(GObject* source_object,
                                         GAsyncResult* res,
                                         gpointer user_data) {
-  GError* error = nullptr;
-  GVariant* result = nullptr;
+  g_autoptr(GError) error = nullptr;
+  g_autoptr(GVariant) result = nullptr;
   GDBusConnection** accessibility_bus =
       static_cast<GDBusConnection**>(user_data);
 
@@ -34,8 +34,7 @@ static void _accessibilityBusAddressGet(GObject* source_object,
   result = g_dbus_proxy_call_finish(proxy, res, &error);
 
   if (error) {
-    FT_LOG(Error) << "GDBus message error. (" << error->message << ")";
-    g_error_free(error);
+    FT_LOG(Error) << "GDBus message error: " << error->message;
     return;
   }
 
@@ -46,7 +45,6 @@ static void _accessibilityBusAddressGet(GObject* source_object,
 
   if (!socket_address) {
     FT_LOG(Error) << "Could not get A11Y Bus socket address.";
-    g_variant_unref(result);
     return;
   }
 
@@ -56,10 +54,7 @@ static void _accessibilityBusAddressGet(GObject* source_object,
 
   if (error) {
     FT_LOG(Error) << "Failed to connect to A11Y Bus: " << error->message;
-    g_error_free(error);
   }
-
-  g_variant_unref(result);
 }
 
 AccessibilityChannel::AccessibilityChannel(BinaryMessenger* messenger)
@@ -67,11 +62,10 @@ AccessibilityChannel::AccessibilityChannel(BinaryMessenger* messenger)
           messenger,
           kChannelName,
           &StandardMessageCodec::GetInstance())) {
-  GError* error = nullptr;
+  g_autoptr(GError) error = nullptr;
   session_bus_ = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, &error);
   if (error) {
     FT_LOG(Error) << "Failed to get session bus: " << error->message;
-    g_error_free(error);
     return;
   }
 
@@ -81,7 +75,6 @@ AccessibilityChannel::AccessibilityChannel(BinaryMessenger* messenger)
 
   if (error) {
     FT_LOG(Error) << "Failed to create proxy: " << error->message;
-    g_error_free(error);
     return;
   }
 
