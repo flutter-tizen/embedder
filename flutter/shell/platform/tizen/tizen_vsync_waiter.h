@@ -5,11 +5,15 @@
 #ifndef EMBEDDER_TIZEN_VSYNC_WAITER_H_
 #define EMBEDDER_TIZEN_VSYNC_WAITER_H_
 
-#include <Ecore.h>
 #include <tdm_client.h>
 
+#include <atomic>
+#include <condition_variable>
+#include <functional>
 #include <memory>
 #include <mutex>
+#include <queue>
+#include <thread>
 
 #include "flutter/shell/platform/embedder/embedder.h"
 
@@ -44,21 +48,39 @@ class TdmClient {
   intptr_t baton_ = 0;
 };
 
+class MessageLoop {
+ public:
+  using Task = std::function<void()>;
+
+  MessageLoop();
+
+  ~MessageLoop();
+
+  void PostTask(Task task);
+  void Init();
+  void Quit();
+
+ private:
+  void Run();
+
+  std::queue<Task> tasks_;
+  std::mutex mutex_;
+  std::condition_variable cond_;
+  std::atomic<bool> quit_;
+  std::thread loop_thread_;
+};
+
 class TizenVsyncWaiter {
  public:
+  using Task = std::function<void()>;
   TizenVsyncWaiter(FlutterTizenEngine* engine);
   virtual ~TizenVsyncWaiter();
 
   void AsyncWaitForVsync(intptr_t baton);
 
  private:
-  void SendMessage(int event, intptr_t baton);
-
-  static void RunVblankLoop(void* data, Ecore_Thread* thread);
-
   std::shared_ptr<TdmClient> tdm_client_;
-  Ecore_Thread* vblank_thread_ = nullptr;
-  Eina_Thread_Queue* vblank_thread_queue_ = nullptr;
+  std::unique_ptr<MessageLoop> message_loop_;
 };
 
 }  // namespace flutter

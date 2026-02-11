@@ -3,107 +3,78 @@
 // found in the LICENSE file.
 
 #include "tizen_vsync_waiter.h"
-
-#include <eina_thread_queue.h>
-
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/logger.h"
 
 namespace flutter {
 
-namespace {
+MessageLoop::MessageLoop() : quit_(false) {
+  Init();
+}
+MessageLoop::~MessageLoop() {
+  Quit();
+}
 
-constexpr int kMessageQuit = -1;
-constexpr int kMessageRequestVblank = 0;
+void MessageLoop::Init() {
+  quit_ = false;
+  loop_thread_ = std::thread(&MessageLoop::Run, this);
+  FT_LOG(Info) << "[MessageLoop] Thread started.";
+}
 
-struct Message {
-  Eina_Thread_Queue_Msg head;
-  int event;
-  intptr_t baton;
-};
+void MessageLoop::Quit() {
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (quit_)
+      return;
+    quit_ = true;
+  }
+  cond_.notify_all();
 
-}  // namespace
+  if (loop_thread_.joinable()) {
+    loop_thread_.join();
+    FT_LOG(Info) << "[MessageLoop] Thread joined and quit.";
+  }
+}
+
+void MessageLoop::PostTask(Task task) {
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    tasks_.push(std::move(task));
+  }
+  cond_.notify_one();
+}
+
+void MessageLoop::Run() {
+  while (true) {
+    Task task;
+    {
+      std::unique_lock<std::mutex> lock(mutex_);
+      cond_.wait(lock, [this] { return !tasks_.empty() || quit_; });
+      if (quit_) {
+        break;
+      }
+
+      task = std::move(tasks_.front());
+      tasks_.pop();
+    }
+
+    if (task) {
+      task();
+    }
+  }
+}
 
 TizenVsyncWaiter::TizenVsyncWaiter(FlutterTizenEngine* engine) {
   tdm_client_ = std::make_shared<TdmClient>(engine);
-
-  vblank_thread_ = ecore_thread_feedback_run(RunVblankLoop, nullptr, nullptr,
-                                             nullptr, this, EINA_TRUE);
+  message_loop_ = std::make_unique<MessageLoop>();
 }
 
 TizenVsyncWaiter::~TizenVsyncWaiter() {
   tdm_client_->OnEngineStop();
-
-  SendMessage(kMessageQuit, 0);
-
-  if (vblank_thread_) {
-    ecore_thread_cancel(vblank_thread_);
-    vblank_thread_ = nullptr;
-  }
 }
 
 void TizenVsyncWaiter::AsyncWaitForVsync(intptr_t baton) {
-  SendMessage(kMessageRequestVblank, baton);
-}
-
-void TizenVsyncWaiter::SendMessage(int event, intptr_t baton) {
-  if (!vblank_thread_ || ecore_thread_check(vblank_thread_)) {
-    FT_LOG(Error) << "Invalid vblank thread.";
-    return;
-  }
-
-  if (!vblank_thread_queue_) {
-    FT_LOG(Error) << "Invalid vblank thread queue.";
-    return;
-  }
-
-  void* ref;
-  Message* message = static_cast<Message*>(
-      eina_thread_queue_send(vblank_thread_queue_, sizeof(Message), &ref));
-  message->event = event;
-  message->baton = baton;
-  eina_thread_queue_send_done(vblank_thread_queue_, ref);
-}
-
-void TizenVsyncWaiter::RunVblankLoop(void* data, Ecore_Thread* thread) {
-  auto* self = static_cast<TizenVsyncWaiter*>(data);
-
-  std::weak_ptr<TdmClient> tdm_client = self->tdm_client_;
-  if (!tdm_client.lock()->IsValid()) {
-    FT_LOG(Error) << "Invalid tdm_client.";
-    ecore_thread_cancel(thread);
-    return;
-  }
-
-  Eina_Thread_Queue* vblank_thread_queue = eina_thread_queue_new();
-  if (!vblank_thread_queue) {
-    FT_LOG(Error) << "Invalid vblank thread queue.";
-    ecore_thread_cancel(thread);
-    return;
-  }
-  self->vblank_thread_queue_ = vblank_thread_queue;
-
-  while (!ecore_thread_check(thread)) {
-    void* ref;
-    Message* message = static_cast<Message*>(
-        eina_thread_queue_wait(vblank_thread_queue, &ref));
-    if (message->event == kMessageQuit) {
-      eina_thread_queue_wait_done(vblank_thread_queue, ref);
-      break;
-    }
-    intptr_t baton = message->baton;
-    eina_thread_queue_wait_done(vblank_thread_queue, ref);
-
-    if (tdm_client.expired()) {
-      break;
-    }
-    tdm_client.lock()->AwaitVblank(baton);
-  }
-
-  if (vblank_thread_queue) {
-    eina_thread_queue_free(vblank_thread_queue);
-    self->vblank_thread_queue_ = nullptr;
-  }
+  message_loop_->PostTask([this, baton]() { tdm_client_->AwaitVblank(baton); });
 }
 
 TdmClient::TdmClient(FlutterTizenEngine* engine) {
@@ -126,7 +97,6 @@ TdmClient::TdmClient(FlutterTizenEngine* engine) {
     return;
   }
   tdm_client_vblank_set_enable_fake(vblank_, 1);
-
   engine_ = engine;
 }
 
