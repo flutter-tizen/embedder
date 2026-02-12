@@ -49,14 +49,23 @@ TizenClipboard::~TizenClipboard() {
 }
 
 void TizenClipboard::SendData(void* event) {
+  if (!event) {
+    return;
+  }
   auto* send_event = reinterpret_cast<Ecore_Wl2_Event_Data_Source_Send*>(event);
   if (!send_event->type || strcmp(send_event->type, kMimeTypeTextPlain)) {
     FT_LOG(Error) << "Invaild mime type.";
+    if (send_event->fd >= 0) {
+      close(send_event->fd);
+    }
     return;
   }
 
   if (send_event->serial != selection_serial_) {
     FT_LOG(Error) << "The serial doesn't match.";
+    if (send_event->fd >= 0) {
+      close(send_event->fd);
+    }
     return;
   }
 
@@ -65,6 +74,9 @@ void TizenClipboard::SendData(void* event) {
 }
 
 void TizenClipboard::ReceiveData(void* event) {
+  if (!event) {
+    return;
+  }
   auto* ready_event =
       reinterpret_cast<Ecore_Wl2_Event_Offer_Data_Ready*>(event);
   if (ready_event->data == nullptr || ready_event->len < 1) {
@@ -129,7 +141,6 @@ bool TizenClipboard::GetData(ClipboardCallback on_data_callback) {
     FT_LOG(Error) << "ecore_wl2_dnd_selection_get() failed.";
 
     if (on_data_callback_) {
-      on_data_callback_(std::nullopt);
       on_data_callback_ = nullptr;
     }
     return false;
