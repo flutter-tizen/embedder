@@ -67,6 +67,7 @@ AppControl::AppControl(app_control_h handle) : id_(next_id_++) {
 }
 
 AppControl::~AppControl() {
+  on_reply_ = nullptr;
   if (handle_) {
     app_control_destroy(handle_);
   }
