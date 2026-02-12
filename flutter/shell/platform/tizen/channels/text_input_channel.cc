@@ -257,7 +257,7 @@ void TextInputChannel::HandleMethodCall(
         TextRange(selection_base_value, selection_extent_value));
 
     auto composing_base = args.FindMember(kComposingBaseKey);
-    auto composing_extent = args.FindMember(kComposingBaseKey);
+    auto composing_extent = args.FindMember(kComposingExtentKey);
     int composing_base_value = composing_base != args.MemberEnd()
                                    ? composing_base->value.GetInt()
                                    : -1;
