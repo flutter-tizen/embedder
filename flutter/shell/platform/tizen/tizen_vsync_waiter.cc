@@ -9,16 +9,11 @@
 namespace flutter {
 
 MessageLoop::MessageLoop() : quit_(false) {
-  Init();
+  loop_thread_ = std::thread(&MessageLoop::Run, this);
+  FT_LOG(Info) << "[MessageLoop] Thread started.";
 }
 MessageLoop::~MessageLoop() {
   Quit();
-}
-
-void MessageLoop::Init() {
-  quit_ = false;
-  loop_thread_ = std::thread(&MessageLoop::Run, this);
-  FT_LOG(Info) << "[MessageLoop] Thread started.";
 }
 
 void MessageLoop::Quit() {

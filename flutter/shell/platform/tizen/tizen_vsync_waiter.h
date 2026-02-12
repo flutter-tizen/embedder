@@ -57,7 +57,6 @@ class MessageLoop {
   ~MessageLoop();
 
   void PostTask(Task task);
-  void Init();
   void Quit();
 
  private:
