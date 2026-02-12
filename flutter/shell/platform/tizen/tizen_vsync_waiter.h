@@ -48,36 +48,73 @@ class TdmClient {
   intptr_t baton_ = 0;
 };
 
-class MessageLoop {
- public:
-  using Task = std::function<void()>;
-
-  MessageLoop();
-
-  ~MessageLoop();
-
-  void PostTask(Task task);
-  void Quit();
-
- private:
-  void Run();
-
-  std::queue<Task> tasks_;
-  std::mutex mutex_;
-  std::condition_variable cond_;
-  std::atomic<bool> quit_;
-  std::thread loop_thread_;
-};
-
 class TizenVsyncWaiter {
  public:
-  using Task = std::function<void()>;
   TizenVsyncWaiter(FlutterTizenEngine* engine);
   virtual ~TizenVsyncWaiter();
-
   void AsyncWaitForVsync(intptr_t baton);
 
  private:
+  class MessageLoop {
+   public:
+    using Task = std::function<void()>;
+
+    MessageLoop() : quit_(false) {
+      loop_thread_ = std::thread(&MessageLoop::Run, this);
+    }
+
+    ~MessageLoop() { Quit(); }
+
+    void PostTask(Task task) {
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        tasks_.push(std::move(task));
+      }
+      cond_.notify_one();
+    }
+
+    void Quit() {
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (quit_)
+          return;
+        quit_ = true;
+      }
+      cond_.notify_all();
+
+      if (loop_thread_.joinable()) {
+        loop_thread_.join();
+      }
+    }
+
+   private:
+    void Run() {
+      while (true) {
+        Task task;
+        {
+          std::unique_lock<std::mutex> lock(mutex_);
+          cond_.wait(lock, [this] { return !tasks_.empty() || quit_; });
+          if (quit_) {
+            break;
+          }
+
+          task = std::move(tasks_.front());
+          tasks_.pop();
+        }
+
+        if (task) {
+          task();
+        }
+      }
+    }
+
+    std::queue<Task> tasks_;
+    std::mutex mutex_;
+    std::condition_variable cond_;
+    std::atomic<bool> quit_;
+    std::thread loop_thread_;
+  };
+
   std::shared_ptr<TdmClient> tdm_client_;
   std::unique_ptr<MessageLoop> message_loop_;
 };

@@ -8,61 +8,9 @@
 
 namespace flutter {
 
-MessageLoop::MessageLoop() : quit_(false) {
-  loop_thread_ = std::thread(&MessageLoop::Run, this);
-  FT_LOG(Info) << "[MessageLoop] Thread started.";
-}
-MessageLoop::~MessageLoop() {
-  Quit();
-}
-
-void MessageLoop::Quit() {
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (quit_)
-      return;
-    quit_ = true;
-  }
-  cond_.notify_all();
-
-  if (loop_thread_.joinable()) {
-    loop_thread_.join();
-    FT_LOG(Info) << "[MessageLoop] Thread joined and quit.";
-  }
-}
-
-void MessageLoop::PostTask(Task task) {
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    tasks_.push(std::move(task));
-  }
-  cond_.notify_one();
-}
-
-void MessageLoop::Run() {
-  while (true) {
-    Task task;
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
-      cond_.wait(lock, [this] { return !tasks_.empty() || quit_; });
-      if (quit_) {
-        break;
-      }
-
-      task = std::move(tasks_.front());
-      tasks_.pop();
-    }
-
-    if (task) {
-      task();
-    }
-  }
-}
-
-TizenVsyncWaiter::TizenVsyncWaiter(FlutterTizenEngine* engine) {
-  tdm_client_ = std::make_shared<TdmClient>(engine);
-  message_loop_ = std::make_unique<MessageLoop>();
-}
+TizenVsyncWaiter::TizenVsyncWaiter(FlutterTizenEngine* engine)
+    : tdm_client_(std::make_shared<TdmClient>(engine)),
+      message_loop_(std::make_unique<MessageLoop>()) {}
 
 TizenVsyncWaiter::~TizenVsyncWaiter() {
   tdm_client_->OnEngineStop();
