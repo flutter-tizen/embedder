@@ -135,11 +135,11 @@ void PlatformChannel::HandleMethodCall(
                     "Clipboard API only supports text.");
       return;
     }
-    auto* result_ptr = result.release();
-    if (!GetClipboardData([result_ptr](std::optional<std::string> data) {
+    std::shared_ptr<MethodResult<rapidjson::Document>> result_box{
+        std::move(result)};
+    if (!GetClipboardData([result_box](std::optional<std::string> data) {
           if (!data.has_value()) {
-            result_ptr->Error(kUnknownClipboardError, "Internal error.");
-            delete result_ptr;
+            result_box->Error(kUnknownClipboardError, "Internal error.");
             return;
           }
 
@@ -150,11 +150,9 @@ void PlatformChannel::HandleMethodCall(
           document.AddMember(rapidjson::Value(kTextKey, allocator),
                              rapidjson::Value(data.value(), allocator),
                              allocator);
-          result_ptr->Success(document);
-          delete result_ptr;
+          result_box->Success(document);
         })) {
-      result_ptr->Error(kUnknownClipboardError, "Internal error.");
-      delete result_ptr;
+      result_box->Error(kUnknownClipboardError, "Internal error.");
     };
   } else if (method == kSetClipboardDataMethod) {
     if (!arguments) {
