@@ -5,11 +5,15 @@
 #ifndef EMBEDDER_TIZEN_VSYNC_WAITER_H_
 #define EMBEDDER_TIZEN_VSYNC_WAITER_H_
 
-#include <Ecore.h>
 #include <tdm_client.h>
 
+#include <atomic>
+#include <condition_variable>
+#include <functional>
 #include <memory>
 #include <mutex>
+#include <queue>
+#include <thread>
 
 #include "flutter/shell/platform/embedder/embedder.h"
 
@@ -48,17 +52,75 @@ class TizenVsyncWaiter {
  public:
   TizenVsyncWaiter(FlutterTizenEngine* engine);
   virtual ~TizenVsyncWaiter();
-
   void AsyncWaitForVsync(intptr_t baton);
 
  private:
-  void SendMessage(int event, intptr_t baton);
+  class MessageLoop {
+   public:
+    using Task = std::function<void()>;
 
-  static void RunVblankLoop(void* data, Ecore_Thread* thread);
+    MessageLoop() : quit_(false) {
+      loop_thread_ = std::thread(&MessageLoop::Run, this);
+    }
+
+    ~MessageLoop() { Quit(); }
+
+    void PostTask(Task task) {
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (quit_) {
+          return;
+        }
+        tasks_.push(std::move(task));
+      }
+      cond_.notify_one();
+    }
+
+    void Quit() {
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (quit_) {
+          return;
+        }
+        quit_ = true;
+      }
+      cond_.notify_all();
+
+      if (loop_thread_.joinable()) {
+        loop_thread_.join();
+      }
+    }
+
+   private:
+    void Run() {
+      while (true) {
+        Task task;
+        {
+          std::unique_lock<std::mutex> lock(mutex_);
+          cond_.wait(lock, [this] { return !tasks_.empty() || quit_; });
+          if (quit_) {
+            break;
+          }
+
+          task = std::move(tasks_.front());
+          tasks_.pop();
+        }
+
+        if (task) {
+          task();
+        }
+      }
+    }
+
+    std::queue<Task> tasks_;
+    std::mutex mutex_;
+    std::condition_variable cond_;
+    std::atomic<bool> quit_;
+    std::thread loop_thread_;
+  };
 
   std::shared_ptr<TdmClient> tdm_client_;
-  Ecore_Thread* vblank_thread_ = nullptr;
-  Eina_Thread_Queue* vblank_thread_queue_ = nullptr;
+  std::unique_ptr<MessageLoop> message_loop_;
 };
 
 }  // namespace flutter
