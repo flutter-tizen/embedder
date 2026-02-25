@@ -22,39 +22,74 @@ constexpr char kAtspiDirectReadInterface[] = "org.tizen.DirectReading";
 
 }  // namespace
 
-static void _accessibilityBusAddressGet(GObject* source_object,
-                                        GAsyncResult* res,
-                                        gpointer user_data) {
+static void _readCommandCallback(GObject* source_object,
+                                 GAsyncResult* res,
+                                 gpointer user_data) {
   g_autoptr(GError) error = nullptr;
-  g_autoptr(GVariant) result = nullptr;
-  GDBusConnection** accessibility_bus =
-      static_cast<GDBusConnection**>(user_data);
 
-  GDBusProxy* proxy = G_DBUS_PROXY(source_object);
-  result = g_dbus_proxy_call_finish(proxy, res, &error);
+  g_dbus_connection_call_finish(G_DBUS_CONNECTION(source_object), res, &error);
 
   if (error) {
-    FT_LOG(Error) << "GDBus message error: " << error->message;
+    FT_LOG(Error) << "ReadCommand failed: " << error->message;
+  } else {
+    FT_LOG(Info) << "ReadCommand succeeded";
+  }
+}
+
+void AccessibilityChannel::OnAccessibilityBusAddressGet(GObject* source_object,
+                                                        GAsyncResult* res,
+                                                        gpointer user_data) {
+  g_autoptr(GError) error = nullptr;
+  g_autoptr(GVariant) result = nullptr;
+
+  result = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source_object), res,
+                                         &error);
+  if (error) {
+    FT_LOG(Error) << "Failed to connect session bus: " << error->message;
     return;
   }
 
   const gchar* socket_address = nullptr;
-  if (g_variant_is_of_type(result, G_VARIANT_TYPE("(s)"))) {
-    g_variant_get(result, "(&s)", &socket_address);
-  }
+  g_variant_get(result, "(&s)", &socket_address);
 
-  if (!socket_address) {
-    FT_LOG(Error) << "Could not get A11Y Bus socket address.";
+  auto* self = static_cast<AccessibilityChannel*>(user_data);
+  self->accessibility_bus_ = g_dbus_connection_new_for_address_sync(
+      socket_address,
+      static_cast<GDBusConnectionFlags>(
+          G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT |
+          G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION),
+      nullptr, nullptr, &error);
+  if (error) {
+    FT_LOG(Error) << "Failed to connect to A11Y Bus: " << error->message;
     return;
   }
 
-  *accessibility_bus = g_dbus_connection_new_for_address_sync(
-      socket_address, G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT, nullptr,
-      nullptr, &error);
+  g_dbus_connection_set_exit_on_close(self->accessibility_bus_, FALSE);
 
+  FT_LOG(Info) << "Successfully connected to A11Y Bus at:  " << socket_address;
+}
+
+void AccessibilityChannel::OnSessionBusConnection(GObject* source_object,
+                                                  GAsyncResult* res,
+                                                  gpointer user_data) {
+  g_autoptr(GError) error = nullptr;
+  GDBusConnection* session_bus = g_bus_get_finish(res, &error);
   if (error) {
-    FT_LOG(Error) << "Failed to connect to A11Y Bus: " << error->message;
+    FT_LOG(Error) << "Failed to get session bus: " << error->message;
+    return;
   }
+
+  auto* self = static_cast<AccessibilityChannel*>(user_data);
+  if (self->session_bus_) {
+    g_object_unref(self->session_bus_);
+  }
+  self->session_bus_ = session_bus;
+
+  g_dbus_connection_call(
+      session_bus, kAccessibilityDbus, kAccessibilityDbusPath,
+      kAccessibilityDbusInterface, "GetAddress", nullptr, G_VARIANT_TYPE("(s)"),
+      G_DBUS_CALL_FLAGS_NONE, -1, nullptr,
+      (GAsyncReadyCallback)OnAccessibilityBusAddressGet, self);
 }
 
 AccessibilityChannel::AccessibilityChannel(BinaryMessenger* messenger)
@@ -62,25 +97,8 @@ AccessibilityChannel::AccessibilityChannel(BinaryMessenger* messenger)
           messenger,
           kChannelName,
           &StandardMessageCodec::GetInstance())) {
-  g_autoptr(GError) error = nullptr;
-  session_bus_ = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, &error);
-  if (error) {
-    FT_LOG(Error) << "Failed to get session bus: " << error->message;
-    return;
-  }
-
-  bus_ = g_dbus_proxy_new_sync(session_bus_, G_DBUS_PROXY_FLAGS_NONE, nullptr,
-                               kAccessibilityDbus, kAccessibilityDbusPath,
-                               kAccessibilityDbusInterface, nullptr, &error);
-
-  if (error) {
-    FT_LOG(Error) << "Failed to create proxy: " << error->message;
-    return;
-  }
-
-  g_dbus_proxy_call(bus_, "GetAddress", nullptr, G_DBUS_CALL_FLAGS_NONE, -1,
-                    nullptr, (GAsyncReadyCallback)_accessibilityBusAddressGet,
-                    &accessibility_bus_);
+  g_bus_get(G_BUS_TYPE_SESSION, nullptr,
+            (GAsyncReadyCallback)OnSessionBusConnection, this);
 
   channel_->SetMessageHandler([&](const auto& message, auto reply) {
     if (std::holds_alternative<EncodableMap>(message)) {
@@ -93,11 +111,23 @@ AccessibilityChannel::AccessibilityChannel(BinaryMessenger* messenger)
         if (*type == "announce" && data) {
           EncodableValueHolder<std::string> msg(data.value, "message");
           if (msg && accessibility_bus_) {
+            FT_LOG(Info)
+                << "A11Y Bus pointer exists, calling ReadCommand with message: "
+                << msg->c_str();
             GVariant* params = g_variant_new("(sb)", msg->c_str(), TRUE);
+            if (!params) {
+              FT_LOG(Error) << "Failed to create GVariant parameters";
+              return;
+            }
             g_dbus_connection_call(
                 accessibility_bus_, kAtspiDirectReadBus, kAtspiDirectReadPath,
                 kAtspiDirectReadInterface, "ReadCommand", params, nullptr,
-                G_DBUS_CALL_FLAGS_NONE, -1, nullptr, nullptr, nullptr);
+                G_DBUS_CALL_FLAGS_NONE, -1, nullptr,
+                (GAsyncReadyCallback)_readCommandCallback, nullptr);
+          } else if (msg) {
+            FT_LOG(Error) << "A11Y Bus is not initialized. Cannot call "
+                             "ReadCommand for message: "
+                          << msg->c_str();
           }
         }
       }
@@ -117,11 +147,6 @@ AccessibilityChannel::~AccessibilityChannel() {
   if (session_bus_) {
     g_object_unref(session_bus_);
     session_bus_ = nullptr;
-  }
-
-  if (bus_) {
-    g_object_unref(bus_);
-    bus_ = nullptr;
   }
 }
 

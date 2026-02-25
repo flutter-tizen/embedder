@@ -21,11 +21,18 @@ class AccessibilityChannel {
   virtual ~AccessibilityChannel();
 
  private:
+  static void OnAccessibilityBusAddressGet(GObject* source_object,
+                                           GAsyncResult* res,
+                                           gpointer user_data);
+  static void OnSessionBusConnection(GObject* source_object,
+                                     GAsyncResult* res,
+                                     gpointer user_data);
+
+ private:
   std::unique_ptr<BasicMessageChannel<EncodableValue>> channel_;
 
   GDBusConnection* session_bus_ = nullptr;
   GDBusConnection* accessibility_bus_ = nullptr;
-  GDBusProxy* bus_ = nullptr;
 };
 
 }  // namespace flutter
