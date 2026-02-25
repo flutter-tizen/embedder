@@ -23,6 +23,13 @@
 
 #include "flutter/shell/platform/tizen/logger.h"
 
+namespace {
+
+// Maximum number of tbm planes.
+constexpr int kTbmPlaneCountMax = 4;
+
+}  // namespace
+
 namespace flutter {
 
 ExternalTextureSurfaceEGL::ExternalTextureSurfaceEGL(
@@ -86,13 +93,13 @@ bool ExternalTextureSurfaceEGL::PopulateGLTexture(
   } else if (state_->gl_extension == ExternalTextureExtensionType::kDmaBuffer) {
     EGLint attribs[50];
     int atti = 0;
-    int plane_fd_ext[4] = {EGL_DMA_BUF_PLANE0_FD_EXT, EGL_DMA_BUF_PLANE1_FD_EXT,
-                           EGL_DMA_BUF_PLANE2_FD_EXT,
-                           EGL_DMA_BUF_PLANE3_FD_EXT};
-    int plane_offset_ext[4] = {
+    int plane_fd_ext[kTbmPlaneCountMax] = {
+        EGL_DMA_BUF_PLANE0_FD_EXT, EGL_DMA_BUF_PLANE1_FD_EXT,
+        EGL_DMA_BUF_PLANE2_FD_EXT, EGL_DMA_BUF_PLANE3_FD_EXT};
+    int plane_offset_ext[kTbmPlaneCountMax] = {
         EGL_DMA_BUF_PLANE0_OFFSET_EXT, EGL_DMA_BUF_PLANE1_OFFSET_EXT,
         EGL_DMA_BUF_PLANE2_OFFSET_EXT, EGL_DMA_BUF_PLANE3_OFFSET_EXT};
-    int plane_pitch_ext[4] = {
+    int plane_pitch_ext[kTbmPlaneCountMax] = {
         EGL_DMA_BUF_PLANE0_PITCH_EXT, EGL_DMA_BUF_PLANE1_PITCH_EXT,
         EGL_DMA_BUF_PLANE2_PITCH_EXT, EGL_DMA_BUF_PLANE3_PITCH_EXT};
 
@@ -104,6 +111,9 @@ bool ExternalTextureSurfaceEGL::PopulateGLTexture(
     attribs[atti++] = info.format;
 
     int num_planes = tbm_surface_internal_get_num_planes(info.format);
+    if (num_planes > kTbmPlaneCountMax) {
+      num_planes = kTbmPlaneCountMax;
+    }
     for (int i = 0; i < num_planes; i++) {
       int bo_idx = tbm_surface_internal_get_plane_bo_idx(tbm_surface, i);
       tbm_bo tbo = tbm_surface_internal_get_bo(tbm_surface, bo_idx);
