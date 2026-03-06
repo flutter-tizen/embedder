@@ -5,7 +5,7 @@
 #ifndef EMBEDDER_ACCESSIBILITY_CHANNEL_H_
 #define EMBEDDER_ACCESSIBILITY_CHANNEL_H_
 
-#include <Eldbus.h>
+#include <gio/gio.h>
 
 #include <functional>
 #include <memory>
@@ -21,11 +21,18 @@ class AccessibilityChannel {
   virtual ~AccessibilityChannel();
 
  private:
+  static void OnAccessibilityBusAddressGet(GObject* source_object,
+                                           GAsyncResult* res,
+                                           gpointer user_data);
+  static void OnSessionBusConnection(GObject* source_object,
+                                     GAsyncResult* res,
+                                     gpointer user_data);
+
+ private:
   std::unique_ptr<BasicMessageChannel<EncodableValue>> channel_;
 
-  Eldbus_Connection* session_bus_ = nullptr;
-  Eldbus_Connection* accessibility_bus_ = nullptr;
-  Eldbus_Object* bus_ = nullptr;
+  GDBusConnection* session_bus_ = nullptr;
+  GDBusConnection* accessibility_bus_ = nullptr;
 };
 
 }  // namespace flutter
