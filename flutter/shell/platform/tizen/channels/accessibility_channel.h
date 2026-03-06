@@ -33,7 +33,7 @@ class AccessibilityChannel {
 
   GDBusConnection* session_bus_ = nullptr;
   GDBusConnection* accessibility_bus_ = nullptr;
-  GCancellable* cancellable_;
+  GCancellable* cancellable_ = nullptr;
 };
 
 }  // namespace flutter

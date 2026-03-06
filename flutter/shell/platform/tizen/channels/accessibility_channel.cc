@@ -39,7 +39,6 @@ static void _readCommandCallback(GObject* source_object,
 void AccessibilityChannel::OnAccessibilityBusAddressGet(GObject* source_object,
                                                         GAsyncResult* res,
                                                         gpointer user_data) {
-  auto* self = static_cast<AccessibilityChannel*>(user_data);
   if (!user_data) {
     FT_LOG(Error) << "Accessibility channel is not available.";
     return;
@@ -65,6 +64,7 @@ void AccessibilityChannel::OnAccessibilityBusAddressGet(GObject* source_object,
     return;
   }
 
+  auto* self = static_cast<AccessibilityChannel*>(user_data);
   self->accessibility_bus_ = g_dbus_connection_new_for_address_sync(
       socket_address,
       static_cast<GDBusConnectionFlags>(
@@ -84,7 +84,6 @@ void AccessibilityChannel::OnAccessibilityBusAddressGet(GObject* source_object,
 void AccessibilityChannel::OnSessionBusConnection(GObject* source_object,
                                                   GAsyncResult* res,
                                                   gpointer user_data) {
-  auto* self = static_cast<AccessibilityChannel*>(user_data);
   if (!user_data) {
     FT_LOG(Error) << "Accessibility channel is not available.";
     return;
@@ -97,6 +96,7 @@ void AccessibilityChannel::OnSessionBusConnection(GObject* source_object,
     return;
   }
 
+  auto* self = static_cast<AccessibilityChannel*>(user_data);
   if (self->session_bus_) {
     g_object_unref(self->session_bus_);
   }
