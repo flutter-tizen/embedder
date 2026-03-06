@@ -40,7 +40,7 @@ void AccessibilityChannel::OnAccessibilityBusAddressGet(GObject* source_object,
                                                         GAsyncResult* res,
                                                         gpointer user_data) {
   auto* self = static_cast<AccessibilityChannel*>(user_data);
-  if (self->shutdown_) {
+  if (!user_data) {
     FT_LOG(Error) << "Accessibility channel is not available.";
     return;
   }
@@ -85,7 +85,7 @@ void AccessibilityChannel::OnSessionBusConnection(GObject* source_object,
                                                   GAsyncResult* res,
                                                   gpointer user_data) {
   auto* self = static_cast<AccessibilityChannel*>(user_data);
-  if (self->shutdown_) {
+  if (!user_data) {
     FT_LOG(Error) << "Accessibility channel is not available.";
     return;
   }
@@ -105,7 +105,7 @@ void AccessibilityChannel::OnSessionBusConnection(GObject* source_object,
   g_dbus_connection_call(
       session_bus, kAccessibilityDbus, kAccessibilityDbusPath,
       kAccessibilityDbusInterface, "GetAddress", nullptr, G_VARIANT_TYPE("(s)"),
-      G_DBUS_CALL_FLAGS_NONE, -1, nullptr,
+      G_DBUS_CALL_FLAGS_NONE, -1, self->cancellable_,
       (GAsyncReadyCallback)OnAccessibilityBusAddressGet, self);
 }
 
@@ -113,8 +113,9 @@ AccessibilityChannel::AccessibilityChannel(BinaryMessenger* messenger)
     : channel_(std::make_unique<BasicMessageChannel<EncodableValue>>(
           messenger,
           kChannelName,
-          &StandardMessageCodec::GetInstance())) {
-  g_bus_get(G_BUS_TYPE_SESSION, nullptr,
+          &StandardMessageCodec::GetInstance())),
+      cancellable_(g_cancellable_new()) {
+  g_bus_get(G_BUS_TYPE_SESSION, cancellable_,
             (GAsyncReadyCallback)OnSessionBusConnection, this);
 
   channel_->SetMessageHandler([&](const auto& message, auto reply) {
@@ -156,6 +157,12 @@ AccessibilityChannel::AccessibilityChannel(BinaryMessenger* messenger)
 AccessibilityChannel::~AccessibilityChannel() {
   channel_->SetMessageHandler(nullptr);
 
+  if (cancellable_) {
+    g_cancellable_cancel(cancellable_);
+    g_object_unref(cancellable_);
+    cancellable_ = nullptr;
+  }
+
   if (accessibility_bus_) {
     g_object_unref(accessibility_bus_);
     accessibility_bus_ = nullptr;
@@ -165,8 +172,6 @@ AccessibilityChannel::~AccessibilityChannel() {
     g_object_unref(session_bus_);
     session_bus_ = nullptr;
   }
-
-  shutdown_ = true;
 }
 
 }  // namespace flutter
