@@ -20,10 +20,12 @@ class SettingsChannel {
 
  private:
   void SendSettingsEvent();
-  bool Prefer24HourTime();
-  float GetTextScaleFactor();
+  bool SetUpLocaleTimeFormat();
+  float SetUpTextScaleFactor();
 
   std::unique_ptr<BasicMessageChannel<rapidjson::Document>> channel_;
+  bool locale_time_format_ = false;
+  float text_scale_factor_ = 1.0;
 };
 
 }  // namespace flutter
