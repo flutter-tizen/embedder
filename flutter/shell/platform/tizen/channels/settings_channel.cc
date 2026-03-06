@@ -63,17 +63,16 @@ void SettingsChannel::SendSettingsEvent() {
   channel_->Send(event);
 }
 
-bool SettingsChannel::SetUpLocaleTimeFormat() {
+void SettingsChannel::SetUpLocaleTimeFormat() {
   bool value = false;
   if (system_settings_get_value_bool(
           SYSTEM_SETTINGS_KEY_LOCALE_TIMEFORMAT_24HOUR, &value) ==
       SYSTEM_SETTINGS_ERROR_NONE) {
     locale_time_format_ = value;
   }
-  return locale_time_format_;
 }
 
-float SettingsChannel::SetUpTextScaleFactor() {
+void SettingsChannel::SetUpTextScaleFactor() {
   const float small = 0.8;
   const float normal = 1.0;
   const float large = 1.5;
@@ -101,7 +100,6 @@ float SettingsChannel::SetUpTextScaleFactor() {
         break;
     }
   }
-  return text_scale_factor_;
 }
 
 }  // namespace flutter

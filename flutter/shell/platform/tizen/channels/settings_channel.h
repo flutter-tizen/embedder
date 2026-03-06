@@ -20,8 +20,8 @@ class SettingsChannel {
 
  private:
   void SendSettingsEvent();
-  bool SetUpLocaleTimeFormat();
-  float SetUpTextScaleFactor();
+  void SetUpLocaleTimeFormat();
+  void SetUpTextScaleFactor();
 
   std::unique_ptr<BasicMessageChannel<rapidjson::Document>> channel_;
   bool locale_time_format_ = false;
