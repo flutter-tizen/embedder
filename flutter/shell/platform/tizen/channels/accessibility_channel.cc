@@ -39,6 +39,12 @@ static void _readCommandCallback(GObject* source_object,
 void AccessibilityChannel::OnAccessibilityBusAddressGet(GObject* source_object,
                                                         GAsyncResult* res,
                                                         gpointer user_data) {
+  auto* self = static_cast<AccessibilityChannel*>(user_data);
+  if (self->shutdown_) {
+    FT_LOG(Error) << "Accessibility channel is not available.";
+    return;
+  }
+
   g_autoptr(GError) error = nullptr;
   g_autoptr(GVariant) result = nullptr;
 
@@ -47,12 +53,18 @@ void AccessibilityChannel::OnAccessibilityBusAddressGet(GObject* source_object,
   if (error) {
     FT_LOG(Error) << "Failed to connect session bus: " << error->message;
     return;
+  } else if (!result || !g_variant_is_of_type(result, G_VARIANT_TYPE("(s)"))) {
+    FT_LOG(Error) << "Unexpected GetAddress response type.";
+    return;
   }
 
   const gchar* socket_address = nullptr;
   g_variant_get(result, "(&s)", &socket_address);
+  if (!socket_address || socket_address[0] == '\0') {
+    FT_LOG(Error) << "Could not get A11Y Bus socket address.";
+    return;
+  }
 
-  auto* self = static_cast<AccessibilityChannel*>(user_data);
   self->accessibility_bus_ = g_dbus_connection_new_for_address_sync(
       socket_address,
       static_cast<GDBusConnectionFlags>(
@@ -72,6 +84,12 @@ void AccessibilityChannel::OnAccessibilityBusAddressGet(GObject* source_object,
 void AccessibilityChannel::OnSessionBusConnection(GObject* source_object,
                                                   GAsyncResult* res,
                                                   gpointer user_data) {
+  auto* self = static_cast<AccessibilityChannel*>(user_data);
+  if (self->shutdown_) {
+    FT_LOG(Error) << "Accessibility channel is not available.";
+    return;
+  }
+
   g_autoptr(GError) error = nullptr;
   GDBusConnection* session_bus = g_bus_get_finish(res, &error);
   if (error) {
@@ -79,7 +97,6 @@ void AccessibilityChannel::OnSessionBusConnection(GObject* source_object,
     return;
   }
 
-  auto* self = static_cast<AccessibilityChannel*>(user_data);
   if (self->session_bus_) {
     g_object_unref(self->session_bus_);
   }
@@ -148,6 +165,8 @@ AccessibilityChannel::~AccessibilityChannel() {
     g_object_unref(session_bus_);
     session_bus_ = nullptr;
   }
+
+  shutdown_ = true;
 }
 
 }  // namespace flutter
