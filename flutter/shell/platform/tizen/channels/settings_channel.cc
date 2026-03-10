@@ -25,10 +25,15 @@ SettingsChannel::SettingsChannel(BinaryMessenger* messenger)
           messenger,
           kChannelName,
           &JsonMessageCodec::GetInstance())) {
+  SetUpLocaleTimeFormat();
+  SetUpTextScaleFactor();
+  SendSettingsEvent();
+
   system_settings_set_changed_cb(
       SYSTEM_SETTINGS_KEY_LOCALE_TIMEFORMAT_24HOUR,
       [](system_settings_key_e key, void* user_data) -> void {
         auto* self = static_cast<SettingsChannel*>(user_data);
+        self->SetUpLocaleTimeFormat();
         self->SendSettingsEvent();
       },
       this);
@@ -36,10 +41,10 @@ SettingsChannel::SettingsChannel(BinaryMessenger* messenger)
       SYSTEM_SETTINGS_KEY_FONT_SIZE,
       [](system_settings_key_e key, void* user_data) -> void {
         auto* self = static_cast<SettingsChannel*>(user_data);
+        self->SetUpTextScaleFactor();
         self->SendSettingsEvent();
       },
       this);
-  SendSettingsEvent();
 }
 
 SettingsChannel::~SettingsChannel() {
@@ -51,23 +56,23 @@ SettingsChannel::~SettingsChannel() {
 void SettingsChannel::SendSettingsEvent() {
   rapidjson::Document event(rapidjson::kObjectType);
   rapidjson::MemoryPoolAllocator<>& allocator = event.GetAllocator();
-  event.AddMember(kTextScaleFactorKey, GetTextScaleFactor(), allocator);
-  event.AddMember(kAlwaysUse24HourFormatKey, Prefer24HourTime(), allocator);
+
+  event.AddMember(kTextScaleFactorKey, text_scale_factor_, allocator);
+  event.AddMember(kAlwaysUse24HourFormatKey, locale_time_format_, allocator);
   event.AddMember(kPlatformBrightnessKey, "light", allocator);
   channel_->Send(event);
 }
 
-bool SettingsChannel::Prefer24HourTime() {
+void SettingsChannel::SetUpLocaleTimeFormat() {
   bool value = false;
   if (system_settings_get_value_bool(
           SYSTEM_SETTINGS_KEY_LOCALE_TIMEFORMAT_24HOUR, &value) ==
       SYSTEM_SETTINGS_ERROR_NONE) {
-    return value;
+    locale_time_format_ = value;
   }
-  return false;
 }
 
-float SettingsChannel::GetTextScaleFactor() {
+void SettingsChannel::SetUpTextScaleFactor() {
   const float small = 0.8;
   const float normal = 1.0;
   const float large = 1.5;
@@ -79,18 +84,22 @@ float SettingsChannel::GetTextScaleFactor() {
       SYSTEM_SETTINGS_ERROR_NONE) {
     switch (value) {
       case SYSTEM_SETTINGS_FONT_SIZE_SMALL:
-        return small;
+        text_scale_factor_ = small;
+        break;
       case SYSTEM_SETTINGS_FONT_SIZE_LARGE:
-        return large;
+        text_scale_factor_ = large;
+        break;
       case SYSTEM_SETTINGS_FONT_SIZE_HUGE:
-        return huge;
+        text_scale_factor_ = huge;
+        break;
       case SYSTEM_SETTINGS_FONT_SIZE_GIANT:
-        return giant;
+        text_scale_factor_ = giant;
+        break;
       default:
-        return normal;
+        text_scale_factor_ = normal;
+        break;
     }
   }
-  return normal;
 }
 
 }  // namespace flutter
