@@ -352,6 +352,8 @@ typedef struct {
   bool is_slider;
   /// Whether the semantics node represents a keyboard key.
   bool is_keyboard_key;
+  /// Whether to block a11y focus for the semantics node.
+  bool is_accessibility_focus_blocked;
 } FlutterSemanticsFlags;
 
 typedef enum {
@@ -405,6 +407,7 @@ typedef struct {
 } FlutterTransformation;
 
 typedef void (*VoidCallback)(void* /* user data */);
+typedef bool (*BoolCallback)(void* /* user data */);
 
 typedef enum {
   /// Specifies an OpenGL texture target type. Textures are specified using
@@ -512,6 +515,13 @@ typedef struct {
   uint32_t name;
   /// The texture format (example GL_RGBA8).
   uint32_t format;
+  /// The pixel data buffer.
+  const uint8_t* buffer;
+  /// The size of pixel buffer.
+  size_t buffer_size;
+  /// Callback invoked that the gpu surface texture start binding.
+  BoolCallback bind_callback;
+
   /// User data to be returned on the invocation of the destruction callback.
   void* user_data;
   /// Callback invoked (on an engine managed thread) that asks the embedder to
@@ -605,7 +615,6 @@ typedef struct {
   uint32_t format;
 } FlutterOpenGLSurface;
 
-typedef bool (*BoolCallback)(void* /* user data */);
 typedef FlutterTransformation (*TransformationCallback)(void* /* user data */);
 typedef uint32_t (*UIntCallback)(void* /* user data */);
 typedef bool (*SoftwareSurfacePresentCallback)(void* /* user data */,
@@ -1742,6 +1751,11 @@ typedef struct {
   /// heading; higher values (1, 2, …) indicate the heading rank, with lower
   /// numbers being higher-level headings.
   int32_t heading_level;
+  /// An identifier for the semantics node in native accessibility hierarchy.
+  /// This value should not be exposed to the users of the app.
+  /// This is usually used for UI testing with tools that work by querying the
+  /// native accessibility, like UI Automator, XCUITest, or Appium.
+  const char* identifier;
 } FlutterSemanticsNode2;
 
 /// `FlutterSemanticsCustomAction` ID used as a sentinel to signal the end of a
