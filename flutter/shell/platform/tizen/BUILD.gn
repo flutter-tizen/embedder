@@ -158,9 +158,7 @@ template("embedder") {
       api_version_numeric = "110"
     }
 
-    defines += [
-      "TIZEN_API_VERSION_NUM=$api_version_numeric",
-    ]
+    defines += [ "TIZEN_API_VERSION_NUM=$api_version_numeric" ]
 
     defines += invoker.defines
     defines += [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
