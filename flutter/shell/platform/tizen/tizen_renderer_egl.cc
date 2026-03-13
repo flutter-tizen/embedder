@@ -111,6 +111,9 @@ bool TizenRendererEgl::CreateSurface(void* render_target,
       tbm_surface_queue_h tbm_surface_queue_ =
           Dali::AnyCast<tbm_surface_queue_h>(
               dali_native_image_queue->GetNativeImageQueue());
+      egl_surface_ = eglCreateWindowSurface(
+          egl_display_, egl_config_,
+          reinterpret_cast<EGLNativeWindowType>(tbm_surface_queue_), attribs);
 #else
       Dali::NativeImageSourceQueuePtr dali_native_image_queue =
           static_cast<Dali::NativeImageSourceQueue*>(render_target);
