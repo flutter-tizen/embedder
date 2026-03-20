@@ -524,6 +524,13 @@ void AccessibilityBridge::SetStringListAttributesFromFlutterUpdate(
   }
 }
 
+void AccessibilityBridge::SetIdentifierFromFlutterUpdate(
+    ui::AXNodeData& node_data,
+    const SemanticsNode& node) {
+  node_data.AddStringAttribute(ax::mojom::StringAttribute::kIdentifier,
+                               node.identifier);
+}
+
 void AccessibilityBridge::SetNameFromFlutterUpdate(ui::AXNodeData& node_data,
                                                    const SemanticsNode& node) {
   node_data.SetName(node.label);
@@ -634,6 +641,9 @@ AccessibilityBridge::FromFlutterSemanticsNode(
         flutter_node.custom_accessibility_actions,
         flutter_node.custom_accessibility_actions +
             flutter_node.custom_accessibility_actions_count);
+  }
+  if (flutter_node.identifier) {
+    result.identifier = std::string(flutter_node.identifier);
   }
   return result;
 }
