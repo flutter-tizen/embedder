@@ -5,11 +5,7 @@
 #include "public/flutter_tizen.h"
 
 #include <dali-toolkit/public-api/controls/image-view/image-view.h>
-#if TIZEN_API_VERSION_NUM >= 110
-#include <dali/devel-api/adaptor-framework/native-image-queue.h>
-#else
 #include <dali/devel-api/adaptor-framework/native-image-source-queue.h>
-#endif
 
 #include <memory>
 
@@ -40,11 +36,7 @@ FlutterDesktopViewRef FlutterDesktopViewCreateFromImageView(
       std::make_unique<flutter::TizenViewNui>(
           view_properties.width, view_properties.height,
           reinterpret_cast<Dali::Toolkit::ImageView*>(image_view),
-#if TIZEN_API_VERSION_NUM >= 110
-          reinterpret_cast<Dali::NativeImageQueue*>(native_image_queue),
-#else
           reinterpret_cast<Dali::NativeImageSourceQueue*>(native_image_queue),
-#endif
           default_window_id);
 
   auto view = std::make_unique<flutter::FlutterTizenView>(

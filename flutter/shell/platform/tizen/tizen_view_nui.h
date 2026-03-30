@@ -7,11 +7,7 @@
 
 #include <dali-toolkit/public-api/controls/image-view/image-view.h>
 #include <dali/devel-api/adaptor-framework/event-thread-callback.h>
-#if TIZEN_API_VERSION_NUM >= 110
-#include <dali/devel-api/adaptor-framework/native-image-queue.h>
-#else
 #include <dali/devel-api/adaptor-framework/native-image-source-queue.h>
-#endif
 #include <dali/devel-api/common/stage.h>
 
 #include <memory>
@@ -25,11 +21,7 @@ class TizenViewNui : public TizenView {
   TizenViewNui(int32_t width,
                int32_t height,
                Dali::Toolkit::ImageView* image_view,
-#if TIZEN_API_VERSION_NUM >= 110
-               Dali::NativeImageQueuePtr native_image_queue,
-#else
                Dali::NativeImageSourceQueuePtr native_image_queue,
-#endif
                int32_t default_window_id);
 
   ~TizenViewNui();
@@ -75,11 +67,7 @@ class TizenViewNui : public TizenView {
   void RenderOnce();
 
   Dali::Toolkit::ImageView* image_view_ = nullptr;
-#if TIZEN_API_VERSION_NUM >= 110
-  Dali::NativeImageQueuePtr native_image_queue_;
-#else
   Dali::NativeImageSourceQueuePtr native_image_queue_;
-#endif
   int32_t default_window_id_;
   std::unique_ptr<Dali::EventThreadCallback> rendering_callback_;
 };

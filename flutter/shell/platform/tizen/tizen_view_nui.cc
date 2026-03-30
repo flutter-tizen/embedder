@@ -16,11 +16,7 @@ namespace flutter {
 TizenViewNui::TizenViewNui(int32_t width,
                            int32_t height,
                            Dali::Toolkit::ImageView* image_view,
-#if TIZEN_API_VERSION_NUM >= 110
-                           Dali::NativeImageQueuePtr native_image_queue,
-#else
                            Dali::NativeImageSourceQueuePtr native_image_queue,
-#endif
                            int32_t default_window_id)
     : TizenView(width, height),
       image_view_(image_view),
