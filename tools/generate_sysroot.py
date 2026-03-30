@@ -155,7 +155,7 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
   packages = base_packages + unified_packages
   if api_version >= 6.5:
     packages += dali_packages
-    if api_version >= 11.0:
+    if api_version > 10.0:
       packages += dali_integration_devel_packages
 
   for package in packages:
