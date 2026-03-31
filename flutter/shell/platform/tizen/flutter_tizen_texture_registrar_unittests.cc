@@ -4,7 +4,7 @@
 
 #include "flutter/shell/platform/tizen/flutter_tizen_texture_registrar.h"
 
-#include <Ecore.h>
+#include <tizen_core_wl.h>
 
 #include <iostream>
 
@@ -18,7 +18,7 @@ namespace testing {
 
 class FlutterTizenTextureRegistrarTest : public ::testing::Test {
  public:
-  FlutterTizenTextureRegistrarTest() { ecore_init(); }
+  FlutterTizenTextureRegistrarTest() { tizen_core_wl_init(); }
 
  protected:
   void SetUp() {

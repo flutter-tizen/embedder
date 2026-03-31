@@ -5,8 +5,8 @@
 #ifndef EMBEDDER_TIZEN_INPUT_METHOD_CONTEXT_H_
 #define EMBEDDER_TIZEN_INPUT_METHOD_CONTEXT_H_
 
-#include <Ecore_IMF.h>
-#include <Ecore_Input.h>
+#include <tizen_core_imf.h>
+#include <tizen_core_wl.h>
 
 #include <functional>
 #include <string>
@@ -29,7 +29,7 @@ class TizenInputMethodContext {
   TizenInputMethodContext(uintptr_t window_id);
   ~TizenInputMethodContext();
 
-  bool HandleEcoreEventKey(Ecore_Event_Key* event, bool is_down);
+  bool HandleTcoreWlEventKey(void* event, bool is_down);
 
 #ifdef NUI_SUPPORT
   bool HandleNuiKeyEvent(const char* device_name,
@@ -79,9 +79,9 @@ class TizenInputMethodContext {
   void UnregisterInputPanelEventCallback();
 
  private:
-  static void InputPanelStateChangedCallback(void* data,
-                                             Ecore_IMF_Context* ctx,
-                                             int value);
+  static void InputPanelStateChangedCallback(tizen_core_imf_context_h ctx,
+                                             int value,
+                                             void* data);
 
   void RegisterEventCallbacks();
   void UnregisterEventCallbacks();
@@ -89,16 +89,13 @@ class TizenInputMethodContext {
   void SetContextOptions();
   void SetInputPanelOptions();
 
-#ifdef NUI_SUPPORT
-  Ecore_Device* ecore_device_ = nullptr;
-#endif
-  Ecore_IMF_Context* imf_context_ = nullptr;
+  tizen_core_imf_context_h imf_context_ = nullptr;
   OnCommit on_commit_;
   OnPreeditChanged on_preedit_changed_;
   OnPreeditStart on_preedit_start_;
   OnPreeditEnd on_preedit_end_;
   OnInputPanelStateChanged on_input_panel_state_changed_;
-  std::unordered_map<Ecore_IMF_Callback_Type, Ecore_IMF_Event_Cb>
+  std::unordered_map<tizen_core_imf_callback_type_e, tizen_core_imf_event_cb>
       event_callbacks_;
 };
 

@@ -66,18 +66,29 @@ TextInputChannel::TextInputChannel(
 TextInputChannel::~TextInputChannel() {}
 
 void TextInputChannel::OnComposeBegin() {
+  FT_LOG(Error) << "TextInputChannel::OnComposeBegin: active_model_="
+                << (active_model_ ? "set" : "null");
   if (active_model_ == nullptr) {
+    FT_LOG(Error)
+        << "TextInputChannel::OnComposeBegin: active_model_ is null, returning";
     return;
   }
   active_model_->BeginComposing();
 }
 
 void TextInputChannel::OnComposeChange(const std::string& str, int cursor_pos) {
+  FT_LOG(Error) << "TextInputChannel::OnComposeChange: str=" << str
+                << ", cursor_pos=" << cursor_pos
+                << ", active_model_=" << (active_model_ ? "set" : "null");
   if (active_model_ == nullptr) {
+    FT_LOG(Error) << "TextInputChannel::OnComposeChange: active_model_ is "
+                     "null, returning";
     return;
   }
   if (str == "") {
     // Enter pre-edit end stage.
+    FT_LOG(Error) << "TextInputChannel::OnComposeChange: empty str, entering "
+                     "pre-edit end stage";
     return;
   }
   active_model_->UpdateComposingText(str);
@@ -85,12 +96,17 @@ void TextInputChannel::OnComposeChange(const std::string& str, int cursor_pos) {
 }
 
 void TextInputChannel::OnComposeEnd() {
+  FT_LOG(Error) << "TextInputChannel::OnComposeEnd: active_model_="
+                << (active_model_ ? "set" : "null");
   if (active_model_ == nullptr) {
+    FT_LOG(Error)
+        << "TextInputChannel::OnComposeEnd: active_model_ is null, returning";
     return;
   }
   // Delete preedit-string, it will be committed.
   int count = active_model_->composing_range().extent() -
               active_model_->composing_range().base();
+  FT_LOG(Error) << "TextInputChannel::OnComposeEnd: composing count=" << count;
 
   active_model_->CommitComposing();
   active_model_->EndComposing();
@@ -99,11 +115,16 @@ void TextInputChannel::OnComposeEnd() {
 }
 
 void TextInputChannel::OnCommit(const std::string& str) {
+  FT_LOG(Error) << "TextInputChannel::OnCommit: str=" << str
+                << ", active_model_=" << (active_model_ ? "set" : "null");
   if (active_model_ == nullptr) {
+    FT_LOG(Error)
+        << "TextInputChannel::OnCommit: active_model_ is null, returning";
     return;
   }
   active_model_->AddText(str);
   if (active_model_->composing()) {
+    FT_LOG(Error) << "TextInputChannel::OnCommit: committing composing text";
     active_model_->CommitComposing();
     active_model_->EndComposing();
   }
@@ -116,12 +137,22 @@ bool TextInputChannel::SendKey(const char* key,
                                uint32_t modifiers,
                                uint32_t scan_code,
                                bool is_down) {
+  FT_LOG(Error) << "TextInputChannel::SendKey: key=" << (key ? key : "null")
+                << ", string=" << (string ? string : "null")
+                << ", compose=" << (compose ? compose : "null")
+                << ", modifiers=" << modifiers << ", scan_code=" << scan_code
+                << ", is_down=" << is_down
+                << ", active_model_=" << (active_model_ ? "set" : "null");
   if (active_model_ == nullptr) {
+    FT_LOG(Error)
+        << "TextInputChannel::SendKey: active_model_ is null, returning false";
     return false;
   }
 
   if (is_down) {
-    return HandleKey(key, string, modifiers);
+    bool result = HandleKey(key, string, modifiers);
+    FT_LOG(Error) << "TextInputChannel::SendKey: HandleKey result=" << result;
+    return result;
   }
 
   return false;
@@ -319,23 +350,32 @@ void TextInputChannel::SendStateUpdate() {
 bool TextInputChannel::HandleKey(const char* key,
                                  const char* string,
                                  uint32_t modifires) {
+  FT_LOG(Error) << "TextInputChannel::HandleKey: key=" << (key ? key : "null")
+                << ", string=" << (string ? string : "null")
+                << ", modifiers=" << modifires;
   bool needs_update = false;
   std::string key_str = key;
 
   if (string && strlen(string) == 1 && IsAsciiPrintableKey(string[0])) {
     // This is a fallback for printable keys not handled by IMF.
+    FT_LOG(Error)
+        << "TextInputChannel::HandleKey: printable key fallback, char="
+        << string[0];
     active_model_->AddCodePoint(string[0]);
     needs_update = true;
   } else if (key_str == "Return") {
+    FT_LOG(Error) << "TextInputChannel::HandleKey: Return key pressed";
     EnterPressed();
     return true;
 #ifdef TV_PROFILE
   } else if (key_str == "Select") {
+    FT_LOG(Error) << "TextInputChannel::HandleKey: Select key pressed";
     SelectPressed();
     return true;
 #endif
   } else {
-    FT_LOG(Info) << "Key[" << key << "] is unhandled.";
+    FT_LOG(Error) << "TextInputChannel::HandleKey: key[" << key
+                  << "] is unhandled.";
     return false;
   }
 
@@ -346,6 +386,9 @@ bool TextInputChannel::HandleKey(const char* key,
 }
 
 void TextInputChannel::EnterPressed() {
+  FT_LOG(Error) << "TextInputChannel::EnterPressed: input_type_=" << input_type_
+                << ", input_action_=" << input_action_
+                << ", client_id_=" << client_id_;
   if (input_type_ == kMultilineInputType) {
     active_model_->AddCodePoint('\n');
     SendStateUpdate();

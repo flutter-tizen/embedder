@@ -119,6 +119,12 @@ void KeyboardChannel::SendKey(const char* key,
                               uint32_t scan_code,
                               bool is_down,
                               std::function<void(bool)> callback) {
+  FT_LOG(Error) << "KeyboardChannel::SendKey: key=" << (key ? key : "null")
+                << ", string=" << (string ? string : "null")
+                << ", compose=" << (compose ? compose : "null")
+                << ", modifiers=" << modifiers << ", scan_code=" << scan_code
+                << ", is_down=" << is_down;
+
   uint64_t sequence_id = last_sequence_id_++;
 
   PendingEvent pending;
@@ -139,8 +145,14 @@ void KeyboardChannel::SendKey(const char* key,
 
   if (scan_code == 0) {
     scan_code = GetFallbackScanCodeFromKey(key);
+    FT_LOG(Error)
+        << "KeyboardChannel::SendKey: scan_code was 0, fallback scan_code="
+        << scan_code;
   }
 
+  FT_LOG(Error) << "KeyboardChannel::SendKey: sending embedder+channel events, "
+                   "sequence_id="
+                << sequence_id;
   SendEmbedderEvent(key, string, compose, modifiers, scan_code, is_down,
                     sequence_id);
   // The channel-based API (RawKeyEvent) is deprecated and |SendChannelEvent|
@@ -164,7 +176,7 @@ void KeyboardChannel::SendChannelEvent(const char* key,
   }
 
   int gtk_modifiers = 0;
-  for (auto element : kEcoreModifierToGtkModifier) {
+  for (auto element : kModifierToGtkModifier) {
     if (element.first & modifiers) {
       gtk_modifiers |= element.second;
     }
@@ -210,6 +222,12 @@ void KeyboardChannel::SendEmbedderEvent(const char* key,
   uint64_t logical_key = GetLogicalKey(key);
   const char* character = is_down ? string : nullptr;
 
+  FT_LOG(Error) << "KeyboardChannel::SendEmbedderEvent: key="
+                << (key ? key : "null") << ", physical_key=" << physical_key
+                << ", logical_key=" << logical_key
+                << ", scan_code=" << scan_code << ", is_down=" << is_down
+                << ", sequence_id=" << sequence_id;
+
   uint64_t last_logical_record = 0;
   auto iter = pressing_records_.find(physical_key);
   if (iter != pressing_records_.end()) {
@@ -231,6 +249,8 @@ void KeyboardChannel::SendEmbedderEvent(const char* key,
       // The physical key has been released before. It might indicate a missed
       // event due to loss of focus, or multiple keyboards pressed keys with the
       // same physical key. Ignore the up event.
+      FT_LOG(Error) << "KeyboardChannel::SendEmbedderEvent: key up without "
+                       "prior key down, synthesizing empty event";
       FlutterKeyEvent empty_event = {
           .struct_size = sizeof(FlutterKeyEvent),
           .timestamp = static_cast<double>(
@@ -264,6 +284,12 @@ void KeyboardChannel::SendEmbedderEvent(const char* key,
   event.character = character;
   event.synthesized = false;
 
+  FT_LOG(Error)
+      << "KeyboardChannel::SendEmbedderEvent: sending FlutterKeyEvent, type="
+      << static_cast<int>(type) << ", physical=" << event.physical
+      << ", logical=" << event.logical
+      << ", character=" << (event.character ? event.character : "null");
+
   send_event_(
       event,
       [](bool handled, void* user_data) {
@@ -277,19 +303,28 @@ void KeyboardChannel::SendEmbedderEvent(const char* key,
 }
 
 void KeyboardChannel::ResolvePendingEvent(uint64_t sequence_id, bool handled) {
+  FT_LOG(Error) << "KeyboardChannel::ResolvePendingEvent: sequence_id="
+                << sequence_id << ", handled=" << handled;
   auto iter = pending_events_.find(sequence_id);
   if (iter != pending_events_.end()) {
     PendingEvent* event = iter->second.get();
     event->any_handled = event->any_handled || handled;
     event->unreplied -= 1;
+    FT_LOG(Error) << "KeyboardChannel::ResolvePendingEvent: unreplied="
+                  << event->unreplied << ", any_handled=" << event->any_handled;
     // If all handlers have replied, report if any of them handled the event.
     if (event->unreplied == 0) {
+      FT_LOG(Error) << "KeyboardChannel::ResolvePendingEvent: all handlers "
+                       "replied, calling callback";
       event->callback(event->any_handled);
       pending_events_.erase(iter);
     }
     return;
   }
   // The pending event should always be found.
+  FT_LOG(Error) << "KeyboardChannel::ResolvePendingEvent: pending event NOT "
+                   "found for sequence_id="
+                << sequence_id;
   FT_ASSERT_NOT_REACHED();
 }
 

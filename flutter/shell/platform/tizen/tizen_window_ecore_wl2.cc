@@ -17,6 +17,21 @@
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/tizen_view_event_handler_delegate.h"
 
+// Forward declarations for rotation APIs that exist in the library
+// but are not yet declared in the public header.
+extern "C" {
+tizen_core_wl_error_e tizen_core_wl_window_set_rotation_angle(
+    tizen_core_wl_window_h window,
+    tizen_core_wl_window_angle_e angle);
+tizen_core_wl_error_e tizen_core_wl_window_get_rotation_angle(
+    tizen_core_wl_window_h window,
+    tizen_core_wl_window_angle_e* angle);
+tizen_core_wl_error_e tizen_core_wl_window_set_available_rotation_angle_list(
+    tizen_core_wl_window_h window,
+    tizen_core_wl_window_angle_e* available_angles,
+    size_t available_angle_count);
+}
+
 namespace flutter {
 
 namespace {
@@ -29,7 +44,7 @@ constexpr char kSysMouseCursorPointerSizeVConfKey[] =
     "db/menu/system/mouse-pointer-size";
 constexpr char kSysPointingDeviceSupportToastSharedPreferenceKey[] =
     "flutter-tizen/preference/pointing-device-support-toast";
-constexpr char kEcoreWL2InputCursorThemeName[] = "vd-cursors";
+constexpr char kTcoreWlInputCursorThemeName[] = "vd-cursors";
 #endif
 
 FlutterPointerMouseButtons ToFlutterPointerButton(int32_t button) {
@@ -42,16 +57,17 @@ FlutterPointerMouseButtons ToFlutterPointerButton(int32_t button) {
   }
 }
 
-FlutterPointerDeviceKind ToFlutterDeviceKind(const Ecore_Device* dev) {
-  Ecore_Device_Class device_class = ecore_device_class_get(dev);
-  if (device_class == ECORE_DEVICE_CLASS_MOUSE) {
-    return kFlutterPointerDeviceKindMouse;
-  } else if (device_class == ECORE_DEVICE_CLASS_PEN) {
-    return kFlutterPointerDeviceKindStylus;
-  } else {
-    return kFlutterPointerDeviceKindTouch;
-  }
-}
+// FlutterPointerDeviceKind GetDeviceKindFromEventType(int event_type) {
+//   if (event_type == TIZEN_CORE_WL_EVENT_MOUSE_BUTTON_DOWN ||
+//       event_type == TIZEN_CORE_WL_EVENT_MOUSE_BUTTON_UP ||
+//       event_type == TIZEN_CORE_WL_EVENT_MOUSE_MOVE ||
+//       event_type == TIZEN_CORE_WL_EVENT_MOUSE_WHEEL) {
+//     // The event system doesn't distinguish mouse vs touch at event level.
+//     // Default to touch; mouse events can be differentiated by touch_id == 0.
+//     return kFlutterPointerDeviceKindTouch;
+//   }
+//   return kFlutterPointerDeviceKindTouch;
+// }
 
 #ifdef TV_PROFILE
 time_t GetBootTimeEpoch() {
@@ -167,7 +183,7 @@ TizenWindowEcoreWl2::TizenWindowEcoreWl2(TizenGeometry geometry,
   RegisterEventHandlers();
   PrepareInputMethod();
   Show();
-}  // namespace flutter
+}
 
 TizenWindowEcoreWl2::~TizenWindowEcoreWl2() {
   UnregisterEventHandlers();
@@ -175,22 +191,41 @@ TizenWindowEcoreWl2::~TizenWindowEcoreWl2() {
 }
 
 bool TizenWindowEcoreWl2::CreateWindow(void* window_handle) {
-  if (!ecore_wl2_init()) {
-    FT_LOG(Error) << "Could not initialize Ecore Wl2.";
+  FT_LOG(Error) << "tizen core wl init()!!!!!!! ";
+
+  if (tizen_core_wl_init() != TIZEN_CORE_WL_ERROR_NONE) {
+    FT_LOG(Error) << "Could not initialize tizen core wl.";
     return false;
   }
 
-  ecore_wl2_display_ = ecore_wl2_display_connect(nullptr);
-  if (!ecore_wl2_display_) {
-    FT_LOG(Error) << "Ecore Wl2 display not found.";
+  if (tizen_core_wl_display_create(&tcore_wl_display_) !=
+      TIZEN_CORE_WL_ERROR_NONE) {
+    FT_LOG(Error) << "Could not create tizen core wl display.";
     return false;
   }
-  wl2_display_ = ecore_wl2_display_get(ecore_wl2_display_);
 
-  ecore_wl2_sync();
+  if (tizen_core_wl_display_connect(tcore_wl_display_, nullptr) !=
+      TIZEN_CORE_WL_ERROR_NONE) {
+    FT_LOG(Error) << "Tizen core wl display not found.";
+    return false;
+  }
 
-  int32_t width, height;
-  ecore_wl2_display_screen_size_get(ecore_wl2_display_, &width, &height);
+  tizen_core_wl_display_private_get_wl_display(tcore_wl_display_,
+                                               &wl2_display_);
+
+  tizen_core_wl_display_sync(tcore_wl_display_);
+
+  tizen_core_wl_display_get_event(tcore_wl_display_, &tcore_wl_event_);
+
+  int32_t width = 0, height = 0;
+  GList* output_list = nullptr;
+  tizen_core_wl_display_get_output_device_list(tcore_wl_display_, &output_list);
+  if (output_list) {
+    tizen_core_wl_output_h output =
+        static_cast<tizen_core_wl_output_h>(output_list->data);
+    tizen_core_wl_output_device_get_geometry(output, &width, &height);
+    g_list_free(output_list);
+  }
   if (width == 0 || height == 0) {
     FT_LOG(Error) << "Invalid screen size: " << width << " x " << height;
     return false;
@@ -204,79 +239,72 @@ bool TizenWindowEcoreWl2::CreateWindow(void* window_handle) {
   }
 
   if (window_handle == nullptr) {
-    ecore_wl2_window_ =
-        ecore_wl2_window_new(ecore_wl2_display_, nullptr,
-                             initial_geometry_.left, initial_geometry_.top,
-                             initial_geometry_.width, initial_geometry_.height);
+    if (tizen_core_wl_create_window(
+            tcore_wl_display_, nullptr, initial_geometry_.left,
+            initial_geometry_.top, initial_geometry_.width,
+            initial_geometry_.height,
+            &tcore_wl_window_) != TIZEN_CORE_WL_ERROR_NONE) {
+      FT_LOG(Error) << "Could not create tizen core wl window.";
+      return false;
+    }
   } else {
-    ecore_wl2_window_ = static_cast<Ecore_Wl2_Window*>(window_handle);
+    tcore_wl_window_ = static_cast<tizen_core_wl_window_h>(window_handle);
   }
 
   if (is_vulkan_) {
-    wl2_surface_ = ecore_wl2_window_surface_get(ecore_wl2_window_);
+    tizen_core_wl_window_private_get_wl_surface(tcore_wl_window_,
+                                                &wl2_surface_);
     return wl2_surface_ && wl2_display_;
   } else {
-    ecore_wl2_egl_window_ = ecore_wl2_egl_window_create(
-        ecore_wl2_window_, initial_geometry_.width, initial_geometry_.height);
-    return ecore_wl2_egl_window_ && wl2_display_;
+    if (tizen_core_wl_create_egl_window(
+            tcore_wl_window_, initial_geometry_.width, initial_geometry_.height,
+            &tcore_wl_egl_window_) != TIZEN_CORE_WL_ERROR_NONE) {
+      FT_LOG(Error) << "Could not create tizen core wl egl window.";
+      return false;
+    }
+    return tcore_wl_egl_window_ && wl2_display_;
   }
 }
 
 void TizenWindowEcoreWl2::SetWindowOptions() {
-  // Change the window type to use the tizen policy for notification window
-  // according to top_level_.
-  // Note: ECORE_WL2_WINDOW_TYPE_TOPLEVEL is similar to "ELM_WIN_BASIC" and it
-  // does not mean that the window always will be overlaid on other apps :(
-  ecore_wl2_window_type_set(ecore_wl2_window_,
-                            top_level_ ? ECORE_WL2_WINDOW_TYPE_NOTIFICATION
-                                       : ECORE_WL2_WINDOW_TYPE_TOPLEVEL);
+  tizen_core_wl_window_set_type(
+      tcore_wl_window_, top_level_ ? TIZEN_CORE_WL_WINDOW_TYPE_NOTIFICATION
+                                   : TIZEN_CORE_WL_WINDOW_TYPE_TOPLEVEL);
   if (top_level_) {
-    SetTizenPolicyNotificationLevel(TIZEN_POLICY_LEVEL_TOP);
+    SetNotificationLevel(TIZEN_CORE_WL_NOTIFICATION_LEVEL_TOP);
   }
 
-  ecore_wl2_window_position_set(ecore_wl2_window_, initial_geometry_.left,
-                                initial_geometry_.top);
-  ecore_wl2_window_aux_hint_add(ecore_wl2_window_, 0,
-                                "wm.policy.win.user.geometry", "1");
+  tizen_core_wl_window_set_position(tcore_wl_window_, initial_geometry_.left,
+                                    initial_geometry_.top);
+  tizen_core_wl_window_set_aux_hint(tcore_wl_window_,
+                                    "wm.policy.win.user.geometry", "1");
 
-  if (transparent_) {
-    ecore_wl2_window_alpha_set(ecore_wl2_window_, EINA_TRUE);
-  } else {
-    ecore_wl2_window_alpha_set(ecore_wl2_window_, EINA_FALSE);
-  }
+  tizen_core_wl_window_set_alpha(tcore_wl_window_, transparent_);
 
   if (!focusable_) {
-    ecore_wl2_window_focus_skip_set(ecore_wl2_window_, EINA_TRUE);
+    tizen_core_wl_window_set_focus_skip(tcore_wl_window_, true);
   }
 
-  ecore_wl2_window_indicator_state_set(ecore_wl2_window_,
-                                       ECORE_WL2_INDICATOR_STATE_ON);
-  ecore_wl2_window_indicator_opacity_set(ecore_wl2_window_,
-                                         ECORE_WL2_INDICATOR_OPAQUE);
-  ecore_wl2_indicator_visible_type_set(ecore_wl2_window_,
-                                       ECORE_WL2_INDICATOR_VISIBLE_TYPE_SHOWN);
-
 #ifdef TV_PROFILE
-  int rotations[1] = {0};  // Default is only landscape.
+  tizen_core_wl_window_angle_e rotations[1] = {TIZEN_CORE_WL_WINDOW_ANGLE_0};
 #else
-  int rotations[4] = {0, 90, 180, 270};
+  tizen_core_wl_window_angle_e rotations[4] = {
+      TIZEN_CORE_WL_WINDOW_ANGLE_0, TIZEN_CORE_WL_WINDOW_ANGLE_90,
+      TIZEN_CORE_WL_WINDOW_ANGLE_180, TIZEN_CORE_WL_WINDOW_ANGLE_270};
 #endif
-  ecore_wl2_window_available_rotations_set(ecore_wl2_window_, rotations,
-                                           sizeof(rotations) / sizeof(int));
+  tizen_core_wl_window_set_available_rotation_angle_list(
+      tcore_wl_window_, rotations, sizeof(rotations) / sizeof(rotations[0]));
   EnableCursor();
 }
 
 void TizenWindowEcoreWl2::EnableCursor() {
 #ifdef TV_PROFILE
-  // dlopen is used here because the TV-specific library libvd-win-util.so
-  // and the relevant headers are not present in the rootstrap.
   void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
   if (!handle) {
     FT_LOG(Error) << "Could not open a shared library libvd-win-util.so.";
     return;
   }
 
-  // These functions are defined in vd-win-util's cursor_module.h.
   int (*CursorModule_Initialize)(wl_display* display, wl_registry* registry,
                                  wl_seat* seat, unsigned int id);
   int (*Cursor_Set_Config)(wl_surface* surface, uint32_t config_type,
@@ -294,34 +322,41 @@ void TizenWindowEcoreWl2::EnableCursor() {
     return;
   }
 
-  wl_registry* registry = ecore_wl2_display_registry_get(ecore_wl2_display_);
-  wl_seat* seat = ecore_wl2_input_seat_get(
-      ecore_wl2_input_default_input_get(ecore_wl2_display_));
-  if (!registry || !seat) {
-    FT_LOG(Error)
-        << "Could not retreive wl_registry or wl_seat from the display.";
+  tizen_core_wl_seat_h default_seat = nullptr;
+  tizen_core_wl_display_get_default_seat(tcore_wl_display_, &default_seat);
+  if (!default_seat) {
+    FT_LOG(Error) << "Could not get default seat.";
+    dlclose(handle);
+    return;
+  }
+  struct wl_seat* seat = nullptr;
+  tizen_core_wl_seat_private_get_wl_seat(default_seat, &seat);
+  if (!seat) {
+    FT_LOG(Error) << "Could not get wl_seat from the default seat.";
     dlclose(handle);
     return;
   }
 
-  Eina_Iterator* iter = ecore_wl2_display_globals_get(ecore_wl2_display_);
-  Ecore_Wl2_Global* global = nullptr;
-
-  EINA_ITERATOR_FOREACH(iter, global) {
-    if (strcmp(global->interface, "tizen_cursor") == 0) {
-      if (!CursorModule_Initialize(wl2_display_, registry, seat, global->id)) {
+  int cursor_global_id = 0;
+  if (tizen_core_wl_display_private_get_global_id(
+          tcore_wl_display_, "tizen_cursor", &cursor_global_id) ==
+          TIZEN_CORE_WL_ERROR_NONE &&
+      cursor_global_id > 0) {
+    struct wl_registry* registry = wl_display_get_registry(wl2_display_);
+    if (registry) {
+      if (!CursorModule_Initialize(wl2_display_, registry, seat,
+                                   cursor_global_id)) {
         FT_LOG(Error) << "Failed to initialize the cursor module.";
       }
+      wl_registry_destroy(registry);
     }
   }
-  eina_iterator_free(iter);
 
-  ecore_wl2_sync();
+  tizen_core_wl_display_sync(tcore_wl_display_);
 
-  wl_surface* surface = ecore_wl2_window_surface_get(ecore_wl2_window_);
-  // The config_type 1 refers to TIZEN_CURSOR_CONFIG_CURSOR_AVAILABLE
-  // defined in the TV extension protocol tizen-extension-tv.xml.
-  if (!Cursor_Set_Config(surface, 1, nullptr)) {
+  struct wl_surface* surface = nullptr;
+  tizen_core_wl_window_private_get_wl_surface(tcore_wl_window_, &surface);
+  if (surface && !Cursor_Set_Config(surface, 1, nullptr)) {
     FT_LOG(Error) << "Failed to set a cursor config value.";
   }
 
@@ -335,16 +370,13 @@ typedef enum _MouseSupport { DISABLE = 0, ENABLE } MouseSupport;
 typedef enum _Device_Type { MOUSE_DEVICE = 3, TOUCH_DEVICE } Device_Type;
 
 void TizenWindowEcoreWl2::SetPointingDeviceSupport() {
-  // dlopen is used here because the TV-specific library libvd-win-util.so
-  // and the relevant headers are not present in the rootstrap.
   void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
   if (!handle) {
     FT_LOG(Error) << "Could not open a shared library libvd-win-util.so.";
     return;
   }
 
-  // These functions are defined in vd-win-util's cursor_module.h.
-  int (*Mouse_Pointer_Support)(MouseSupport type, void* ecore_wl2_win);
+  int (*Mouse_Pointer_Support)(MouseSupport type, void* win);
   *(void**)(&Mouse_Pointer_Support) = dlsym(handle, "Mouse_Pointer_Support");
 
   if (!Mouse_Pointer_Support) {
@@ -354,21 +386,18 @@ void TizenWindowEcoreWl2::SetPointingDeviceSupport() {
   }
 
   Mouse_Pointer_Support(pointing_device_support_ ? ENABLE : DISABLE,
-                        ecore_wl2_window_);
+                        tcore_wl_window_);
   dlclose(handle);
 }
 
 void TizenWindowEcoreWl2::SetFloatingMenuSupport() {
-  // dlopen is used here because the TV-specific library libvd-win-util.so
-  // and the relevant headers are not present in the rootstrap.
   void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
   if (!handle) {
     FT_LOG(Error) << "Could not open a shared library libvd-win-util.so.";
     return;
   }
 
-  // These functions are defined in vd-win-util's cursor_module.h.
-  int (*Mouse_Pointer_Not_Allow)(int enable, void* ecore_wl2_win);
+  int (*Mouse_Pointer_Not_Allow)(int enable, void* win);
   *(void**)(&Mouse_Pointer_Not_Allow) =
       dlsym(handle, "Mouse_Pointer_Not_Allow");
 
@@ -378,22 +407,19 @@ void TizenWindowEcoreWl2::SetFloatingMenuSupport() {
     return;
   }
 
-  Mouse_Pointer_Not_Allow(!floating_menu_support_, ecore_wl2_window_);
+  Mouse_Pointer_Not_Allow(!floating_menu_support_, tcore_wl_window_);
   dlclose(handle);
 }
 
 void TizenWindowEcoreWl2::ShowUnsupportedToast() {
-  // dlopen is used here because the TV-specific library libvd-win-util.so
-  // and the relevant headers are not present in the rootstrap.
   void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
   if (!handle) {
     FT_LOG(Error) << "Could not open a shared library libvd-win-util.so.";
     return;
   }
 
-  // These functions are defined in vd-win-util's cursor_module.h.
   void (*Unsupported_Toast_Launch)(Device_Type type, int show, int enable,
-                                   void* ecore_wl2_win);
+                                   void* win);
   *(void**)(&Unsupported_Toast_Launch) =
       dlsym(handle, "Unsupported_Toast_Launch");
 
@@ -403,60 +429,75 @@ void TizenWindowEcoreWl2::ShowUnsupportedToast() {
     return;
   }
 
-  Unsupported_Toast_Launch(MOUSE_DEVICE, 1, 1, ecore_wl2_window_);
+  Unsupported_Toast_Launch(MOUSE_DEVICE, 1, 1, tcore_wl_window_);
   dlclose(handle);
 }
 #endif
 
 void TizenWindowEcoreWl2::RegisterEventHandlers() {
-  ecore_event_handlers_.push_back(ecore_event_handler_add(
-      ECORE_WL2_EVENT_WINDOW_ROTATE,
-      [](void* data, int type, void* event) -> Eina_Bool {
+  tizen_core_wl_event_listener_h listener = nullptr;
+
+  // Window rotation event.
+  tizen_core_wl_event_add_listener(
+      tcore_wl_event_, TIZEN_CORE_WL_EVENT_WINDOW_ROTATION,
+      [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowEcoreWl2*>(data);
         if (self->view_delegate_) {
-          auto* rotation_event =
-              reinterpret_cast<Ecore_Wl2_Event_Window_Rotation*>(event);
-          if (rotation_event->win == self->GetWindowId()) {
-            int32_t degree = rotation_event->angle;
+          auto* base_event =
+              static_cast<tizen_core_wl_event_window_base_h>(event);
+          tizen_core_wl_window_h event_window = nullptr;
+          tizen_core_wl_event_window_base_get_window(base_event, &event_window);
+          if (event_window == self->tcore_wl_window_) {
+            tizen_core_wl_event_window_rotation_h rot_event = nullptr;
+            tizen_core_wl_event_window_base_to_window_rotation(base_event,
+                                                               &rot_event);
+            tizen_core_wl_window_angle_e angle = TIZEN_CORE_WL_WINDOW_ANGLE_0;
+            tizen_core_wl_event_window_rotation_get_angle(rot_event, &angle);
+            int degree = static_cast<int>(angle);
             self->view_delegate_->OnRotate(degree);
-            TizenGeometry geometry = self->GetGeometry();
-            ecore_wl2_window_rotation_set(self->ecore_wl2_window_, degree);
-            ecore_wl2_window_rotation_change_done_send(
-                self->ecore_wl2_window_, rotation_event->rotation,
-                geometry.width, geometry.height);
-            return ECORE_CALLBACK_DONE;
+            tizen_core_wl_window_set_rotation_angle(
+                self->tcore_wl_window_,
+                static_cast<tizen_core_wl_window_angle_e>(degree));
+            tizen_core_wl_window_send_rotation_change_done(
+                self->tcore_wl_window_, degree);
           }
         }
-        return ECORE_CALLBACK_PASS_ON;
       },
-      this));
+      this, &listener);
+  tcore_event_listeners_.push_back(listener);
+
+  // Window configure event.
   if (!is_vulkan_) {
-    ecore_event_handlers_.push_back(ecore_event_handler_add(
-        ECORE_WL2_EVENT_WINDOW_CONFIGURE,
-        [](void* data, int type, void* event) -> Eina_Bool {
+    tizen_core_wl_event_add_listener(
+        tcore_wl_event_, TIZEN_CORE_WL_EVENT_WINDOW_CONFIGURE_COMPLETE,
+        [](void* event, tizen_core_wl_event_type_e type, void* data) {
           auto* self = static_cast<TizenWindowEcoreWl2*>(data);
           if (self->view_delegate_) {
-            auto* configure_event =
-                reinterpret_cast<Ecore_Wl2_Event_Window_Configure*>(event);
-            if (configure_event->win == self->GetWindowId()) {
-              ecore_wl2_egl_window_resize_with_rotation(
-                  self->ecore_wl2_egl_window_, configure_event->x,
-                  configure_event->y, configure_event->w, configure_event->h,
-                  self->GetRotation());
-
-              self->view_delegate_->OnResize(
-                  configure_event->x, configure_event->y, configure_event->w,
-                  configure_event->h);
-              return ECORE_CALLBACK_DONE;
+            auto* base_event =
+                static_cast<tizen_core_wl_event_window_base_h>(event);
+            tizen_core_wl_window_h event_window = nullptr;
+            tizen_core_wl_event_window_base_get_window(base_event,
+                                                       &event_window);
+            if (event_window == self->tcore_wl_window_) {
+              int x = 0, y = 0, w = 0, h = 0;
+              tizen_core_wl_window_get_geometry(self->tcore_wl_window_, &x, &y,
+                                                &w, &h);
+              int32_t rotation = self->GetRotation();
+              tizen_core_wl_egl_window_resize(self->tcore_wl_egl_window_, w, h);
+              tizen_core_wl_egl_window_set_window_transform(
+                  self->tcore_wl_egl_window_, rotation / 90);
+              self->view_delegate_->OnResize(x, y, w, h);
             }
           }
-          return ECORE_CALLBACK_PASS_ON;
         },
-        this));
+        this, &listener);
+    tcore_event_listeners_.push_back(listener);
   }
-  ecore_event_handlers_.push_back(ecore_event_handler_add(
-      ECORE_EVENT_MOUSE_BUTTON_DOWN,
-      [](void* data, int type, void* event) -> Eina_Bool {
+
+  // Mouse button down.
+  tizen_core_wl_event_add_listener(
+      tcore_wl_event_, TIZEN_CORE_WL_EVENT_MOUSE_BUTTON_DOWN,
+      [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowEcoreWl2*>(data);
 #ifdef TV_PROFILE
         if ((!self->pointing_device_support_ ||
@@ -467,7 +508,6 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
             self->SetFloatingMenuSupport();
           }
           if (!shown) {
-            // Toast popup should be called first to set up D-PAD.
             self->ShowUnsupportedToast();
             SetPointingDevicePreference();
           }
@@ -475,282 +515,458 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
           if (self->floating_menu_support_ && !self->pointing_device_support_) {
             self->SetPointingDeviceSupport();
           }
-          return ECORE_CALLBACK_PASS_ON;
+          return;
         }
 #endif
-
         if (self->view_delegate_) {
-          auto* button_event =
-              reinterpret_cast<Ecore_Event_Mouse_Button*>(event);
-          if (button_event->window == self->GetWindowId()) {
+          auto* ev = static_cast<tizen_core_wl_event_input_base_h>(event);
+          tizen_core_wl_window_h event_window = nullptr;
+          tizen_core_wl_event_input_base_get_window(ev, &event_window);
+          if (event_window == self->tcore_wl_window_) {
+            int x = 0, y = 0;
+            tizen_core_wl_event_mouse_button_get_position(ev, &x, &y);
+            unsigned int buttons = 0;
+            tizen_core_wl_event_mouse_button_get_buttons(ev, &buttons);
+            uint32_t timestamp = 0;
+            tizen_core_wl_event_input_base_get_timestamp(ev, &timestamp);
+            unsigned int touch_id = 0;
+            tizen_core_wl_event_mouse_button_get_touch_id(ev, &touch_id);
             self->view_delegate_->OnPointerDown(
-                button_event->x, button_event->y,
-                ToFlutterPointerButton(button_event->buttons),
-                button_event->timestamp, ToFlutterDeviceKind(button_event->dev),
-                button_event->multi.device);
-            return ECORE_CALLBACK_DONE;
+                x, y, ToFlutterPointerButton(buttons), timestamp,
+                touch_id == 0 ? kFlutterPointerDeviceKindMouse
+                              : kFlutterPointerDeviceKindTouch,
+                touch_id);
           }
         }
-        return ECORE_CALLBACK_PASS_ON;
       },
-      this));
+      this, &listener);
+  tcore_event_listeners_.push_back(listener);
 
-  ecore_event_handlers_.push_back(ecore_event_handler_add(
-      ECORE_EVENT_MOUSE_BUTTON_UP,
-      [](void* data, int type, void* event) -> Eina_Bool {
+  // Mouse button up.
+  tizen_core_wl_event_add_listener(
+      tcore_wl_event_, TIZEN_CORE_WL_EVENT_MOUSE_BUTTON_UP,
+      [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowEcoreWl2*>(data);
         if (self->view_delegate_) {
-          auto* button_event =
-              reinterpret_cast<Ecore_Event_Mouse_Button*>(event);
-          if (button_event->window == self->GetWindowId()) {
+          auto* ev = static_cast<tizen_core_wl_event_input_base_h>(event);
+          tizen_core_wl_window_h event_window = nullptr;
+          tizen_core_wl_event_input_base_get_window(ev, &event_window);
+          if (event_window == self->tcore_wl_window_) {
+            int x = 0, y = 0;
+            tizen_core_wl_event_mouse_button_get_position(ev, &x, &y);
+            unsigned int buttons = 0;
+            tizen_core_wl_event_mouse_button_get_buttons(ev, &buttons);
+            uint32_t timestamp = 0;
+            tizen_core_wl_event_input_base_get_timestamp(ev, &timestamp);
+            unsigned int touch_id = 0;
+            tizen_core_wl_event_mouse_button_get_touch_id(ev, &touch_id);
             self->view_delegate_->OnPointerUp(
-                button_event->x, button_event->y,
-                ToFlutterPointerButton(button_event->buttons),
-                button_event->timestamp, ToFlutterDeviceKind(button_event->dev),
-                button_event->multi.device);
-            return ECORE_CALLBACK_DONE;
+                x, y, ToFlutterPointerButton(buttons), timestamp,
+                touch_id == 0 ? kFlutterPointerDeviceKindMouse
+                              : kFlutterPointerDeviceKindTouch,
+                touch_id);
           }
         }
-        return ECORE_CALLBACK_PASS_ON;
       },
-      this));
+      this, &listener);
+  tcore_event_listeners_.push_back(listener);
 
-  ecore_event_handlers_.push_back(ecore_event_handler_add(
-      ECORE_EVENT_MOUSE_MOVE,
-      [](void* data, int type, void* event) -> Eina_Bool {
+  // Mouse move.
+  tizen_core_wl_event_add_listener(
+      tcore_wl_event_, TIZEN_CORE_WL_EVENT_MOUSE_MOVE,
+      [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowEcoreWl2*>(data);
         if (self->view_delegate_) {
-          auto* move_event = reinterpret_cast<Ecore_Event_Mouse_Move*>(event);
-          if (move_event->window == self->GetWindowId()) {
+          auto* ev = static_cast<tizen_core_wl_event_input_base_h>(event);
+          tizen_core_wl_window_h event_window = nullptr;
+          tizen_core_wl_event_input_base_get_window(ev, &event_window);
+          if (event_window == self->tcore_wl_window_) {
+            int x = 0, y = 0;
+            tizen_core_wl_event_mouse_move_get_position(ev, &x, &y);
+            uint32_t timestamp = 0;
+            tizen_core_wl_event_input_base_get_timestamp(ev, &timestamp);
+            unsigned int touch_id = 0;
+            tizen_core_wl_event_mouse_move_get_touch_id(ev, &touch_id);
             self->view_delegate_->OnPointerMove(
-                move_event->x, move_event->y, move_event->timestamp,
-                ToFlutterDeviceKind(move_event->dev), move_event->multi.device);
-            return ECORE_CALLBACK_DONE;
+                x, y, timestamp,
+                touch_id == 0 ? kFlutterPointerDeviceKindMouse
+                              : kFlutterPointerDeviceKindTouch,
+                touch_id);
           }
         }
-        return ECORE_CALLBACK_PASS_ON;
       },
-      this));
+      this, &listener);
+  tcore_event_listeners_.push_back(listener);
 
-  ecore_event_handlers_.push_back(ecore_event_handler_add(
-      ECORE_EVENT_MOUSE_WHEEL,
-      [](void* data, int type, void* event) -> Eina_Bool {
+  // Mouse wheel.
+  tizen_core_wl_event_add_listener(
+      tcore_wl_event_, TIZEN_CORE_WL_EVENT_MOUSE_WHEEL,
+      [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowEcoreWl2*>(data);
         if (self->view_delegate_) {
-          auto* wheel_event = reinterpret_cast<Ecore_Event_Mouse_Wheel*>(event);
-          if (wheel_event->window == self->GetWindowId()) {
+          auto* ev = static_cast<tizen_core_wl_event_input_base_h>(event);
+          tizen_core_wl_window_h event_window = nullptr;
+          tizen_core_wl_event_input_base_get_window(ev, &event_window);
+          if (event_window == self->tcore_wl_window_) {
+            int x = 0, y = 0;
+            tizen_core_wl_event_mouse_wheel_get_position(ev, &x, &y);
+            int direction = 0;
+            tizen_core_wl_event_mouse_wheel_get_direction(ev, &direction);
+            int z = 0;
+            tizen_core_wl_event_mouse_wheel_get_z(ev, &z);
+            uint32_t timestamp = 0;
+            tizen_core_wl_event_input_base_get_timestamp(ev, &timestamp);
+
             double delta_x = 0.0;
             double delta_y = 0.0;
-
-            if (wheel_event->direction == kScrollDirectionVertical) {
-              delta_y += wheel_event->z;
-            } else if (wheel_event->direction == kScrollDirectionHorizontal) {
-              delta_x += wheel_event->z;
+            if (direction == kScrollDirectionVertical) {
+              delta_y += z;
+            } else if (direction == kScrollDirectionHorizontal) {
+              delta_x += z;
             }
 
-            self->view_delegate_->OnScroll(
-                wheel_event->x, wheel_event->y, delta_x, delta_y,
-                wheel_event->timestamp, ToFlutterDeviceKind(wheel_event->dev),
-                0);
-            return ECORE_CALLBACK_DONE;
+            self->view_delegate_->OnScroll(x, y, delta_x, delta_y, timestamp,
+                                           kFlutterPointerDeviceKindMouse, 0);
           }
         }
-        return ECORE_CALLBACK_PASS_ON;
       },
-      this));
+      this, &listener);
+  tcore_event_listeners_.push_back(listener);
 
-  ecore_event_handlers_.push_back(ecore_event_handler_add(
-      ECORE_EVENT_KEY_DOWN,
-      [](void* data, int type, void* event) -> Eina_Bool {
+  // Key down.
+  tizen_core_wl_event_add_listener(
+      tcore_wl_event_, TIZEN_CORE_WL_EVENT_KEY_DOWN,
+      [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowEcoreWl2*>(data);
+        FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [1] entered, view_delegate_="
+                      << (self->view_delegate_ ? "set" : "null")
+                      << ", event=" << event;
         if (self->view_delegate_) {
-          auto* key_event = reinterpret_cast<Ecore_Event_Key*>(event);
-          if (key_event->window == self->GetWindowId()) {
+          FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [2] casting event to base";
+          auto* ev = static_cast<tizen_core_wl_event_input_base_h>(event);
+          FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [3] ev=" << ev;
+
+          FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [4] getting event window";
+          tizen_core_wl_window_h event_window = nullptr;
+          int ret_get_window =
+              tizen_core_wl_event_input_base_get_window(ev, &event_window);
+          FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [5] get_window ret="
+                        << ret_get_window << ", event_window=" << event_window
+                        << ",  self_window=" << self->tcore_wl_window_;
+
+          if (event_window == self->tcore_wl_window_) {
+            FT_LOG(Error)
+                << "WL_EVENT_KEY_DOWN: [6] window matched, extracting key info";
+
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [7] getting keyname";
+            char* keyname = nullptr;
+            tizen_core_wl_event_key_get_keyname(ev, &keyname);
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [8] keyname="
+                          << (keyname ? keyname : "null");
+
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [9] getting keysymbol";
+            char* keysymbol = nullptr;
+            tizen_core_wl_event_key_get_keysymbol(ev, &keysymbol);
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [10] keysymbol="
+                          << (keysymbol ? keysymbol : "null");
+
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [11] getting compose";
+            char* compose = nullptr;
+            tizen_core_wl_event_key_get_compose(ev, &compose);
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [12] compose="
+                          << (compose ? compose : "null");
+
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [13] getting modifiers";
+            unsigned int modifiers = 0;
+            tizen_core_wl_event_key_get_modifiers(ev, &modifiers);
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [14] modifiers=" << modifiers;
+
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [15] getting keycode";
+            unsigned int keycode = 0;
+            tizen_core_wl_event_key_get_keycode(ev, &keycode);
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [16] keycode=" << keycode;
+
+            FT_LOG(Error)
+                << "WL_EVENT_KEY_DOWN: [17] getting device_identifier";
+            char* dev_identifier = nullptr;
+            tizen_core_wl_event_input_base_get_device_identifier(
+                ev, &dev_identifier);
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [18] dev_identifier="
+                          << (dev_identifier ? dev_identifier : "null");
+
+            FT_LOG(Error)
+                << "WL_EVENT_KEY_DOWN: [19] checking input_method_context_="
+                << (self->input_method_context_ ? "set" : "null");
             bool handled = false;
-            if (self->input_method_context_->IsInputPanelShown()) {
-              handled = self->input_method_context_->HandleEcoreEventKey(
-                  key_event, true);
+            if (self->input_method_context_) {
+              FT_LOG(Error)
+                  << "WL_EVENT_KEY_DOWN: [20] calling IsInputPanelShown";
+              bool panel_shown =
+                  self->input_method_context_->IsInputPanelShown();
+              FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [21] IsInputPanelShown="
+                            << panel_shown;
+              if (panel_shown) {
+                FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [22] input panel shown, "
+                                 "calling HandleTcoreWlEventKey";
+                handled = self->input_method_context_->HandleTcoreWlEventKey(
+                    event, true);
+                FT_LOG(Error)
+                    << "WL_EVENT_KEY_DOWN: [23] IMF handled=" << handled;
+              } else {
+                FT_LOG(Error)
+                    << "WL_EVENT_KEY_DOWN: [24] input panel NOT shown";
+              }
+            } else {
+              FT_LOG(Error)
+                  << "WL_EVENT_KEY_DOWN: [25] input_method_context_ is null";
             }
             if (!handled) {
-              self->view_delegate_->OnKey(
-                  key_event->key, key_event->string, key_event->compose,
-                  key_event->modifiers, key_event->keycode,
-                  ecore_device_name_get(key_event->dev), true);
+              FT_LOG(Error)
+                  << "WL_EVENT_KEY_DOWN: [26] calling view_delegate_->OnKey";
+              self->view_delegate_->OnKey(keyname, keysymbol, compose,
+                                          modifiers, keycode, dev_identifier,
+                                          true);
+              FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [27] OnKey returned";
             }
-            return ECORE_CALLBACK_DONE;
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [28] freeing keyname";
+            free(keyname);
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [29] freeing keysymbol";
+            free(keysymbol);
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [30] freeing compose";
+            free(compose);
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [31] freeing dev_identifier";
+            free(dev_identifier);
+            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [32] done";
+          } else {
+            FT_LOG(Error)
+                << "WL_EVENT_KEY_DOWN: event window mismatch, ignoring";
           }
         }
-        return ECORE_CALLBACK_PASS_ON;
       },
-      this));
+      this, &listener);
+  tcore_event_listeners_.push_back(listener);
 
-  ecore_event_handlers_.push_back(ecore_event_handler_add(
-      ECORE_EVENT_KEY_UP,
-      [](void* data, int type, void* event) -> Eina_Bool {
+  // Key up.
+  tizen_core_wl_event_add_listener(
+      tcore_wl_event_, TIZEN_CORE_WL_EVENT_KEY_UP,
+      [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowEcoreWl2*>(data);
+        FT_LOG(Error) << "WL_EVENT_KEY_UP: [1] entered, view_delegate_="
+                      << (self->view_delegate_ ? "set" : "null")
+                      << ", event=" << event;
         if (self->view_delegate_) {
-          auto* key_event = reinterpret_cast<Ecore_Event_Key*>(event);
-          if (key_event->window == self->GetWindowId()) {
+          FT_LOG(Error) << "WL_EVENT_KEY_UP: [2] casting event to base";
+          auto* ev = static_cast<tizen_core_wl_event_input_base_h>(event);
+          FT_LOG(Error) << "WL_EVENT_KEY_UP: [3] ev=" << ev;
+
+          FT_LOG(Error) << "WL_EVENT_KEY_UP: [4] getting event window";
+          tizen_core_wl_window_h event_window = nullptr;
+          int ret_get_window =
+              tizen_core_wl_event_input_base_get_window(ev, &event_window);
+          FT_LOG(Error) << "WL_EVENT_KEY_UP: [5] get_window ret="
+                        << ret_get_window << ", event_window=" << event_window
+                        << ", self_window=" << self->tcore_wl_window_;
+
+          if (event_window == self->tcore_wl_window_) {
+            FT_LOG(Error)
+                << "WL_EVENT_KEY_UP: [6] window matched, extracting key info";
+
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [7] getting keyname";
+            char* keyname = nullptr;
+            tizen_core_wl_event_key_get_keyname(ev, &keyname);
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [8] keyname="
+                          << (keyname ? keyname : "null");
+
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [9] getting keysymbol";
+            char* keysymbol = nullptr;
+            tizen_core_wl_event_key_get_keysymbol(ev, &keysymbol);
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [10] keysymbol="
+                          << (keysymbol ? keysymbol : "null");
+
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [11] getting compose";
+            char* compose = nullptr;
+            tizen_core_wl_event_key_get_compose(ev, &compose);
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [12] compose="
+                          << (compose ? compose : "null");
+
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [13] getting modifiers";
+            unsigned int modifiers = 0;
+            tizen_core_wl_event_key_get_modifiers(ev, &modifiers);
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [14] modifiers=" << modifiers;
+
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [15] getting keycode";
+            unsigned int keycode = 0;
+            tizen_core_wl_event_key_get_keycode(ev, &keycode);
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [16] keycode=" << keycode;
+
+            FT_LOG(Error)
+                << "WL_EVENT_KEY_UP: [17] checking input_method_context_="
+                << (self->input_method_context_ ? "set" : "null");
             bool handled = false;
-            if (self->input_method_context_->IsInputPanelShown()) {
-              handled = self->input_method_context_->HandleEcoreEventKey(
-                  key_event, false);
+            if (self->input_method_context_) {
+              FT_LOG(Error)
+                  << "WL_EVENT_KEY_UP: [18] calling IsInputPanelShown";
+              bool panel_shown =
+                  self->input_method_context_->IsInputPanelShown();
+              FT_LOG(Error)
+                  << "WL_EVENT_KEY_UP: [19] IsInputPanelShown=" << panel_shown;
+              if (panel_shown) {
+                FT_LOG(Error) << "WL_EVENT_KEY_UP: [20] input panel shown, "
+                                 "calling HandleTcoreWlEventKey";
+                handled = self->input_method_context_->HandleTcoreWlEventKey(
+                    event, false);
+                FT_LOG(Error)
+                    << "WL_EVENT_KEY_UP: [21] IMF handled=" << handled;
+              } else {
+                FT_LOG(Error) << "WL_EVENT_KEY_UP: [22] input panel NOT shown";
+              }
+            } else {
+              FT_LOG(Error)
+                  << "WL_EVENT_KEY_UP: [23] input_method_context_ is null";
             }
             if (!handled) {
-              self->view_delegate_->OnKey(
-                  key_event->key, key_event->string, key_event->compose,
-                  key_event->modifiers, key_event->keycode, nullptr, false);
+              FT_LOG(Error)
+                  << "WL_EVENT_KEY_UP: [24] calling view_delegate_->OnKey";
+              self->view_delegate_->OnKey(keyname, keysymbol, compose,
+                                          modifiers, keycode, nullptr, false);
+              FT_LOG(Error) << "WL_EVENT_KEY_UP: [25] OnKey returned";
             }
-            return ECORE_CALLBACK_DONE;
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [26] freeing keyname";
+            free(keyname);
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [27] freeing keysymbol";
+            free(keysymbol);
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [28] freeing compose";
+            free(compose);
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: [29] done";
+          } else {
+            FT_LOG(Error) << "WL_EVENT_KEY_UP: event window mismatch, ignoring";
           }
         }
-        return ECORE_CALLBACK_PASS_ON;
       },
-      this));
+      this, &listener);
+  tcore_event_listeners_.push_back(listener);
 }
 
 void TizenWindowEcoreWl2::UnregisterEventHandlers() {
-  for (Ecore_Event_Handler* handler : ecore_event_handlers_) {
-    ecore_event_handler_del(handler);
+  for (tizen_core_wl_event_listener_h listener : tcore_event_listeners_) {
+    tizen_core_wl_event_remove_listener(tcore_wl_event_, listener);
   }
-  ecore_event_handlers_.clear();
+  tcore_event_listeners_.clear();
 }
 
 void TizenWindowEcoreWl2::DestroyWindow() {
-  if (ecore_wl2_egl_window_) {
-    ecore_wl2_egl_window_destroy(ecore_wl2_egl_window_);
-    ecore_wl2_egl_window_ = nullptr;
+  if (tcore_wl_egl_window_) {
+    tizen_core_wl_egl_window_destroy(tcore_wl_egl_window_);
+    tcore_wl_egl_window_ = nullptr;
   }
 
-  if (ecore_wl2_window_) {
-    ecore_wl2_window_free(ecore_wl2_window_);
-    ecore_wl2_window_ = nullptr;
+  if (tcore_wl_window_) {
+    tizen_core_wl_window_destroy(tcore_wl_window_);
+    tcore_wl_window_ = nullptr;
   }
 
-  if (ecore_wl2_display_) {
-    ecore_wl2_display_disconnect(ecore_wl2_display_);
-    ecore_wl2_display_ = nullptr;
+  if (tcore_wl_display_) {
+    tizen_core_wl_display_disconnect(tcore_wl_display_);
+    tizen_core_wl_display_destroy(tcore_wl_display_);
+    tcore_wl_display_ = nullptr;
   }
-  ecore_wl2_shutdown();
+  tizen_core_wl_shutdown();
 }
 
 TizenGeometry TizenWindowEcoreWl2::GetGeometry() {
   TizenGeometry result;
-  ecore_wl2_window_geometry_get(ecore_wl2_window_, &result.left, &result.top,
-                                &result.width, &result.height);
+  tizen_core_wl_window_get_geometry(tcore_wl_window_, &result.left, &result.top,
+                                    &result.width, &result.height);
   return result;
 }
 
 bool TizenWindowEcoreWl2::SetGeometry(TizenGeometry geometry) {
-  ecore_wl2_window_rotation_geometry_set(ecore_wl2_window_, GetRotation(),
-                                         geometry.left, geometry.top,
-                                         geometry.width, geometry.height);
-  // FIXME: The changes set in `ecore_wl2_window_geometry_set` seems to apply
-  // only after calling `ecore_wl2_window_position_set`. Call a more
-  // appropriate API that flushes geometry settings to the compositor.
-  ecore_wl2_window_position_set(ecore_wl2_window_, geometry.left, geometry.top);
+  tizen_core_wl_window_set_geometry(tcore_wl_window_, geometry.left,
+                                    geometry.top, geometry.width,
+                                    geometry.height);
+  tizen_core_wl_window_set_position(tcore_wl_window_, geometry.left,
+                                    geometry.top);
   return true;
 }
 
 TizenGeometry TizenWindowEcoreWl2::GetScreenGeometry() {
   TizenGeometry result = {};
-  ecore_wl2_display_screen_size_get(ecore_wl2_display_, &result.width,
-                                    &result.height);
+  GList* output_list = nullptr;
+  tizen_core_wl_display_get_output_device_list(tcore_wl_display_, &output_list);
+  if (output_list) {
+    tizen_core_wl_output_h output =
+        static_cast<tizen_core_wl_output_h>(output_list->data);
+    tizen_core_wl_output_device_get_geometry(output, &result.width,
+                                             &result.height);
+    g_list_free(output_list);
+  }
   return result;
 }
 
 int32_t TizenWindowEcoreWl2::GetRotation() {
-  return ecore_wl2_window_rotation_get(ecore_wl2_window_);
+  tizen_core_wl_window_angle_e angle = TIZEN_CORE_WL_WINDOW_ANGLE_0;
+  tizen_core_wl_window_get_rotation_angle(tcore_wl_window_, &angle);
+  return static_cast<int32_t>(angle);
 }
 
 int32_t TizenWindowEcoreWl2::GetDpi() {
-  Ecore_Wl2_Output* output = ecore_wl2_window_output_find(ecore_wl2_window_);
-  if (!output) {
-    FT_LOG(Error) << "Could not find an output associated with the window.";
+  GList* output_list = nullptr;
+  tizen_core_wl_display_get_output_device_list(tcore_wl_display_, &output_list);
+  if (!output_list) {
+    FT_LOG(Error) << "Could not find an output device.";
     return 0;
   }
-  return ecore_wl2_output_dpi_get(output);
+  tizen_core_wl_output_h output =
+      static_cast<tizen_core_wl_output_h>(output_list->data);
+  g_list_free(output_list);
+  int dpi = 0;
+  tizen_core_wl_output_device_get_dpi(output, &dpi);
+  return dpi;
 }
 
 uintptr_t TizenWindowEcoreWl2::GetWindowId() {
-  return ecore_wl2_window_id_get(ecore_wl2_window_);
-}
-
-void HandleResourceId(void* data, tizen_resource* tizen_resource, uint32_t id) {
-  if (data) {
-    *reinterpret_cast<uint32_t*>(data) = id;
-  }
+  return reinterpret_cast<uintptr_t>(tcore_wl_window_);
 }
 
 uint32_t TizenWindowEcoreWl2::GetResourceId() {
   if (resource_id_ > 0) {
     return resource_id_;
   }
-  struct wl_registry* registry =
-      ecore_wl2_display_registry_get(ecore_wl2_display_);
-  if (!registry) {
-    FT_LOG(Error) << "Could not retreive wl_registry from the display.";
-    return 0;
-  }
 
-  static const struct tizen_resource_listener tz_resource_listener = {
-      HandleResourceId};
-  Eina_Iterator* iter = ecore_wl2_display_globals_get(ecore_wl2_display_);
-  Ecore_Wl2_Global* global = nullptr;
-  struct tizen_surface* surface = nullptr;
-  EINA_ITERATOR_FOREACH(iter, global) {
-    if (strcmp(global->interface, "tizen_surface") == 0) {
-      surface = static_cast<tizen_surface*>(wl_registry_bind(
-          registry, global->id, &tizen_surface_interface, global->version));
-      break;
-    }
+  unsigned int res_id = 0;
+  if (tizen_core_wl_window_private_get_resource_id(tcore_wl_window_, &res_id) ==
+      TIZEN_CORE_WL_ERROR_NONE) {
+    resource_id_ = res_id;
   }
-  eina_iterator_free(iter);
-  if (!surface) {
-    FT_LOG(Error) << "Failed to initialize the tizen surface.";
-    return 0;
-  }
-
-  struct tizen_resource* resource = tizen_surface_get_tizen_resource(
-      surface, ecore_wl2_window_surface_get(ecore_wl2_window_));
-
-  if (!resource) {
-    FT_LOG(Error) << "Failed to get tizen resource.";
-    tizen_surface_destroy(surface);
-    return 0;
-  }
-
-  struct wl_event_queue* event_queue = wl_display_create_queue(wl2_display_);
-  if (!event_queue) {
-    FT_LOG(Error) << "Failed to create wl_event_queue.";
-    tizen_resource_destroy(resource);
-    tizen_surface_destroy(surface);
-    return 0;
-  }
-  wl_proxy_set_queue(reinterpret_cast<struct wl_proxy*>(resource), event_queue);
-  tizen_resource_add_listener(resource, &tz_resource_listener, &resource_id_);
-  wl_display_roundtrip_queue(wl2_display_, event_queue);
-  tizen_resource_destroy(resource);
-  tizen_surface_destroy(surface);
-  wl_event_queue_destroy(event_queue);
   return resource_id_;
 }
 
 void TizenWindowEcoreWl2::SetPreferredOrientations(
     const std::vector<int>& rotations) {
-  ecore_wl2_window_available_rotations_set(ecore_wl2_window_, rotations.data(),
-                                           rotations.size());
+  std::vector<tizen_core_wl_window_angle_e> angles;
+  for (int rot : rotations) {
+    angles.push_back(static_cast<tizen_core_wl_window_angle_e>(rot));
+  }
+  tizen_core_wl_window_set_available_rotation_angle_list(
+      tcore_wl_window_, angles.data(), angles.size());
 }
 
 void TizenWindowEcoreWl2::BindKeys(const std::vector<std::string>& keys) {
   for (const std::string& key : keys) {
-    ecore_wl2_window_keygrab_set(ecore_wl2_window_, key.c_str(), 0, 0, 0,
-                                 ECORE_WL2_WINDOW_KEYGRAB_TOPMOST);
+    tizen_core_wl_keygrab_info_h info = nullptr;
+    tizen_core_wl_keygrab_info_create(key.c_str(),
+                                      TIZEN_CORE_WL_KEYGRAB_TOPMOST, &info);
+    if (info) {
+      GList* list = g_list_append(nullptr, info);
+      tizen_core_wl_window_set_keygrab_list(tcore_wl_window_, list);
+      g_list_free(list);
+      tizen_core_wl_keygrab_info_destroy(info);
+    }
   }
 }
 
 void TizenWindowEcoreWl2::Show() {
-  ecore_wl2_window_show(ecore_wl2_window_);
+  tizen_core_wl_window_show(tcore_wl_window_);
 }
 
 void TizenWindowEcoreWl2::UpdateFlutterCursor(const std::string& kind) {
@@ -762,31 +978,31 @@ void TizenWindowEcoreWl2::UpdateFlutterCursor(const std::string& kind) {
 
   std::string cursor_name = "normal_default";
   if (kind == "basic") {
-    if (pointer_size == 0) {  // Large.
+    if (pointer_size == 0) {
       cursor_name = "large_normal";
-    } else if (pointer_size == 1) {  // Medium.
+    } else if (pointer_size == 1) {
       cursor_name = "medium_normal";
-    } else if (pointer_size == 2) {  // Small.
+    } else if (pointer_size == 2) {
       cursor_name = "small_normal";
     } else {
       cursor_name = "normal_default";
     }
   } else if (kind == "click") {
-    if (pointer_size == 0) {  // Large.
+    if (pointer_size == 0) {
       cursor_name = "large_normal_pnh";
-    } else if (pointer_size == 1) {  // Medium.
+    } else if (pointer_size == 1) {
       cursor_name = "medium_normal_pnh";
-    } else if (pointer_size == 2) {  // Small.
+    } else if (pointer_size == 2) {
       cursor_name = "small_normal_pnh";
     } else {
       cursor_name = "normal_pnh";
     }
   } else if (kind == "text") {
-    if (pointer_size == 0) {  // Large.
+    if (pointer_size == 0) {
       cursor_name = "large_normal_input_field";
-    } else if (pointer_size == 1) {  // Medium.
+    } else if (pointer_size == 1) {
       cursor_name = "medium_normal_input_field";
-    } else if (pointer_size == 2) {  // Small.
+    } else if (pointer_size == 2) {
       cursor_name = "small_normal_input_field";
     } else {
       cursor_name = "normal_input_field";
@@ -796,53 +1012,36 @@ void TizenWindowEcoreWl2::UpdateFlutterCursor(const std::string& kind) {
   } else {
     FT_LOG(Info) << kind << " cursor is not supported.";
   }
-  ecore_wl2_input_cursor_theme_name_set(
-      ecore_wl2_input_default_input_get(ecore_wl2_display_),
-      kEcoreWL2InputCursorThemeName);
-  ecore_wl2_input_cursor_from_name_set(
-      ecore_wl2_input_default_input_get(ecore_wl2_display_),
-      cursor_name.c_str());
+  tizen_core_wl_seat_h default_seat = nullptr;
+  tizen_core_wl_display_get_default_seat(tcore_wl_display_, &default_seat);
+  if (default_seat) {
+    tizen_core_wl_seat_set_cursor_theme(default_seat,
+                                        kTcoreWlInputCursorThemeName);
+    tizen_core_wl_seat_set_cursor_name(default_seat, cursor_name.c_str());
+  } else {
+    tizen_core_wl_seat_set_cursor_theme(default_seat, "default");
+    tizen_core_wl_seat_set_cursor_name(default_seat, "left_ptr");
+  }
 #else
+  tizen_core_wl_seat_h default_seat = nullptr;
+  tizen_core_wl_display_get_default_seat(tcore_wl_display_, &default_seat);
+  if (default_seat) {
+    tizen_core_wl_seat_set_cursor_theme(default_seat, "default");
+    tizen_core_wl_seat_set_cursor_name(default_seat, "left_ptr");
+  }
   FT_LOG(Info) << "UpdateFlutterCursor is not supported.";
 #endif
 }
 
-void TizenWindowEcoreWl2::SetTizenPolicyNotificationLevel(int level) {
-  wl_registry* registry = ecore_wl2_display_registry_get(ecore_wl2_display_);
-  if (!registry) {
-    FT_LOG(Error) << "Could not retreive wl_registry from the display.";
-    return;
-  }
-
-  Eina_Iterator* iter = ecore_wl2_display_globals_get(ecore_wl2_display_);
-  Ecore_Wl2_Global* global = nullptr;
-
-  // Retrieve global objects to bind a tizen policy.
-  EINA_ITERATOR_FOREACH(iter, global) {
-    if (strcmp(global->interface, tizen_policy_interface.name) == 0) {
-      tizen_policy_ = static_cast<tizen_policy*>(
-          wl_registry_bind(registry, global->id, &tizen_policy_interface, 1));
-      break;
-    }
-  }
-  eina_iterator_free(iter);
-
-  if (!tizen_policy_) {
-    FT_LOG(Error)
-        << "Failed to initialize the tizen policy handle, the top_level "
-           "attribute is ignored.";
-    return;
-  }
-
-  tizen_policy_set_notification_level(
-      tizen_policy_, ecore_wl2_window_surface_get(ecore_wl2_window_), level);
+void TizenWindowEcoreWl2::SetNotificationLevel(int level) {
+  tizen_core_wl_notification_set_level(
+      tcore_wl_window_, static_cast<tizen_core_wl_notification_level_e>(level));
 }
 
 void TizenWindowEcoreWl2::PrepareInputMethod() {
   input_method_context_ =
       std::make_unique<TizenInputMethodContext>(GetWindowId());
 
-  // Set input method callbacks.
   input_method_context_->SetOnPreeditStart(
       [this]() { view_delegate_->OnComposeBegin(); });
   input_method_context_->SetOnPreeditChanged(
@@ -859,20 +1058,20 @@ void* TizenWindowEcoreWl2::GetRenderTarget() {
   if (is_vulkan_) {
     return wl2_surface_;
   } else {
-    return ecore_wl2_egl_window_;
+    return tcore_wl_egl_window_;
   }
 }
 
 void TizenWindowEcoreWl2::ActivateWindow() {
-  ecore_wl2_window_activate(ecore_wl2_window_);
+  tizen_core_wl_window_activate(tcore_wl_window_);
 }
 
 void TizenWindowEcoreWl2::RaiseWindow() {
-  ecore_wl2_window_raise(ecore_wl2_window_);
+  tizen_core_wl_window_raise(tcore_wl_window_);
 }
 
 void TizenWindowEcoreWl2::LowerWindow() {
-  ecore_wl2_window_lower(ecore_wl2_window_);
+  tizen_core_wl_window_lower(tcore_wl_window_);
 }
 
 }  // namespace flutter

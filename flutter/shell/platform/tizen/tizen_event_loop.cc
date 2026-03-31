@@ -5,6 +5,8 @@
 
 #include "tizen_event_loop.h"
 
+#include <unistd.h>
+
 #include <utility>
 
 namespace flutter {
@@ -15,17 +17,34 @@ TizenEventLoop::TizenEventLoop(std::thread::id main_thread_id,
     : main_thread_id_(main_thread_id),
       get_current_time_(get_current_time),
       on_task_expired_(std::move(on_task_expired)) {
-  ecore_pipe_ = ecore_pipe_add(
-      [](void* data, void* buffer, unsigned int nbyte) -> void {
-        auto* self = static_cast<TizenEventLoop*>(data);
-        self->ExecuteTaskEvents();
-      },
-      this);
+  if (pipe(pipe_fds_) == 0) {
+    pipe_channel_ = g_io_channel_unix_new(pipe_fds_[0]);
+    pipe_watch_id_ = g_io_add_watch(
+        pipe_channel_, G_IO_IN,
+        [](GIOChannel* source, GIOCondition condition,
+           gpointer data) -> gboolean {
+          auto* self = static_cast<TizenEventLoop*>(data);
+          char buf[64];
+          read(self->pipe_fds_[0], buf, sizeof(buf));
+          self->ExecuteTaskEvents();
+          return G_SOURCE_CONTINUE;
+        },
+        this);
+  }
 }
 
 TizenEventLoop::~TizenEventLoop() {
-  if (ecore_pipe_) {
-    ecore_pipe_del(ecore_pipe_);
+  if (pipe_watch_id_ > 0) {
+    g_source_remove(pipe_watch_id_);
+  }
+  if (pipe_channel_) {
+    g_io_channel_unref(pipe_channel_);
+  }
+  if (pipe_fds_[0] >= 0) {
+    close(pipe_fds_[0]);
+  }
+  if (pipe_fds_[1] >= 0) {
+    close(pipe_fds_[1]);
   }
 }
 
@@ -74,19 +93,23 @@ void TizenEventLoop::PostTask(FlutterTask flutter_task,
   const double flutter_duration =
       static_cast<double>(flutter_target_time_nanos) - get_current_time_();
   if (flutter_duration > 0) {
-    ecore_timer_add(
-        flutter_duration / 1000000000.0,
-        [](void* data) -> Eina_Bool {
-          auto* self = static_cast<TizenEventLoop*>(data);
-          if (self->ecore_pipe_) {
-            ecore_pipe_write(self->ecore_pipe_, nullptr, 0);
+    int* pipe_write_fd = new int(pipe_fds_[1]);
+    g_timeout_add(
+        static_cast<guint>(flutter_duration / 1000000.0),
+        [](gpointer data) -> gboolean {
+          int* fd = static_cast<int*>(data);
+          if (*fd >= 0) {
+            char c = 1;
+            write(*fd, &c, 1);
           }
-          return ECORE_CALLBACK_CANCEL;
+          delete fd;
+          return G_SOURCE_REMOVE;
         },
-        this);
+        pipe_write_fd);
   } else {
-    if (ecore_pipe_) {
-      ecore_pipe_write(ecore_pipe_, nullptr, 0);
+    if (pipe_fds_[1] >= 0) {
+      char c = 1;
+      write(pipe_fds_[1], &c, 1);
     }
   }
 }
