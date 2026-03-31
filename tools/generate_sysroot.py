@@ -105,6 +105,11 @@ dali_packages = [
   'dali2-toolkit-devel',
 ]
 
+dali_integration_devel_packages = [
+  'dali2-integration-devel',
+  'dali2-adaptor-integration-devel',
+  'dali2-toolkit-integration-devel',
+]
 
 def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
   target = 'standard'
@@ -122,7 +127,7 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
   else:
     sys.exit('Unknown arch: ' + arch)
 
-  if api_version >= 10.0:
+  if api_version > 10.0:
     base_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base/reference/repos/standard/packages'
     unified_repo = 'http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified/reference/repos/{}/packages'.format(
       target)
@@ -150,6 +155,8 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
   packages = base_packages + unified_packages
   if api_version >= 6.5:
     packages += dali_packages
+    if api_version > 10.0:
+      packages += dali_integration_devel_packages
 
   for package in packages:
     quoted = urllib.parse.quote(package)
