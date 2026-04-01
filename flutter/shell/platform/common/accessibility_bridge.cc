@@ -528,8 +528,10 @@ void AccessibilityBridge::SetStringListAttributesFromFlutterUpdate(
 void AccessibilityBridge::SetIdentifierFromFlutterUpdate(
     ui::AXNodeData& node_data,
     const SemanticsNode& node) {
-  node_data.AddStringAttribute(ax::mojom::StringAttribute::kIdentifier,
-                               node.identifier);
+  if (!node.identifier.empty()) {
+    node_data.AddStringAttribute(ax::mojom::StringAttribute::kIdentifier,
+                                 node.identifier);
+  }
 }
 
 void AccessibilityBridge::SetNameFromFlutterUpdate(ui::AXNodeData& node_data,
