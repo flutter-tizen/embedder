@@ -173,7 +173,7 @@ void AccessibilitySettings::OnA11yPropertiesChanged(
 
     if (old_a11y_enabled != self->a11y_enabled_) {
       FT_LOG(Info) << "a11y IsEnabled property changed to: "
-                   << (self->a11y_enabled_ ? "true" : "false");
+                   << (self->a11y_enabled_ ? "enabled" : "disabled");
       self->UpdateSemanticsState();
     }
     g_variant_unref(is_enabled);
