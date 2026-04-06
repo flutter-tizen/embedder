@@ -16,64 +16,67 @@ namespace flutter {
 
 AccessibilitySettings::AccessibilitySettings(FlutterTizenEngine* engine)
     : engine_(engine),
-      tts_enabled_(false),
-      a11y_enabled_(false),
-      a11y_proxy_(nullptr),
+      dbus_is_enabled_(false),
+      dbus_screen_reader_enabled_(false),
+      dbus_proxy_(nullptr),
       cancellable_(g_cancellable_new()) {
-  InitializeScreenReaderMonitoring();
-  InitializeA11yMonitoring();
-  UpdateSemanticsState();
-  InitializeHighContrastMonitoring();
+  ConnectToA11yBus();
+  InitializeHighContrast();
 }
 
-void AccessibilitySettings::InitializeScreenReaderMonitoring() {
-  int ret = system_settings_get_value_bool(
-      SYSTEM_SETTINGS_KEY_ACCESSIBILITY_TTS, &tts_enabled_);
-  if (ret != SYSTEM_SETTINGS_ERROR_NONE) {
-    FT_LOG(Error) << "Failed to get value of accessibility tts.";
-  }
-  system_settings_set_changed_cb(SYSTEM_SETTINGS_KEY_ACCESSIBILITY_TTS,
-                                 OnScreenReaderStateChanged, this);
+void AccessibilitySettings::ConnectToA11yBus() {
+  g_dbus_proxy_new_for_bus(G_BUS_TYPE_SESSION, G_DBUS_PROXY_FLAGS_NONE,
+                           nullptr,            // GDBusInterfaceInfo
+                           "org.a11y.Bus",     // name
+                           "/org/a11y/bus",    // object path
+                           "org.a11y.Status",  // interface
+                           cancellable_,       // GCancellable
+                           OnDBusProxyReady,   // Callback
+                           this);              // GError
 }
 
-void AccessibilitySettings::InitializeA11yMonitoring() {
+void AccessibilitySettings::OnDBusProxyReady(GObject* source_object,
+                                             GAsyncResult* res,
+                                             gpointer user_data) {
   GError* error = nullptr;
+  auto* self = static_cast<AccessibilitySettings*>(user_data);
 
-  a11y_proxy_ =
-      g_dbus_proxy_new_for_bus_sync(G_BUS_TYPE_SESSION, G_DBUS_PROXY_FLAGS_NONE,
-                                    nullptr,            // GDBusInterfaceInfo
-                                    "org.a11y.Bus",     // name
-                                    "/org/a11y/bus",    // object path
-                                    "org.a11y.Status",  // interface
-                                    cancellable_,       // GCancellable
-                                    &error);            // GError
-
-  if (error) {
-    FT_LOG(Error) << "Failed to create a11y proxy: " << error->message;
-    g_error_free(error);
+  self->dbus_proxy_ = g_dbus_proxy_new_for_bus_finish(res, &error);
+  if (!self->dbus_proxy_) {
+    FT_LOG(Error) << "Failed to create GDBusProxy";
+    if (error) {
+      FT_LOG(Error) << error->message;
+      g_error_free(error);
+    }
     return;
   }
-
-  GVariant* result = g_dbus_proxy_get_cached_property(a11y_proxy_, "IsEnabled");
-
-  if (error) {
-    FT_LOG(Error) << "Failed to get initial a11y state: " << error->message;
-    g_error_free(error);
-  } else {
-    a11y_enabled_ = g_variant_get_boolean(result);
-    g_variant_unref(result);
-    FT_LOG(Info) << "Initial a11y state: "
-                 << (a11y_enabled_ ? "enabled" : "disabled");
-  }
-
-  g_signal_connect_data(a11y_proxy_, "g-properties-changed",
-                        G_CALLBACK(OnA11yPropertiesChanged), this, nullptr,
-                        G_CONNECT_AFTER);
-
-  FT_LOG(Info) << "Connected to a11y status changes via GDBusProxy";
+  self->SetupDBusPropertyMonitoring();
 }
 
-void AccessibilitySettings::InitializeHighContrastMonitoring() {
+void AccessibilitySettings::SetupDBusPropertyMonitoring() {
+  UpdateStateFromProxy("IsEnabled", dbus_is_enabled_);
+  UpdateStateFromProxy("ScreenReaderEnabled", dbus_screen_reader_enabled_);
+  UpdateSemanticsState();
+
+  g_signal_connect_data(dbus_proxy_, "g-properties-changed",
+                        G_CALLBACK(OnDBusPropertiesChanged), this, nullptr,
+                        G_CONNECT_AFTER);
+}
+
+void AccessibilitySettings::UpdateStateFromProxy(const char* property_name,
+                                                 bool& property_state) {
+  GVariant* result =
+      g_dbus_proxy_get_cached_property(dbus_proxy_, property_name);
+
+  if (result) {
+    property_state = g_variant_get_boolean(result);
+    g_variant_unref(result);
+  } else {
+    FT_LOG(Error) << "Failed to get " << property_name << " state.";
+  }
+}
+
+void AccessibilitySettings::InitializeHighContrast() {
 #ifdef TV_PROFILE
   int high_contrast = 0;
   int ret = system_settings_get_value_int(
@@ -89,24 +92,24 @@ void AccessibilitySettings::InitializeHighContrastMonitoring() {
 }
 
 void AccessibilitySettings::UpdateSemanticsState() {
-  bool should_enable = tts_enabled_ || a11y_enabled_;
-  if (should_enable != screen_reader_enabled_) {
-    screen_reader_enabled_ = should_enable;
+  bool should_enable = dbus_screen_reader_enabled_ || dbus_is_enabled_;
+  if (should_enable != semantics_enabled_) {
+    semantics_enabled_ = should_enable;
     engine_->SetSemanticsEnabled(should_enable);
-    FT_LOG(Info) << "Semantics state updated to: "
-                 << (should_enable ? "enabled" : "disabled")
-                 << " (TTS: " << (tts_enabled_ ? "enabled" : "disabled")
-                 << ", a11y: " << (a11y_enabled_ ? "enabled" : "disabled")
-                 << ")";
+    FT_LOG(Debug) << "Semantics state updated to: "
+                  << (should_enable ? "enabled" : "disabled") << " (TTS: "
+                  << (dbus_screen_reader_enabled_ ? "enabled" : "disabled")
+                  << ", a11y: " << (dbus_is_enabled_ ? "enabled" : "disabled")
+                  << ")";
   }
 }
 
 AccessibilitySettings::~AccessibilitySettings() {
   system_settings_unset_changed_cb(SYSTEM_SETTINGS_KEY_ACCESSIBILITY_TTS);
 
-  if (a11y_proxy_) {
-    g_object_unref(a11y_proxy_);
-    a11y_proxy_ = nullptr;
+  if (dbus_proxy_) {
+    g_object_unref(dbus_proxy_);
+    dbus_proxy_ = nullptr;
   }
 
   if (cancellable_) {
@@ -139,44 +142,38 @@ void AccessibilitySettings::OnHighContrastStateChanged(
 #endif
 }
 
-void AccessibilitySettings::OnScreenReaderStateChanged(
-    system_settings_key_e key,
-    void* user_data) {
-  auto* self = static_cast<AccessibilitySettings*>(user_data);
-
-  bool old_tts_enabled = self->tts_enabled_;
-  int ret = system_settings_get_value_bool(key, &self->tts_enabled_);
-  if (ret != SYSTEM_SETTINGS_ERROR_NONE) {
-    FT_LOG(Error) << "Failed to get value of accessibility tts.";
-    return;
-  }
-
-  if (old_tts_enabled != self->tts_enabled_) {
-    FT_LOG(Info) << "TTS state changed to: "
-                 << (self->tts_enabled_ ? "enabled" : "disabled");
-    self->UpdateSemanticsState();
-  }
-}
-
-void AccessibilitySettings::OnA11yPropertiesChanged(
+void AccessibilitySettings::OnDBusPropertiesChanged(
     GDBusProxy* proxy,
     GVariant* changed_properties,
     const gchar* const* invalidated_properties,
     gpointer user_data) {
   auto* self = static_cast<AccessibilitySettings*>(user_data);
+  bool is_changed = false;
 
   GVariant* is_enabled = g_variant_lookup_value(changed_properties, "IsEnabled",
                                                 G_VARIANT_TYPE_BOOLEAN);
   if (is_enabled) {
-    bool old_a11y_enabled = self->a11y_enabled_;
-    self->a11y_enabled_ = g_variant_get_boolean(is_enabled);
-
-    if (old_a11y_enabled != self->a11y_enabled_) {
-      FT_LOG(Info) << "a11y IsEnabled property changed to: "
-                   << (self->a11y_enabled_ ? "enabled" : "disabled");
-      self->UpdateSemanticsState();
+    bool old_dbus_is_enabled = self->dbus_is_enabled_;
+    self->dbus_is_enabled_ = g_variant_get_boolean(is_enabled);
+    if (old_dbus_is_enabled != self->dbus_is_enabled_) {
+      is_changed = true;
     }
     g_variant_unref(is_enabled);
+  }
+
+  GVariant* tts_enabled = g_variant_lookup_value(
+      changed_properties, "ScreenReaderEnabled", G_VARIANT_TYPE_BOOLEAN);
+  if (tts_enabled) {
+    bool old_dbus_screen_reader_enabled = self->dbus_screen_reader_enabled_;
+    self->dbus_screen_reader_enabled_ = g_variant_get_boolean(tts_enabled);
+    if (old_dbus_screen_reader_enabled != self->dbus_screen_reader_enabled_) {
+      is_changed = true;
+    }
+    g_variant_unref(tts_enabled);
+  }
+
+  if (is_changed) {
+    self->UpdateSemanticsState();
   }
 }
 
