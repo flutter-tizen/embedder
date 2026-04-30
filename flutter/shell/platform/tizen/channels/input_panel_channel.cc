@@ -54,8 +54,13 @@ void InputPanelChannel::SendInputPanelStateEvent(const std::string& state) {
     return;
   }
 
+  InputPanelGeometry geometry = imf_context_->GetInputPanelGeometry();
   EncodableMap event;
   event[EncodableValue("state")] = EncodableValue(state);
+  event[EncodableValue("x")] = EncodableValue(geometry.x);
+  event[EncodableValue("y")] = EncodableValue(geometry.y);
+  event[EncodableValue("width")] = EncodableValue(geometry.w);
+  event[EncodableValue("height")] = EncodableValue(geometry.h);
   event_sink_->Success(EncodableValue(event));
 }
 
