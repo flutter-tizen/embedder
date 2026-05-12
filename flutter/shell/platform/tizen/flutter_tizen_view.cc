@@ -125,24 +125,30 @@ void FlutterTizenView::OnRotate(int32_t degree) {
   int32_t width = geometry.width;
   int32_t height = geometry.height;
   if (dynamic_cast<TizenRendererEgl*>(engine_->renderer())) {
-    rotation_degree_ = degree;
-    // Compute renderer transformation based on the angle of rotation.
-    double rad = (360 - rotation_degree_) * M_PI / 180;
-    double trans_x = 0.0, trans_y = 0.0;
-    if (rotation_degree_ == 90) {
-      trans_y = height;
-    } else if (rotation_degree_ == 180) {
-      trans_x = width;
-      trans_y = height;
-    } else if (rotation_degree_ == 270) {
-      trans_x = width;
+    rotation_degree_ = (degree % 360 + 360) % 360;
+    const double w = width;
+    const double h = height;
+    switch (rotation_degree_) {
+      case 0:
+        flutter_transformation_ = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+        break;
+      case 90:
+        flutter_transformation_ = {0.0, 1.0, 0.0, -1.0, 0.0, h, 0.0, 0.0, 1.0};
+        break;
+      case 180:
+        flutter_transformation_ = {-1.0, 0.0, w, 0.0, -1.0, h, 0.0, 0.0, 1.0};
+        break;
+      case 270:
+        flutter_transformation_ = {0.0, -1.0, w, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        break;
+      default: {
+        double rad = (360 - rotation_degree_) * M_PI / 180;
+        flutter_transformation_ = {
+            cos(rad), -sin(rad), 0.0, sin(rad), cos(rad), 0.0, 0.0, 0.0, 1.0,
+        };
+        break;
+      }
     }
-
-    flutter_transformation_ = {
-        cos(rad), -sin(rad), trans_x,  // x
-        sin(rad), cos(rad),  trans_y,  // y
-        0.0,      0.0,       1.0       // perspective
-    };
 
     if (rotation_degree_ == 90 || rotation_degree_ == 270) {
       std::swap(width, height);
