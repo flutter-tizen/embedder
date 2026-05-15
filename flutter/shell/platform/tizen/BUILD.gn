@@ -19,15 +19,34 @@ config("flutter_tizen_config") {
     "${sysroot_path}/usr/include/dlog",
     "${sysroot_path}/usr/include/feedback",
     "${sysroot_path}/usr/include/system",
-    "${sysroot_path}/usr/include/tizen-core",
-    "${sysroot_path}/usr/include/tizen-core-imf",
-    "${sysroot_path}/usr/include/tizen-core-wl",
     "${sysroot_path}/usr/include/tzsh",
     "${sysroot_path}/usr/include/vconf",
     "${sysroot_path}/usr/include/wayland-extension",
     "${sysroot_path}/usr/include/glib-2.0",
     "${sysroot_path}/usr/lib/glib-2.0/include",
   ]
+
+  # tcore-specific includes
+  if (use_tcore) {
+    include_dirs += [
+      "${sysroot_path}/usr/include/tizen-core",
+      "${sysroot_path}/usr/include/tizen-core-imf",
+      "${sysroot_path}/usr/include/tizen-core-wl",
+    ]
+  } else {
+    # ecore-specific includes
+    include_dirs += [
+      "${sysroot_path}/usr/include/ecore-1",
+      "${sysroot_path}/usr/include/ecore-imf-1",
+      "${sysroot_path}/usr/include/ecore-input-1",
+      "${sysroot_path}/usr/include/ecore-wayland-1",
+      "${sysroot_path}/usr/include/ecore-wl2-1",
+      "${sysroot_path}/usr/include/efl-1",
+      "${sysroot_path}/usr/include/eina-1",
+      "${sysroot_path}/usr/include/eina-1/eina",
+      "${sysroot_path}/usr/include/eo-1",
+    ]
+  }
 
   cflags_cc = [
     "-Wno-newline-eof",
@@ -87,13 +106,24 @@ template("embedder") {
       "logger.cc",
       "system_utils.cc",
       "tizen_event_loop.cc",
-      "tizen_input_method_context.cc",
       "tizen_renderer.cc",
       "tizen_renderer_egl.cc",
       "tizen_renderer_gl.cc",
       "tizen_vsync_waiter.cc",
-      "tizen_window_ecore_wl2.cc",
     ]
+
+    # Select window implementation based on use_tcore
+    if (use_tcore) {
+      sources += [
+        "tizen_window_tcore_wl.cc",
+        "tizen_input_method_context_tcore.cc",
+      ]
+    } else {
+      sources += [
+        "tizen_window_ecore_wl2.cc",
+        "tizen_input_method_context.cc",
+      ]
+    }
 
     lib_dirs = [ "//engine/${target_cpu}" ]
 
@@ -107,9 +137,6 @@ template("embedder") {
       "capi-system-info",
       "capi-system-system-settings",
       "dlog",
-      "tizen-core",
-      "tizen-core-imf",
-      "tizen-core-wl",
       "glib-2.0",
       "gio-2.0",
       "feedback",
@@ -123,6 +150,23 @@ template("embedder") {
       "GLESv2",
     ]
 
+    # tcore-specific or ecore-specific libraries
+    if (use_tcore) {
+      libs += [
+        "tizen-core",
+        "tizen-core-imf",
+        "tizen-core-wl",
+      ]
+    } else {
+      libs += [
+        "ecore",
+        "ecore_imf",
+        "ecore_input",
+        "ecore_wl2",
+        "eina",
+      ]
+    }
+
     if (target_name == "flutter_tizen_common" ||
         target_name == "flutter_tizen_common_experimental") {
       sources += [ "channels/tizen_shell.cc" ]
@@ -135,6 +179,11 @@ template("embedder") {
 
     defines += invoker.defines
     defines += [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
+
+    # Add USE_TCORE_WL define when using tcore
+    if (use_tcore) {
+      defines += [ "USE_TCORE_WL" ]
+    }
 
     if (target_name == "flutter_tizen_mobile_experimental" ||
         target_name == "flutter_tizen_tv_experimental" ||

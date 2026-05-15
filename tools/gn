@@ -14,6 +14,9 @@ from pathlib import Path
 def get_out_dir(args):
   target_dir = ['tizen', args.target_cpu]
 
+  if args.use_tcore:
+    target_dir.append('tcore')
+
   if args.unoptimized:
     target_dir.append('unopt')
 
@@ -78,6 +81,7 @@ def to_gn_args(args):
   gn_args['clang_version'] = get_clang_version(args.target_toolchain)
   gn_args['api_version'] = args.api_version
   gn_args['use_system_cxx'] = not args.no_system_cxx
+  gn_args['use_tcore'] = args.use_tcore
 
   for key, val in gn_args.items():
     if isinstance(val, bool):
@@ -104,6 +108,8 @@ def parse_args(args):
 
   parser.add_argument('--api-version', default='6.0', type=str)
   parser.add_argument('--no-system-cxx', default=False, action='store_true')
+  parser.add_argument('--use-tcore', default=False, action='store_true',
+                      help='Use tizen-core-wl API instead of ecore')
 
   parser.add_argument('--target-dir', type=str)
   parser.add_argument('--verbose', default=False, action='store_true')

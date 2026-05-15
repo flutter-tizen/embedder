@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef EMBEDDER_TIZEN_WINDOW_ECORE_WL2_H_
-#define EMBEDDER_TIZEN_WINDOW_ECORE_WL2_H_
+#ifndef EMBEDDER_TIZEN_WINDOW_TCORE_WL_H_
+#define EMBEDDER_TIZEN_WINDOW_TCORE_WL_H_
 
-#define EFL_BETA_API_SUPPORT
-#include <Ecore_Wl2.h>
+#include <tizen_core_wl.h>
+#include <tizen_core_wl_internal.h>
 #include <tizen-extension-client-protocol.h>
 
 #include <cstdint>
@@ -17,9 +17,9 @@
 
 namespace flutter {
 
-class TizenWindowEcoreWl2 : public TizenWindow {
+class TizenWindowTcoreWl : public TizenWindow {
  public:
-  TizenWindowEcoreWl2(TizenGeometry geometry,
+  TizenWindowTcoreWl(TizenGeometry geometry,
                       bool transparent,
                       bool focusable,
                       bool top_level,
@@ -28,7 +28,7 @@ class TizenWindowEcoreWl2 : public TizenWindow {
                       void* window_handle,
                       bool is_vulkan);
 
-  ~TizenWindowEcoreWl2();
+  ~TizenWindowTcoreWl();
 
   TizenGeometry GetGeometry() override;
 
@@ -40,7 +40,7 @@ class TizenWindowEcoreWl2 : public TizenWindow {
 
   void* GetRenderTargetDisplay() override { return wl2_display_; }
 
-  void* GetNativeHandle() override { return ecore_wl2_window_; }
+  void* GetNativeHandle() override { return tcore_wl_window_; }
 
   int32_t GetRotation() override;
 
@@ -85,17 +85,17 @@ class TizenWindowEcoreWl2 : public TizenWindow {
 
   void UnregisterEventHandlers();
 
-  void SetTizenPolicyNotificationLevel(int level);
+  void SetNotificationLevel(int level);
 
   void PrepareInputMethod();
 
-  Ecore_Wl2_Display* ecore_wl2_display_ = nullptr;
-  Ecore_Wl2_Window* ecore_wl2_window_ = nullptr;
-  Ecore_Wl2_Egl_Window* ecore_wl2_egl_window_ = nullptr;
+  tizen_core_wl_display_h tcore_wl_display_ = nullptr;
+  tizen_core_wl_window_h tcore_wl_window_ = nullptr;
+  tizen_core_wl_egl_window_h tcore_wl_egl_window_ = nullptr;
+  tizen_core_event_h tcore_wl_event_ = nullptr;
   wl_display* wl2_display_ = nullptr;
   wl_surface* wl2_surface_ = nullptr;
-  std::vector<Ecore_Event_Handler*> ecore_event_handlers_;
-  tizen_policy* tizen_policy_ = nullptr;
+  std::vector<tizen_core_wl_event_listener_h> tcore_event_listeners_;
   uint32_t resource_id_ = 0;
 
 #ifdef TV_PROFILE
@@ -108,4 +108,4 @@ class TizenWindowEcoreWl2 : public TizenWindow {
 
 }  // namespace flutter
 
-#endif  // EMBEDDER_TIZEN_WINDOW_ECORE_WL2_H_
+#endif  // EMBEDDER_TIZEN_WINDOW_TCORE_WL_H_
