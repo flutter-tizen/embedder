@@ -159,13 +159,13 @@ void SetPointingDevicePreference() {
 }  // namespace
 
 TizenWindowTcoreWl::TizenWindowTcoreWl(TizenGeometry geometry,
-                                         bool transparent,
-                                         bool focusable,
-                                         bool top_level,
-                                         bool pointing_device_support,
-                                         bool floating_menu_support,
-                                         void* window_handle = nullptr,
-                                         bool is_vulkan = false)
+                                       bool transparent,
+                                       bool focusable,
+                                       bool top_level,
+                                       bool pointing_device_support,
+                                       bool floating_menu_support,
+                                       void* window_handle = nullptr,
+                                       bool is_vulkan = false)
     : TizenWindow(geometry, transparent, focusable, top_level)
 #ifdef TV_PROFILE
       ,

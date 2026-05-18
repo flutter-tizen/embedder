@@ -5,9 +5,9 @@
 #ifndef EMBEDDER_TIZEN_WINDOW_TCORE_WL_H_
 #define EMBEDDER_TIZEN_WINDOW_TCORE_WL_H_
 
+#include <tizen-extension-client-protocol.h>
 #include <tizen_core_wl.h>
 #include <tizen_core_wl_internal.h>
-#include <tizen-extension-client-protocol.h>
 
 #include <cstdint>
 #include <string>
@@ -20,13 +20,13 @@ namespace flutter {
 class TizenWindowTcoreWl : public TizenWindow {
  public:
   TizenWindowTcoreWl(TizenGeometry geometry,
-                      bool transparent,
-                      bool focusable,
-                      bool top_level,
-                      bool pointing_device_support,
-                      bool floating_menu_support,
-                      void* window_handle,
-                      bool is_vulkan);
+                     bool transparent,
+                     bool focusable,
+                     bool top_level,
+                     bool pointing_device_support,
+                     bool floating_menu_support,
+                     void* window_handle,
+                     bool is_vulkan);
 
   ~TizenWindowTcoreWl();
 
