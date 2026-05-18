@@ -11,7 +11,11 @@
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/method_channel.h"
 #include "flutter/shell/platform/common/text_input_model.h"
+#ifdef USE_TCORE_WL
+#include "flutter/shell/platform/tizen/tizen_input_method_context_tcore.h"
+#else
 #include "flutter/shell/platform/tizen/tizen_input_method_context.h"
+#endif
 #include "rapidjson/document.h"
 
 namespace flutter {
