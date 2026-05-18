@@ -5,7 +5,12 @@
 #ifndef EMBEDDER_TIZEN_CLIPBOARD_H_
 #define EMBEDDER_TIZEN_CLIPBOARD_H_
 
+#ifdef USE_TCORE_WL
 #include <tizen_core_wl.h>
+#else
+#define EFL_BETA_API_SUPPORT
+#include <Ecore_Wl2.h>
+#endif
 
 #include <functional>
 #include <optional>
@@ -34,11 +39,18 @@ class TizenClipboard {
   std::string data_;
   ClipboardCallback on_data_callback_;
   uint32_t selection_serial_ = 0;
+#ifdef USE_TCORE_WL
   tizen_core_wl_data_offer_h selection_offer_ = nullptr;
   tizen_core_wl_display_h display_ = nullptr;
   tizen_core_event_h tcore_wl_event_ = nullptr;
   tizen_core_wl_event_listener_h send_listener_ = nullptr;
   tizen_core_wl_event_listener_h receive_listener_ = nullptr;
+#else
+  Ecore_Wl2_Offer* selection_offer_ = nullptr;
+  Ecore_Wl2_Display* display_ = nullptr;
+  Ecore_Event_Handler* send_handler = nullptr;
+  Ecore_Event_Handler* receive_handler = nullptr;
+#endif
 };
 
 }  // namespace flutter
