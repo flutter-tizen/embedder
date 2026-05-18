@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "tizen_input_method_context.h"
+#include "tizen_input_method_context_tcore.h"
 
 #include "flutter/shell/platform/tizen/logger.h"
 
@@ -160,22 +160,17 @@ bool TizenInputMethodContext::HandleTcoreWlEventKey(void* event, bool is_down) {
   FT_ASSERT(imf_context_);
   FT_ASSERT(event);
 
-  FT_LOG(Error) << "HandleTcoreWlEventKey: is_down=" << is_down;
-
   tizen_core_imf_event_key_h imf_key = CreateImfKeyEventFromTcoreWlEvent(event);
   if (!imf_key) {
-    FT_LOG(Error) << "HandleTcoreWlEventKey: failed to create imf_key event";
     return false;
   }
 
   bool filter_result = false;
-  int ret = tizen_core_imf_context_filter_event(
-      imf_context_,
-      is_down ? TIZEN_CORE_IMF_EVENT_TYPE_KEY_DOWN
-              : TIZEN_CORE_IMF_EVENT_TYPE_KEY_UP,
-      imf_key, &filter_result);
-  FT_LOG(Error) << "HandleTcoreWlEventKey: filter_event ret=" << ret
-                << ", filter_result=" << filter_result;
+  tizen_core_imf_context_filter_event(imf_context_,
+                                      is_down
+                                          ? TIZEN_CORE_IMF_EVENT_TYPE_KEY_DOWN
+                                          : TIZEN_CORE_IMF_EVENT_TYPE_KEY_UP,
+                                      imf_key, &filter_result);
   tizen_core_imf_event_key_destroy(imf_key);
   return filter_result;
 }
@@ -190,15 +185,9 @@ bool TizenInputMethodContext::HandleNuiKeyEvent(const char* device_name,
                                                 uint32_t scan_code,
                                                 size_t timestamp,
                                                 bool is_down) {
-  FT_LOG(Error) << "HandleNuiKeyEvent: key=" << (key ? key : "null")
-                << ", string=" << (string ? string : "null")
-                << ", modifiers=" << modifiers << ", scan_code=" << scan_code
-                << ", is_down=" << is_down;
-
   tizen_core_imf_event_key_h imf_key = nullptr;
   tizen_core_imf_event_key_create(&imf_key);
   if (!imf_key) {
-    FT_LOG(Error) << "HandleNuiKeyEvent: failed to create imf_key event";
     return false;
   }
 
@@ -225,13 +214,11 @@ bool TizenInputMethodContext::HandleNuiKeyEvent(const char* device_name,
       imf_key, static_cast<tizen_core_imf_device_subclass_e>(device_subclass));
 
   bool filter_result = false;
-  int ret = tizen_core_imf_context_filter_event(
-      imf_context_,
-      is_down ? TIZEN_CORE_IMF_EVENT_TYPE_KEY_DOWN
-              : TIZEN_CORE_IMF_EVENT_TYPE_KEY_UP,
-      imf_key, &filter_result);
-  FT_LOG(Error) << "HandleNuiKeyEvent: filter_event ret=" << ret
-                << ", filter_result=" << filter_result;
+  tizen_core_imf_context_filter_event(imf_context_,
+                                      is_down
+                                          ? TIZEN_CORE_IMF_EVENT_TYPE_KEY_DOWN
+                                          : TIZEN_CORE_IMF_EVENT_TYPE_KEY_UP,
+                                      imf_key, &filter_result);
   tizen_core_imf_event_key_destroy(imf_key);
   return filter_result;
 }
@@ -252,22 +239,19 @@ void TizenInputMethodContext::ResetInputMethodContext() {
 
 void TizenInputMethodContext::ShowInputPanel() {
   FT_ASSERT(imf_context_);
-  FT_LOG(Error) << "ShowInputPanel: called";
   tizen_core_imf_context_input_panel_show(imf_context_);
   tizen_core_imf_context_focus_in(imf_context_);
 }
 
 void TizenInputMethodContext::HideInputPanel() {
   FT_ASSERT(imf_context_);
-  FT_LOG(Error) << "HideInputPanel: called";
   tizen_core_imf_context_focus_out(imf_context_);
   tizen_core_imf_context_input_panel_hide(imf_context_);
 }
 
 bool TizenInputMethodContext::IsInputPanelShown() {
   tizen_core_imf_input_panel_state_e state;
-  int ret = tizen_core_imf_context_get_input_panel_state(imf_context_, &state);
-  FT_LOG(Error) << "IsInputPanelShown: ret=" << ret << ", state=" << state;
+  tizen_core_imf_context_get_input_panel_state(imf_context_, &state);
   return state == TIZEN_CORE_IMF_INPUT_PANEL_STATE_SHOW;
 }
 
@@ -319,8 +303,6 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
       [](tizen_core_imf_context_h ctx, void* event_info, void* data) {
         auto* self = static_cast<TizenInputMethodContext*>(data);
         char* str = static_cast<char*>(event_info);
-        FT_LOG(Error) << "IMF_CALLBACK_COMMIT: str=" << (str ? str : "null")
-                      << ", on_commit_=" << (self->on_commit_ ? "set" : "null");
         if (self->on_commit_) {
           self->on_commit_(str);
         }
@@ -333,8 +315,6 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
   event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_START] =
       [](tizen_core_imf_context_h ctx, void* event_info, void* data) {
         auto* self = static_cast<TizenInputMethodContext*>(data);
-        FT_LOG(Error) << "IMF_CALLBACK_PREEDIT_START: on_preedit_start_="
-                      << (self->on_preedit_start_ ? "set" : "null");
         if (self->on_preedit_start_) {
           self->on_preedit_start_();
         }
@@ -347,8 +327,6 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
   event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_END] =
       [](tizen_core_imf_context_h ctx, void* event_info, void* data) {
         auto* self = static_cast<TizenInputMethodContext*>(data);
-        FT_LOG(Error) << "IMF_CALLBACK_PREEDIT_END: on_preedit_end_="
-                      << (self->on_preedit_end_ ? "set" : "null");
         if (self->on_preedit_end_) {
           self->on_preedit_end_();
         }
@@ -361,16 +339,11 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
   event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_CHANGED] =
       [](tizen_core_imf_context_h ctx, void* event_info, void* data) {
         auto* self = static_cast<TizenInputMethodContext*>(data);
-        FT_LOG(Error) << "IMF_CALLBACK_PREEDIT_CHANGED: on_preedit_changed_="
-                      << (self->on_preedit_changed_ ? "set" : "null");
         if (self->on_preedit_changed_) {
           char* str = nullptr;
           int cursor_pos = 0;
           tizen_core_imf_context_get_preedit_string(ctx, &str, nullptr, nullptr,
                                                     &cursor_pos);
-          FT_LOG(Error) << "IMF_CALLBACK_PREEDIT_CHANGED: str="
-                        << (str ? str : "null")
-                        << ", cursor_pos=" << cursor_pos;
           if (str) {
             self->on_preedit_changed_(str, cursor_pos);
             free(str);
@@ -435,10 +408,6 @@ void TizenInputMethodContext::InputPanelStateChangedCallback(
       state_str = "unknown";
       break;
   }
-
-  FT_LOG(Error) << "InputPanelStateChangedCallback: state=" << state_str
-                << ", on_input_panel_state_changed_="
-                << (self->on_input_panel_state_changed_ ? "set" : "null");
 
   if (self->on_input_panel_state_changed_) {
     self->on_input_panel_state_changed_(state_str);

@@ -191,8 +191,6 @@ TizenWindowTcoreWl::~TizenWindowTcoreWl() {
 }
 
 bool TizenWindowTcoreWl::CreateWindow(void* window_handle) {
-  FT_LOG(Error) << "tizen core wl init()!!!!!!! ";
-
   if (tizen_core_wl_init() != TIZEN_CORE_WL_ERROR_NONE) {
     FT_LOG(Error) << "Could not initialize tizen core wl.";
     return false;
@@ -297,6 +295,13 @@ void TizenWindowTcoreWl::SetWindowOptions() {
   EnableCursor();
 }
 
+// NOTE: The TV profile cursor / mouse-pointer / floating-menu helpers below
+// depend on libvd-win-util.so, which is an internal Samsung TV library and
+// not part of the public Tizen API. Symbols are looked up via dlopen/dlsym
+// so the embedder still builds on devices where the library is missing, but
+// these symbols may be renamed or removed in future TV platform releases.
+// All call sites must handle the "library or symbol not available" case
+// gracefully (by bailing out and leaving the corresponding feature disabled).
 void TizenWindowTcoreWl::EnableCursor() {
 #ifdef TV_PROFILE
   void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
@@ -638,110 +643,44 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
       tcore_wl_event_, TIZEN_CORE_WL_EVENT_KEY_DOWN,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowTcoreWl*>(data);
-        FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [1] entered, view_delegate_="
-                      << (self->view_delegate_ ? "set" : "null")
-                      << ", event=" << event;
-        if (self->view_delegate_) {
-          FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [2] casting event to base";
-          auto* ev = static_cast<tizen_core_wl_event_input_base_h>(event);
-          FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [3] ev=" << ev;
-
-          FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [4] getting event window";
-          tizen_core_wl_window_h event_window = nullptr;
-          int ret_get_window =
-              tizen_core_wl_event_input_base_get_window(ev, &event_window);
-          FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [5] get_window ret="
-                        << ret_get_window << ", event_window=" << event_window
-                        << ",  self_window=" << self->tcore_wl_window_;
-
-          if (event_window == self->tcore_wl_window_) {
-            FT_LOG(Error)
-                << "WL_EVENT_KEY_DOWN: [6] window matched, extracting key info";
-
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [7] getting keyname";
-            char* keyname = nullptr;
-            tizen_core_wl_event_key_get_keyname(ev, &keyname);
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [8] keyname="
-                          << (keyname ? keyname : "null");
-
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [9] getting keysymbol";
-            char* keysymbol = nullptr;
-            tizen_core_wl_event_key_get_keysymbol(ev, &keysymbol);
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [10] keysymbol="
-                          << (keysymbol ? keysymbol : "null");
-
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [11] getting compose";
-            char* compose = nullptr;
-            tizen_core_wl_event_key_get_compose(ev, &compose);
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [12] compose="
-                          << (compose ? compose : "null");
-
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [13] getting modifiers";
-            unsigned int modifiers = 0;
-            tizen_core_wl_event_key_get_modifiers(ev, &modifiers);
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [14] modifiers=" << modifiers;
-
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [15] getting keycode";
-            unsigned int keycode = 0;
-            tizen_core_wl_event_key_get_keycode(ev, &keycode);
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [16] keycode=" << keycode;
-
-            FT_LOG(Error)
-                << "WL_EVENT_KEY_DOWN: [17] getting device_identifier";
-            char* dev_identifier = nullptr;
-            tizen_core_wl_event_input_base_get_device_identifier(
-                ev, &dev_identifier);
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [18] dev_identifier="
-                          << (dev_identifier ? dev_identifier : "null");
-
-            FT_LOG(Error)
-                << "WL_EVENT_KEY_DOWN: [19] checking input_method_context_="
-                << (self->input_method_context_ ? "set" : "null");
-            bool handled = false;
-            if (self->input_method_context_) {
-              FT_LOG(Error)
-                  << "WL_EVENT_KEY_DOWN: [20] calling IsInputPanelShown";
-              bool panel_shown =
-                  self->input_method_context_->IsInputPanelShown();
-              FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [21] IsInputPanelShown="
-                            << panel_shown;
-              if (panel_shown) {
-                FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [22] input panel shown, "
-                                 "calling HandleTcoreWlEventKey";
-                handled = self->input_method_context_->HandleTcoreWlEventKey(
-                    event, true);
-                FT_LOG(Error)
-                    << "WL_EVENT_KEY_DOWN: [23] IMF handled=" << handled;
-              } else {
-                FT_LOG(Error)
-                    << "WL_EVENT_KEY_DOWN: [24] input panel NOT shown";
-              }
-            } else {
-              FT_LOG(Error)
-                  << "WL_EVENT_KEY_DOWN: [25] input_method_context_ is null";
-            }
-            if (!handled) {
-              FT_LOG(Error)
-                  << "WL_EVENT_KEY_DOWN: [26] calling view_delegate_->OnKey";
-              self->view_delegate_->OnKey(keyname, keysymbol, compose,
-                                          modifiers, keycode, dev_identifier,
-                                          true);
-              FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [27] OnKey returned";
-            }
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [28] freeing keyname";
-            free(keyname);
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [29] freeing keysymbol";
-            free(keysymbol);
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [30] freeing compose";
-            free(compose);
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [31] freeing dev_identifier";
-            free(dev_identifier);
-            FT_LOG(Error) << "WL_EVENT_KEY_DOWN: [32] done";
-          } else {
-            FT_LOG(Error)
-                << "WL_EVENT_KEY_DOWN: event window mismatch, ignoring";
-          }
+        if (!self->view_delegate_) {
+          return;
         }
+        auto* ev = static_cast<tizen_core_wl_event_input_base_h>(event);
+        tizen_core_wl_window_h event_window = nullptr;
+        tizen_core_wl_event_input_base_get_window(ev, &event_window);
+        if (event_window != self->tcore_wl_window_) {
+          return;
+        }
+
+        char* keyname = nullptr;
+        tizen_core_wl_event_key_get_keyname(ev, &keyname);
+        char* keysymbol = nullptr;
+        tizen_core_wl_event_key_get_keysymbol(ev, &keysymbol);
+        char* compose = nullptr;
+        tizen_core_wl_event_key_get_compose(ev, &compose);
+        unsigned int modifiers = 0;
+        tizen_core_wl_event_key_get_modifiers(ev, &modifiers);
+        unsigned int keycode = 0;
+        tizen_core_wl_event_key_get_keycode(ev, &keycode);
+        char* dev_identifier = nullptr;
+        tizen_core_wl_event_input_base_get_device_identifier(ev,
+                                                             &dev_identifier);
+
+        bool handled = false;
+        if (self->input_method_context_ &&
+            self->input_method_context_->IsInputPanelShown()) {
+          handled =
+              self->input_method_context_->HandleTcoreWlEventKey(event, true);
+        }
+        if (!handled) {
+          self->view_delegate_->OnKey(keyname, keysymbol, compose, modifiers,
+                                      keycode, dev_identifier, true);
+        }
+        free(keyname);
+        free(keysymbol);
+        free(compose);
+        free(dev_identifier);
       },
       this, &listener);
   tcore_event_listeners_.push_back(listener);
@@ -751,97 +690,40 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
       tcore_wl_event_, TIZEN_CORE_WL_EVENT_KEY_UP,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowTcoreWl*>(data);
-        FT_LOG(Error) << "WL_EVENT_KEY_UP: [1] entered, view_delegate_="
-                      << (self->view_delegate_ ? "set" : "null")
-                      << ", event=" << event;
-        if (self->view_delegate_) {
-          FT_LOG(Error) << "WL_EVENT_KEY_UP: [2] casting event to base";
-          auto* ev = static_cast<tizen_core_wl_event_input_base_h>(event);
-          FT_LOG(Error) << "WL_EVENT_KEY_UP: [3] ev=" << ev;
-
-          FT_LOG(Error) << "WL_EVENT_KEY_UP: [4] getting event window";
-          tizen_core_wl_window_h event_window = nullptr;
-          int ret_get_window =
-              tizen_core_wl_event_input_base_get_window(ev, &event_window);
-          FT_LOG(Error) << "WL_EVENT_KEY_UP: [5] get_window ret="
-                        << ret_get_window << ", event_window=" << event_window
-                        << ", self_window=" << self->tcore_wl_window_;
-
-          if (event_window == self->tcore_wl_window_) {
-            FT_LOG(Error)
-                << "WL_EVENT_KEY_UP: [6] window matched, extracting key info";
-
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [7] getting keyname";
-            char* keyname = nullptr;
-            tizen_core_wl_event_key_get_keyname(ev, &keyname);
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [8] keyname="
-                          << (keyname ? keyname : "null");
-
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [9] getting keysymbol";
-            char* keysymbol = nullptr;
-            tizen_core_wl_event_key_get_keysymbol(ev, &keysymbol);
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [10] keysymbol="
-                          << (keysymbol ? keysymbol : "null");
-
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [11] getting compose";
-            char* compose = nullptr;
-            tizen_core_wl_event_key_get_compose(ev, &compose);
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [12] compose="
-                          << (compose ? compose : "null");
-
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [13] getting modifiers";
-            unsigned int modifiers = 0;
-            tizen_core_wl_event_key_get_modifiers(ev, &modifiers);
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [14] modifiers=" << modifiers;
-
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [15] getting keycode";
-            unsigned int keycode = 0;
-            tizen_core_wl_event_key_get_keycode(ev, &keycode);
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [16] keycode=" << keycode;
-
-            FT_LOG(Error)
-                << "WL_EVENT_KEY_UP: [17] checking input_method_context_="
-                << (self->input_method_context_ ? "set" : "null");
-            bool handled = false;
-            if (self->input_method_context_) {
-              FT_LOG(Error)
-                  << "WL_EVENT_KEY_UP: [18] calling IsInputPanelShown";
-              bool panel_shown =
-                  self->input_method_context_->IsInputPanelShown();
-              FT_LOG(Error)
-                  << "WL_EVENT_KEY_UP: [19] IsInputPanelShown=" << panel_shown;
-              if (panel_shown) {
-                FT_LOG(Error) << "WL_EVENT_KEY_UP: [20] input panel shown, "
-                                 "calling HandleTcoreWlEventKey";
-                handled = self->input_method_context_->HandleTcoreWlEventKey(
-                    event, false);
-                FT_LOG(Error)
-                    << "WL_EVENT_KEY_UP: [21] IMF handled=" << handled;
-              } else {
-                FT_LOG(Error) << "WL_EVENT_KEY_UP: [22] input panel NOT shown";
-              }
-            } else {
-              FT_LOG(Error)
-                  << "WL_EVENT_KEY_UP: [23] input_method_context_ is null";
-            }
-            if (!handled) {
-              FT_LOG(Error)
-                  << "WL_EVENT_KEY_UP: [24] calling view_delegate_->OnKey";
-              self->view_delegate_->OnKey(keyname, keysymbol, compose,
-                                          modifiers, keycode, nullptr, false);
-              FT_LOG(Error) << "WL_EVENT_KEY_UP: [25] OnKey returned";
-            }
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [26] freeing keyname";
-            free(keyname);
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [27] freeing keysymbol";
-            free(keysymbol);
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [28] freeing compose";
-            free(compose);
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: [29] done";
-          } else {
-            FT_LOG(Error) << "WL_EVENT_KEY_UP: event window mismatch, ignoring";
-          }
+        if (!self->view_delegate_) {
+          return;
         }
+        auto* ev = static_cast<tizen_core_wl_event_input_base_h>(event);
+        tizen_core_wl_window_h event_window = nullptr;
+        tizen_core_wl_event_input_base_get_window(ev, &event_window);
+        if (event_window != self->tcore_wl_window_) {
+          return;
+        }
+
+        char* keyname = nullptr;
+        tizen_core_wl_event_key_get_keyname(ev, &keyname);
+        char* keysymbol = nullptr;
+        tizen_core_wl_event_key_get_keysymbol(ev, &keysymbol);
+        char* compose = nullptr;
+        tizen_core_wl_event_key_get_compose(ev, &compose);
+        unsigned int modifiers = 0;
+        tizen_core_wl_event_key_get_modifiers(ev, &modifiers);
+        unsigned int keycode = 0;
+        tizen_core_wl_event_key_get_keycode(ev, &keycode);
+
+        bool handled = false;
+        if (self->input_method_context_ &&
+            self->input_method_context_->IsInputPanelShown()) {
+          handled =
+              self->input_method_context_->HandleTcoreWlEventKey(event, false);
+        }
+        if (!handled) {
+          self->view_delegate_->OnKey(keyname, keysymbol, compose, modifiers,
+                                      keycode, nullptr, false);
+        }
+        free(keyname);
+        free(keysymbol);
+        free(compose);
       },
       this, &listener);
   tcore_event_listeners_.push_back(listener);

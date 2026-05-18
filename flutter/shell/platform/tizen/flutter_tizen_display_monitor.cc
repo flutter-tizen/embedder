@@ -28,8 +28,10 @@ void FlutterTizenDisplayMonitor::UpdateDisplays() {
   display.display_id = 0;
   display.single_display = true;
 
-  // Default to 60Hz refresh rate since the Tizen platform does not
-  // provide a direct API to query the display refresh rate.
+  // TODO(jsuya): Default to 60Hz refresh rate. The previous implementation
+  // used ecore_animator_frametime_get(), which is no longer available after
+  // dropping the Ecore dependency. Replace this once tizen-core (or another
+  // public Tizen API) exposes a way to query the display refresh rate.
   display.refresh_rate = 60.0;
 
   int32_t width = 0, height = 0, dpi = 0;

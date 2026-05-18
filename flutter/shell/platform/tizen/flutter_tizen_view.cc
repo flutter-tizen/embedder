@@ -250,13 +250,6 @@ void FlutterTizenView::OnKey(const char* key,
                              uint32_t scan_code,
                              const char* device_name,
                              bool is_down) {
-  FT_LOG(Error) << "OnKey: key=" << (key ? key : "null")
-                << ", string=" << (string ? string : "null")
-                << ", compose=" << (compose ? compose : "null")
-                << ", modifiers=" << modifiers << ", scan_code=" << scan_code
-                << ", device_name=" << (device_name ? device_name : "null")
-                << ", is_down=" << is_down;
-
   if (is_down) {
     FT_LOG(Info) << "Key symbol: " << key << ", code: 0x" << std::setw(8)
                  << std::setfill('0') << std::right << std::hex << scan_code;
@@ -264,7 +257,6 @@ void FlutterTizenView::OnKey(const char* key,
 
   // Do not handle the TV system menu key.
   if (strcmp(key, kSysMenuKey) == 0) {
-    FT_LOG(Error) << "OnKey: ignoring system menu key";
     return;
   }
 
@@ -274,36 +266,25 @@ void FlutterTizenView::OnKey(const char* key,
   }
 
   if (text_input_channel_) {
-    FT_LOG(Error) << "OnKey: sending to text_input_channel_";
     if (text_input_channel_->SendKey(key, string, compose, modifiers, scan_code,
                                      is_down)) {
-      FT_LOG(Error) << "OnKey: handled by text_input_channel_";
       return;
     }
-    FT_LOG(Error) << "OnKey: not handled by text_input_channel_";
-  } else {
-    FT_LOG(Error) << "OnKey: text_input_channel_ is null";
   }
 
   if (platform_view_channel_) {
-    FT_LOG(Error) << "OnKey: sending to platform_view_channel_";
     if (platform_view_channel_->SendKey(key, string, compose, modifiers,
                                         scan_code, is_down)) {
-      FT_LOG(Error) << "OnKey: handled by platform_view_channel_";
       return;
     }
-    FT_LOG(Error) << "OnKey: not handled by platform_view_channel_";
   }
 
   if (engine_->keyboard_channel()) {
-    FT_LOG(Error) << "OnKey: sending to keyboard_channel_";
     bool& backkey_handled = backkey_handled_;
     engine_->keyboard_channel()->SendKey(
         key, string, compose, modifiers, scan_code, is_down,
         [engine = engine_.get(), symbol = std::string(key), is_down,
          &backkey_handled](bool handled) {
-          FT_LOG(Error) << "OnKey: keyboard_channel_ callback, handled="
-                        << handled << ", symbol=" << symbol;
           // If System's back key is handled in key-down, it should be
           // handled so that "popRoute" is not called in key-up.
           if (symbol == kBackKey) {
@@ -325,33 +306,22 @@ void FlutterTizenView::OnKey(const char* key,
             ui_app_exit();
           }
         });
-  } else {
-    FT_LOG(Error) << "OnKey: keyboard_channel_ is null";
   }
 }
 
 void FlutterTizenView::OnComposeBegin() {
-  FT_LOG(Error) << "OnComposeBegin: text_input_channel_="
-                << (text_input_channel_ ? "set" : "null");
   text_input_channel_->OnComposeBegin();
 }
 
 void FlutterTizenView::OnComposeChange(const std::string& str, int cursor_pos) {
-  FT_LOG(Error) << "OnComposeChange: str=" << str
-                << ", cursor_pos=" << cursor_pos << ", text_input_channel_="
-                << (text_input_channel_ ? "set" : "null");
   text_input_channel_->OnComposeChange(str, cursor_pos);
 }
 
 void FlutterTizenView::OnComposeEnd() {
-  FT_LOG(Error) << "OnComposeEnd: text_input_channel_="
-                << (text_input_channel_ ? "set" : "null");
   text_input_channel_->OnComposeEnd();
 }
 
 void FlutterTizenView::OnCommit(const std::string& str) {
-  FT_LOG(Error) << "OnCommit: str=" << str << ", text_input_channel_="
-                << (text_input_channel_ ? "set" : "null");
   text_input_channel_->OnCommit(str);
 }
 

@@ -88,30 +88,15 @@ void TizenViewNui::OnKey(const char* device_name,
                          uint32_t scan_code,
                          size_t timestamp,
                          bool is_down) {
-  FT_LOG(Error) << "TizenViewNui::OnKey: key=" << (key ? key : "null")
-                << ", string=" << (string ? string : "null")
-                << ", compose=" << (compose ? compose : "null")
-                << ", modifiers=" << modifiers << ", scan_code=" << scan_code
-                << ", device_name=" << (device_name ? device_name : "null")
-                << ", device_class=" << device_class
-                << ", device_subclass=" << device_subclass
-                << ", timestamp=" << timestamp << ", is_down=" << is_down;
-
   bool handled = false;
 
   if (input_method_context_->IsInputPanelShown()) {
-    FT_LOG(Error) << "TizenViewNui::OnKey: input panel shown, passing to "
-                     "HandleNuiKeyEvent";
     handled = input_method_context_->HandleNuiKeyEvent(
         device_name, device_class, device_subclass, key, string, modifiers,
         scan_code, timestamp, is_down);
-    FT_LOG(Error) << "TizenViewNui::OnKey: IMF handled=" << handled;
-  } else {
-    FT_LOG(Error) << "TizenViewNui::OnKey: input panel NOT shown";
   }
 
   if (!handled) {
-    FT_LOG(Error) << "TizenViewNui::OnKey: forwarding to view_delegate_->OnKey";
     view_delegate_->OnKey(key, string, compose, modifiers, scan_code,
                           device_name, is_down);
   }
