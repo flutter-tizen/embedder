@@ -674,7 +674,15 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
               self->input_method_context_->HandleTcoreWlEventKey(event, true);
         }
         if (!handled) {
-          self->view_delegate_->OnKey(keyname, keysymbol, compose, modifiers,
+          // Match TizenWindowEcoreWl2 OnKey arg semantics:
+          //   param 1 (key)    = XKB key symbol name (e.g. "period")
+          //   param 2 (string) = composed printable string (e.g. ".")
+          // tcore's keysymbol corresponds to ecore's key_event->key, and
+          // tcore's compose corresponds to ecore's key_event->string.
+          // Passing keysymbol as `string` breaks the printable-key fallback
+          // in TextInputChannel::HandleKey() for keys whose symbol name is
+          // multi-char ("period", "minus", "equal", ...).
+          self->view_delegate_->OnKey(keysymbol, compose, compose, modifiers,
                                       keycode, dev_identifier, true);
         }
         free(keyname);
@@ -718,7 +726,8 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
               self->input_method_context_->HandleTcoreWlEventKey(event, false);
         }
         if (!handled) {
-          self->view_delegate_->OnKey(keyname, keysymbol, compose, modifiers,
+          // See key-down handler for the keysymbol vs compose rationale.
+          self->view_delegate_->OnKey(keysymbol, compose, compose, modifiers,
                                       keycode, nullptr, false);
         }
         free(keyname);
