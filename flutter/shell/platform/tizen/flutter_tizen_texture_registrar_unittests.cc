@@ -4,7 +4,11 @@
 
 #include "flutter/shell/platform/tizen/flutter_tizen_texture_registrar.h"
 
+#ifdef USE_TCORE_WL
 #include <tizen_core_wl.h>
+#else
+#include <Ecore.h>
+#endif
 
 #include <iostream>
 
@@ -18,7 +22,13 @@ namespace testing {
 
 class FlutterTizenTextureRegistrarTest : public ::testing::Test {
  public:
-  FlutterTizenTextureRegistrarTest() { tizen_core_wl_init(); }
+  FlutterTizenTextureRegistrarTest() {
+#ifdef USE_TCORE_WL
+    tizen_core_wl_init();
+#else
+    ecore_init();
+#endif
+  }
 
  protected:
   void SetUp() {

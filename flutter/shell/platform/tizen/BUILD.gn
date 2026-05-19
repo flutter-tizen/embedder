@@ -297,6 +297,10 @@ executable("flutter_tizen_unittests") {
 
   ldflags = [ "-Wl,--unresolved-symbols=ignore-in-shared-libs" ]
 
+  if (use_tcore) {
+    defines = [ "USE_TCORE_WL" ]
+  }
+
   configs += [ ":flutter_tizen_config" ]
 
   deps += [
