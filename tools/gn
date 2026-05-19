@@ -120,6 +120,16 @@ def parse_args(args):
 def main():
   args = parse_args(sys.argv)
 
+  if args.use_tcore:
+    try:
+      api_value = float(args.api_version)
+    except ValueError:
+      api_value = 0.0
+    if api_value < 10.0:
+      sys.exit('--use-tcore requires --api-version 10.0 or higher '
+               '(tizen-core packages are only published for Tizen 11+). '
+               'Got --api-version {}.'.format(args.api_version))
+
   root_dir = Path(__file__).parent.parent.resolve()
   gn = root_dir / 'third_party' / 'gn' / 'gn'
   command = [gn, 'gen', '--check', '--export-compile-commands']

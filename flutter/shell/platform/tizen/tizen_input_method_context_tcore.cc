@@ -4,6 +4,8 @@
 
 #include "tizen_input_method_context_tcore.h"
 
+#include <tizen_core_wl.h>
+
 #include "flutter/shell/platform/tizen/logger.h"
 
 namespace {

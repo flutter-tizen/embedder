@@ -6,7 +6,6 @@
 #define EMBEDDER_TIZEN_INPUT_METHOD_CONTEXT_H_
 
 #include <tizen_core_imf.h>
-#include <tizen_core_wl.h>
 
 #include <functional>
 #include <string>
