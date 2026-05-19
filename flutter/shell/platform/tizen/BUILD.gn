@@ -115,13 +115,13 @@ template("embedder") {
     # Select window implementation based on use_tcore
     if (use_tcore) {
       sources += [
-        "tizen_window_tcore_wl.cc",
         "tizen_input_method_context_tcore.cc",
+        "tizen_window_tcore_wl.cc",
       ]
     } else {
       sources += [
-        "tizen_window_ecore_wl2.cc",
         "tizen_input_method_context.cc",
+        "tizen_window_ecore_wl2.cc",
       ]
     }
 
