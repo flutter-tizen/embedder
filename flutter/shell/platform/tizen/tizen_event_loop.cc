@@ -100,10 +100,15 @@ TizenPlatformEventLoop::TizenPlatformEventLoop(
 TizenPlatformEventLoop::~TizenPlatformEventLoop() {}
 
 void TizenPlatformEventLoop::OnTaskExpired() {
-  for (const Task& task : expired_tasks_) {
+  std::vector<Task> local_expired_tasks;
+  {
+    std::lock_guard<std::mutex> lock(expired_tasks_mutex_);
+    local_expired_tasks = std::move(expired_tasks_);
+  }
+
+  for (const Task& task : local_expired_tasks) {
     on_task_expired_(&task.task);
   }
-  expired_tasks_.clear();
 }
 
 }  // namespace flutter
