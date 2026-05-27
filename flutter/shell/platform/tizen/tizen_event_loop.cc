@@ -104,7 +104,6 @@ void TizenPlatformEventLoop::OnTaskExpired() {
   {
     std::lock_guard<std::mutex> lock(expired_tasks_mutex_);
     local_expired_tasks = std::move(expired_tasks_);
-    expired_tasks_.clear();
   }
 
   for (const Task& task : local_expired_tasks) {
