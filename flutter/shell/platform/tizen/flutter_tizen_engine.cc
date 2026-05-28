@@ -471,7 +471,7 @@ void FlutterTizenEngine::SetSemanticsEnabled(bool enabled) {
 void FlutterTizenEngine::OnUpdateSemantics(
     const FlutterSemanticsUpdate2* update) {
   if (!accessibility_bridge_) {
-    FT_LOG(Error) << "The accessibility bridge must be initialized.";
+    FT_LOG(Debug) << "The accessibility bridge must be initialized.";
     return;
   }
 
