@@ -4,6 +4,8 @@
 
 #include "tizen_input_method_context.h"
 
+#include <cstring>
+
 #include "flutter/shell/platform/tizen/logger.h"
 
 namespace {
@@ -115,6 +117,27 @@ T EcoreEventKeyToEcoreImfEvent(Ecore_Event_Key* event) {
   return imf_event;
 }
 
+bool IsNavigationOrSystemKey(const char* key) {
+  if (!key) {
+    return false;
+  }
+  // Multimedia / system / TV remote keys.
+  if (strncmp(key, "XF86", 4) == 0) {
+    return true;
+  }
+  // Directional and action keys used for app/remote navigation.
+  static const char* kNavigationKeys[] = {
+      "Up",      "Down",     "Left",   "Right",    "KP_Up",  "KP_Down",
+      "KP_Left", "KP_Right", "Return", "KP_Enter", "Select",
+  };
+  for (const char* nav_key : kNavigationKeys) {
+    if (strcmp(key, nav_key) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
 namespace flutter {
@@ -165,8 +188,10 @@ TizenInputMethodContext::~TizenInputMethodContext() {
 
 bool TizenInputMethodContext::HandleEcoreEventKey(Ecore_Event_Key* event,
                                                   bool is_down) {
-  FT_ASSERT(imf_context_);
   FT_ASSERT(event);
+  if (!imf_context_) {
+    return false;
+  }
 
   Ecore_IMF_Event imf_event;
   if (is_down) {
@@ -192,7 +217,7 @@ bool TizenInputMethodContext::HandleNuiKeyEvent(const char* device_name,
                                                 uint32_t scan_code,
                                                 size_t timestamp,
                                                 bool is_down) {
-  Ecore_Event_Key event;
+  Ecore_Event_Key event = {};
   event.keyname = event.key = key ? key : "";
   event.string = string ? string : "";
   event.modifiers = modifiers;
@@ -227,39 +252,80 @@ bool TizenInputMethodContext::HandleNuiKeyEvent(const char* device_name,
 #endif
 
 InputPanelGeometry TizenInputMethodContext::GetInputPanelGeometry() {
-  FT_ASSERT(imf_context_);
   InputPanelGeometry geometry;
+  if (!imf_context_) {
+    return geometry;
+  }
   ecore_imf_context_input_panel_geometry_get(
       imf_context_, &geometry.x, &geometry.y, &geometry.w, &geometry.h);
   return geometry;
 }
 
 void TizenInputMethodContext::ResetInputMethodContext() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
   ecore_imf_context_reset(imf_context_);
 }
 
 void TizenInputMethodContext::ShowInputPanel() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
   ecore_imf_context_input_panel_show(imf_context_);
-  ecore_imf_context_focus_in(imf_context_);
 }
 
 void TizenInputMethodContext::HideInputPanel() {
-  FT_ASSERT(imf_context_);
-  ecore_imf_context_focus_out(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
   ecore_imf_context_input_panel_hide(imf_context_);
 }
 
+void TizenInputMethodContext::SetEditingActive(bool active) {
+  if (!imf_context_) {
+    return;
+  }
+  editing_active_ = active;
+  if (active) {
+    ecore_imf_context_focus_in(imf_context_);
+  } else {
+    ecore_imf_context_focus_out(imf_context_);
+  }
+}
+
+void TizenInputMethodContext::SetInputPanelEnabled(bool enabled) {
+  if (!imf_context_) {
+    return;
+  }
+  ecore_imf_context_input_panel_enabled_set(imf_context_, enabled);
+}
+
+bool TizenInputMethodContext::ShouldFilterKey(const char* key) {
+  if (!imf_context_) {
+    return false;
+  }
+  if (IsInputPanelShown()) {
+    return true;
+  }
+  return editing_active_ && !IsNavigationOrSystemKey(key);
+}
+
 bool TizenInputMethodContext::IsInputPanelShown() {
+  if (!imf_context_) {
+    return false;
+  }
   Ecore_IMF_Input_Panel_State state =
       ecore_imf_context_input_panel_state_get(imf_context_);
-  return state == ECORE_IMF_INPUT_PANEL_STATE_SHOW;
+  return state == ECORE_IMF_INPUT_PANEL_STATE_SHOW ||
+         state == ECORE_IMF_INPUT_PANEL_STATE_WILL_SHOW;
 }
 
 void TizenInputMethodContext::SetInputPanelLayout(
     const std::string& input_type) {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
   Ecore_IMF_Input_Panel_Layout panel_layout =
       TextInputTypeToEcoreImfInputPanelLayout(input_type);
   ecore_imf_context_input_panel_layout_set(imf_context_, panel_layout);
@@ -267,6 +333,9 @@ void TizenInputMethodContext::SetInputPanelLayout(
 
 void TizenInputMethodContext::SetInputPanelLayoutVariation(bool is_signed,
                                                            bool is_decimal) {
+  if (!imf_context_) {
+    return;
+  }
   Ecore_IMF_Input_Panel_Layout_Numberonly_Variation variation;
   if (is_signed && is_decimal) {
     variation =
@@ -282,6 +351,9 @@ void TizenInputMethodContext::SetInputPanelLayoutVariation(bool is_signed,
 }
 
 void TizenInputMethodContext::SetAutocapitalType(const std::string& type) {
+  if (!imf_context_) {
+    return;
+  }
   Ecore_IMF_Autocapital_Type autocapital_type = ECORE_IMF_AUTOCAPITAL_TYPE_NONE;
 
   if (type == "TextCapitalization.characters") {
@@ -356,7 +428,9 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
 }
 
 void TizenInputMethodContext::UnregisterEventCallbacks() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
   ecore_imf_context_event_callback_del(
       imf_context_, ECORE_IMF_CALLBACK_COMMIT,
       event_callbacks_[ECORE_IMF_CALLBACK_COMMIT]);
@@ -418,7 +492,9 @@ void TizenInputMethodContext::InputPanelStateChangedCallback(
 }
 
 void TizenInputMethodContext::RegisterInputPanelEventCallback() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
 
   ecore_imf_context_input_panel_event_callback_add(
       imf_context_, ECORE_IMF_INPUT_PANEL_STATE_EVENT,
@@ -426,7 +502,9 @@ void TizenInputMethodContext::RegisterInputPanelEventCallback() {
 }
 
 void TizenInputMethodContext::UnregisterInputPanelEventCallback() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
 
   ecore_imf_context_input_panel_event_callback_del(
       imf_context_, ECORE_IMF_INPUT_PANEL_STATE_EVENT,
