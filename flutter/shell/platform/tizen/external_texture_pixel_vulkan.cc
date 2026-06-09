@@ -49,7 +49,8 @@ bool ExternalTexturePixelVulkan::PopulateVulkanTexture(
   }
 
   VkDeviceSize required_staging_size =
-      pixel_buffer->width * pixel_buffer->height * 4;
+      static_cast<VkDeviceSize>(pixel_buffer->width) *
+      static_cast<VkDeviceSize>(pixel_buffer->height) * 4;
   if (!CreateOrUpdateBuffer(required_staging_size)) {
     FT_LOG(Error) << "Fail to create buffer";
     ReleaseBuffer();
