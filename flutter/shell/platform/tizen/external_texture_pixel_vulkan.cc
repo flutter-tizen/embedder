@@ -244,7 +244,7 @@ bool ExternalTexturePixelVulkan::AllocateMemory(
   return true;
 }
 
-VkDevice ExternalTexturePixelVulkan::GetDevice() {
+VkDevice ExternalTexturePixelVulkan::GetDevice() const {
   return static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle());
 }
 

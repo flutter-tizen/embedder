@@ -31,7 +31,7 @@ class ExternalTextureSurfaceVulkanBuffer {
 
  protected:
   VkFormat ConvertFormat(tbm_format& format);
-  VkDevice GetDevice();
+  VkDevice GetDevice() const;
 
  private:
   TizenRendererVulkan* vulkan_renderer_ = nullptr;

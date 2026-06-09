@@ -31,7 +31,7 @@ VkFormat ExternalTextureSurfaceVulkanBuffer::ConvertFormat(tbm_format& format) {
   }
 }
 
-VkDevice ExternalTextureSurfaceVulkanBuffer::GetDevice() {
+VkDevice ExternalTextureSurfaceVulkanBuffer::GetDevice() const {
   return static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle());
 }
 
