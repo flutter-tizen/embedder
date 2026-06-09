@@ -6,6 +6,8 @@
 #include "flutter/shell/platform/tizen/external_texture_surface_vulkan_buffer_dma.h"
 #include "flutter/shell/platform/tizen/logger.h"
 
+#include <vector>
+
 namespace flutter {
 
 ExternalTextureSurfaceVulkan::ExternalTextureSurfaceVulkan(
@@ -92,7 +94,7 @@ bool ExternalTextureSurfaceVulkan::IsSupportDisjoint(
   }
 
   bool is_disjoint = false;
-  uint32_t tfd[num_bos];
+  std::vector<uint32_t> tfd(num_bos);
   for (int i = 0; i < num_bos; i++) {
     tbm_bo bo = tbm_surface_internal_get_bo(tbm_surface, i);
     tfd[i] = tbm_bo_get_handle(bo, TBM_DEVICE_3D).u32;
