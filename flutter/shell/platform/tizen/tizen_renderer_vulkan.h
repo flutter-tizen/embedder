@@ -51,6 +51,9 @@ class TizenRendererVulkan : public TizenRenderer {
   bool Present(const FlutterVulkanImage* image);
   VkCommandBuffer BeginSingleTimeCommands();
   void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+  bool FindMemoryType(uint32_t type_filter,
+                      VkMemoryPropertyFlags properties,
+                      uint32_t& index_out);
 
  private:
   bool CreateCommandPool();

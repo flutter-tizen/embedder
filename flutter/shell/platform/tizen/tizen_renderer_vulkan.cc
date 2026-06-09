@@ -1022,4 +1022,21 @@ void TizenRendererVulkan::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
                        &commandBuffer);
 }
 
+bool TizenRendererVulkan::FindMemoryType(uint32_t type_filter,
+                                         VkMemoryPropertyFlags properties,
+                                         uint32_t& index_out) {
+  VkPhysicalDeviceMemoryProperties memory_properties;
+  vkGetPhysicalDeviceMemoryProperties(physical_device_, &memory_properties);
+
+  for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
+    if ((type_filter & (1 << i)) &&
+        (memory_properties.memoryTypes[i].propertyFlags & properties) ==
+            properties) {
+      index_out = i;
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace flutter

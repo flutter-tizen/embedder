@@ -36,9 +36,6 @@ class ExternalTexturePixelVulkan : public ExternalVulkanTexture {
   VkDevice GetDevice();
   void ReleaseBuffer();
   void ReleaseImage();
-  bool FindMemoryType(uint32_t typeFilter,
-                      VkMemoryPropertyFlags properties,
-                      uint32_t& index_out);
   FlutterDesktopPixelBufferTextureCallback texture_callback_ = nullptr;
   size_t width_ = 0;
   size_t height_ = 0;

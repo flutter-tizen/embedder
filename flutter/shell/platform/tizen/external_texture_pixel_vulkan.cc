@@ -37,6 +37,11 @@ bool ExternalTexturePixelVulkan::PopulateVulkanTexture(
     return false;
   }
 
+  if (!pixel_buffer->buffer) {
+    FT_LOG(Error) << "pixel_buffer->buffer is nullptr";
+    return false;
+  }
+
   if (!CreateOrUpdateImage(pixel_buffer->width, pixel_buffer->height)) {
     FT_LOG(Error) << "Fail to create image";
     ReleaseImage();
@@ -127,27 +132,6 @@ bool ExternalTexturePixelVulkan::CreateImage(size_t width, size_t height) {
   return true;
 }
 
-bool ExternalTexturePixelVulkan::FindMemoryType(
-    uint32_t type_filter,
-    VkMemoryPropertyFlags properties,
-    uint32_t& index_out) {
-  VkPhysicalDeviceMemoryProperties memory_properties;
-  vkGetPhysicalDeviceMemoryProperties(
-      static_cast<VkPhysicalDevice>(
-          vulkan_renderer_->GetPhysicalDeviceHandle()),
-      &memory_properties);
-
-  for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
-    if ((type_filter & (1 << i)) &&
-        (memory_properties.memoryTypes[i].propertyFlags & properties) ==
-            properties) {
-      index_out = i;
-      return true;
-    }
-  }
-  return false;
-}
-
 bool ExternalTexturePixelVulkan::CreateBuffer(VkDeviceSize required_size) {
   VkBufferCreateInfo buffer_info{};
   buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -197,7 +181,12 @@ void ExternalTexturePixelVulkan::ReleaseBuffer() {
 void ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
                                                    VkDeviceSize size) {
   void* data;
-  vkMapMemory(GetDevice(), staging_buffer_memory_, 0, size, 0, &data);
+  VkResult result =
+      vkMapMemory(GetDevice(), staging_buffer_memory_, 0, size, 0, &data);
+  if (result != VK_SUCCESS) {
+    FT_LOG(Error) << "Failed to map staging buffer memory";
+    return;
+  }
   memcpy(data, src_buffer, static_cast<size_t>(size));
   vkUnmapMemory(GetDevice(), staging_buffer_memory_);
   VkCommandBuffer command_buffer = vulkan_renderer_->BeginSingleTimeCommands();
@@ -237,8 +226,8 @@ bool ExternalTexturePixelVulkan::AllocateMemory(
     VkDeviceMemory& memory,
     VkMemoryPropertyFlags properties) {
   uint32_t memory_type_index;
-  if (!FindMemoryType(memory_requirements.memoryTypeBits, properties,
-                      memory_type_index)) {
+  if (!vulkan_renderer_->FindMemoryType(memory_requirements.memoryTypeBits,
+                                        properties, memory_type_index)) {
     FT_LOG(Error) << "Fail to find memory type";
     return false;
   }
