@@ -109,6 +109,14 @@ dali_integration_devel_packages = [
   'dali2-integration-devel',
   'dali2-adaptor-integration-devel',
   'dali2-toolkit-integration-devel',
+  'tizen-core',
+  'tizen-core-devel',
+  'tizen-core-imf',
+  'tizen-core-imf-devel',
+  'tizen-core-wl',
+  'tizen-core-wl-devel',
+  'libwayland-egl-tizen',
+  'libwayland-egl-tizen-devel',
 ]
 
 def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):

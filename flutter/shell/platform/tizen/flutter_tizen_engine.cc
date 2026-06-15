@@ -15,7 +15,11 @@
 #include "flutter/shell/platform/tizen/flutter_tizen_view.h"
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/system_utils.h"
+#ifdef USE_TCORE_WL
+#include "flutter/shell/platform/tizen/tizen_input_method_context_tcore.h"
+#else
 #include "flutter/shell/platform/tizen/tizen_input_method_context.h"
+#endif
 #include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
 
 #ifdef FLUTTER_TIZEN_EXPERIMENTAL

@@ -335,7 +335,6 @@ bool TextInputChannel::HandleKey(const char* key,
     return true;
 #endif
   } else {
-    FT_LOG(Info) << "Key[" << key << "] is unhandled.";
     return false;
   }
 

@@ -4,7 +4,11 @@
 
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 
+#ifdef USE_TCORE_WL
+#include <tizen_core_wl.h>
+#else
 #include <Ecore.h>
+#endif
 
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/tizen/testing/engine_modifier.h"
@@ -15,7 +19,13 @@ namespace testing {
 
 class FlutterTizenEngineTest : public ::testing::Test {
  public:
-  FlutterTizenEngineTest() { ecore_init(); }
+  FlutterTizenEngineTest() {
+#ifdef USE_TCORE_WL
+    tizen_core_wl_init();
+#else
+    ecore_init();
+#endif
+  }
 
  protected:
   void SetUp() {

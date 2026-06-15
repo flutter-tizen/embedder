@@ -19,15 +19,15 @@
 // legacy RawKeyboard API is removed from the framework in the future.
 extern std::map<uint32_t, uint32_t> kScanCodeToGtkKeyCode;
 
-// Maps Ecore modifiers to GTK modifiers.
+// Maps Tizen modifier bitmask values to GTK modifiers.
 //
-// The values are originally defined in:
-// - efl/Ecore_Input.h
-// - flutter/raw_keyboard_linux.dart (GtkKeyHelper)
+// The modifier bitmask values match tizen_core_wl_modifier_e.
+// The GTK modifier values are from flutter/raw_keyboard_linux.dart
+// (GtkKeyHelper).
 //
 // Provided only for backward compatibility. This will be removed after the
 // legacy RawKeyboard API is removed from the framework in the future.
-extern std::map<int, int> kEcoreModifierToGtkModifier;
+extern std::map<int, int> kModifierToGtkModifier;
 
 // Maps XKB scan codes to Flutter's physical key codes.
 //

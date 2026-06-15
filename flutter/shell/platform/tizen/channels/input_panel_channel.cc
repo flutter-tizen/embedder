@@ -7,7 +7,11 @@
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/event_stream_handler_functions.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
 #include "flutter/shell/platform/tizen/logger.h"
+#ifdef USE_TCORE_WL
+#include "flutter/shell/platform/tizen/tizen_input_method_context_tcore.h"
+#else
 #include "flutter/shell/platform/tizen/tizen_input_method_context.h"
+#endif
 
 namespace {
 

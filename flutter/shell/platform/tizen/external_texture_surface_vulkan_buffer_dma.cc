@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/tizen/external_texture_surface_vulkan_buffer_dma.h"
+
+#include <unistd.h>
+
 #include "flutter/shell/platform/tizen/logger.h"
 
 namespace flutter {

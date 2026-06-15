@@ -3,7 +3,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <Ecore.h>
 #include <system_info.h>
 
 #include "flutter/shell/platform/tizen/flutter_tizen_display_monitor.h"
@@ -29,12 +28,11 @@ void FlutterTizenDisplayMonitor::UpdateDisplays() {
   display.display_id = 0;
   display.single_display = true;
 
-  double fps = ecore_animator_frametime_get();
-  if (fps <= 0.0) {
-    display.refresh_rate = 0.0;
-  } else {
-    display.refresh_rate = 1 / fps;
-  }
+  // TODO(jsuya): Default to 60Hz refresh rate. The previous implementation
+  // used ecore_animator_frametime_get(), which is no longer available after
+  // dropping the Ecore dependency. Replace this once tizen-core (or another
+  // public Tizen API) exposes a way to query the display refresh rate.
+  display.refresh_rate = 60.0;
 
   int32_t width = 0, height = 0, dpi = 0;
   FlutterTizenView* view = engine_->view();

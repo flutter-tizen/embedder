@@ -164,7 +164,7 @@ void KeyboardChannel::SendChannelEvent(const char* key,
   }
 
   int gtk_modifiers = 0;
-  for (auto element : kEcoreModifierToGtkModifier) {
+  for (auto element : kModifierToGtkModifier) {
     if (element.first & modifiers) {
       gtk_modifiers |= element.second;
     }

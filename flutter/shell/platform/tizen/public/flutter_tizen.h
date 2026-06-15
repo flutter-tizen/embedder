@@ -206,7 +206,7 @@ FLUTTER_EXPORT void FlutterDesktopViewDestroy(FlutterDesktopViewRef view);
 // Returns a native UI toolkit handle for manipulation in host application.
 //
 // Cast the returned void*
-// - window ecore wl2   : to Ecore_Wl2_Window*
+// - window ecore wl2   : to tizen_core_wl_window_h
 // @warning This API is a work-in-progress and may change.
 FLUTTER_EXPORT void* FlutterDesktopViewGetNativeHandle(
     FlutterDesktopViewRef view);

@@ -177,7 +177,7 @@ std::map<uint32_t, uint32_t> kScanCodeToGtkKeyCode = {
     {0x0000024d, 269025069},  // launchScreenSaver
 };
 
-std::map<int, int> kEcoreModifierToGtkModifier = {
+std::map<int, int> kModifierToGtkModifier = {
     {0x0001, 1 << 0},   // SHIFT -> modifierShift
     {0x0002, 1 << 2},   // CTRL -> modifierControl
     {0x0004, 1 << 3},   // ALT -> modifierMod1
