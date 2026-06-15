@@ -211,9 +211,17 @@ bool TizenWindowTcoreWl::CreateWindow(void* window_handle) {
   tizen_core_wl_display_private_get_wl_display(tcore_wl_display_,
                                                &wl2_display_);
 
-  tizen_core_wl_display_sync(tcore_wl_display_);
+  if (tizen_core_wl_display_sync(tcore_wl_display_) !=
+      TIZEN_CORE_WL_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to sync tizen core wl display.";
+    return false;
+  }
 
-  tizen_core_wl_display_get_event(tcore_wl_display_, &tcore_wl_event_);
+  if (tizen_core_wl_display_get_event(tcore_wl_display_, &tcore_wl_event_) !=
+      TIZEN_CORE_WL_ERROR_NONE) {
+    FT_LOG(Error) << "Could not get tizen core wl event handle.";
+    return false;
+  }
 
   int32_t width = 0, height = 0;
   GList* output_list = nullptr;
@@ -439,12 +447,21 @@ void TizenWindowTcoreWl::ShowUnsupportedToast() {
 }
 #endif
 
-void TizenWindowTcoreWl::RegisterEventHandlers() {
+void TizenWindowTcoreWl::AddEventListener(tizen_core_wl_event_type_e type,
+                                          tizen_core_wl_event_cb callback) {
   tizen_core_wl_event_listener_h listener = nullptr;
+  if (tizen_core_wl_event_add_listener(tcore_wl_event_, type, callback, this,
+                                       &listener) != TIZEN_CORE_WL_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to add tizen core wl event listener.";
+    return;
+  }
+  tcore_event_listeners_.push_back(listener);
+}
 
+void TizenWindowTcoreWl::RegisterEventHandlers() {
   // Window rotation event.
-  tizen_core_wl_event_add_listener(
-      tcore_wl_event_, TIZEN_CORE_WL_EVENT_WINDOW_ROTATION,
+  AddEventListener(
+      TIZEN_CORE_WL_EVENT_WINDOW_ROTATION,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowTcoreWl*>(data);
         if (self->view_delegate_) {
@@ -467,14 +484,12 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
                 self->tcore_wl_window_, degree);
           }
         }
-      },
-      this, &listener);
-  tcore_event_listeners_.push_back(listener);
+      });
 
   // Window configure event.
   if (!is_vulkan_) {
-    tizen_core_wl_event_add_listener(
-        tcore_wl_event_, TIZEN_CORE_WL_EVENT_WINDOW_CONFIGURE_COMPLETE,
+    AddEventListener(
+        TIZEN_CORE_WL_EVENT_WINDOW_CONFIGURE_COMPLETE,
         [](void* event, tizen_core_wl_event_type_e type, void* data) {
           auto* self = static_cast<TizenWindowTcoreWl*>(data);
           if (self->view_delegate_) {
@@ -494,14 +509,12 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
               self->view_delegate_->OnResize(x, y, w, h);
             }
           }
-        },
-        this, &listener);
-    tcore_event_listeners_.push_back(listener);
+        });
   }
 
   // Mouse button down.
-  tizen_core_wl_event_add_listener(
-      tcore_wl_event_, TIZEN_CORE_WL_EVENT_MOUSE_BUTTON_DOWN,
+  AddEventListener(
+      TIZEN_CORE_WL_EVENT_MOUSE_BUTTON_DOWN,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowTcoreWl*>(data);
 #ifdef TV_PROFILE
@@ -543,13 +556,11 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
                 touch_id);
           }
         }
-      },
-      this, &listener);
-  tcore_event_listeners_.push_back(listener);
+      });
 
   // Mouse button up.
-  tizen_core_wl_event_add_listener(
-      tcore_wl_event_, TIZEN_CORE_WL_EVENT_MOUSE_BUTTON_UP,
+  AddEventListener(
+      TIZEN_CORE_WL_EVENT_MOUSE_BUTTON_UP,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowTcoreWl*>(data);
         if (self->view_delegate_) {
@@ -572,13 +583,11 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
                 touch_id);
           }
         }
-      },
-      this, &listener);
-  tcore_event_listeners_.push_back(listener);
+      });
 
   // Mouse move.
-  tizen_core_wl_event_add_listener(
-      tcore_wl_event_, TIZEN_CORE_WL_EVENT_MOUSE_MOVE,
+  AddEventListener(
+      TIZEN_CORE_WL_EVENT_MOUSE_MOVE,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowTcoreWl*>(data);
         if (self->view_delegate_) {
@@ -599,13 +608,11 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
                 touch_id);
           }
         }
-      },
-      this, &listener);
-  tcore_event_listeners_.push_back(listener);
+      });
 
   // Mouse wheel.
-  tizen_core_wl_event_add_listener(
-      tcore_wl_event_, TIZEN_CORE_WL_EVENT_MOUSE_WHEEL,
+  AddEventListener(
+      TIZEN_CORE_WL_EVENT_MOUSE_WHEEL,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowTcoreWl*>(data);
         if (self->view_delegate_) {
@@ -634,13 +641,11 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
                                            kFlutterPointerDeviceKindMouse, 0);
           }
         }
-      },
-      this, &listener);
-  tcore_event_listeners_.push_back(listener);
+      });
 
   // Key down.
-  tizen_core_wl_event_add_listener(
-      tcore_wl_event_, TIZEN_CORE_WL_EVENT_KEY_DOWN,
+  AddEventListener(
+      TIZEN_CORE_WL_EVENT_KEY_DOWN,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowTcoreWl*>(data);
         if (!self->view_delegate_) {
@@ -689,13 +694,11 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
         free(keysymbol);
         free(compose);
         free(dev_identifier);
-      },
-      this, &listener);
-  tcore_event_listeners_.push_back(listener);
+      });
 
   // Key up.
-  tizen_core_wl_event_add_listener(
-      tcore_wl_event_, TIZEN_CORE_WL_EVENT_KEY_UP,
+  AddEventListener(
+      TIZEN_CORE_WL_EVENT_KEY_UP,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
         auto* self = static_cast<TizenWindowTcoreWl*>(data);
         if (!self->view_delegate_) {
@@ -733,9 +736,7 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
         free(keyname);
         free(keysymbol);
         free(compose);
-      },
-      this, &listener);
-  tcore_event_listeners_.push_back(listener);
+      });
 }
 
 void TizenWindowTcoreWl::UnregisterEventHandlers() {
@@ -910,8 +911,7 @@ void TizenWindowTcoreWl::UpdateFlutterCursor(const std::string& kind) {
                                         kTcoreWlInputCursorThemeName);
     tizen_core_wl_seat_set_cursor_name(default_seat, cursor_name.c_str());
   } else {
-    tizen_core_wl_seat_set_cursor_theme(default_seat, "default");
-    tizen_core_wl_seat_set_cursor_name(default_seat, "left_ptr");
+    FT_LOG(Error) << "Failed to get default seat; cannot update cursor.";
   }
 #else
   tizen_core_wl_seat_h default_seat = nullptr;

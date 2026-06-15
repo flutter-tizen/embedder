@@ -42,6 +42,7 @@ class TizenClipboard {
 #ifdef USE_TCORE_WL
   tizen_core_wl_data_offer_h selection_offer_ = nullptr;
   tizen_core_wl_display_h display_ = nullptr;
+  bool owns_display_ = false;
   tizen_core_event_h tcore_wl_event_ = nullptr;
   tizen_core_wl_event_listener_h send_listener_ = nullptr;
   tizen_core_wl_event_listener_h receive_listener_ = nullptr;

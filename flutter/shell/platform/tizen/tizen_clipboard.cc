@@ -6,6 +6,9 @@
 
 #include <unistd.h>
 
+#include <cerrno>
+#include <cstring>
+
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/tizen_window.h"
 
@@ -31,11 +34,22 @@ TizenClipboard::TizenClipboard(TizenViewBase* view) {
         static_cast<tizen_core_wl_window_h>(window->GetNativeHandle());
     tizen_core_wl_window_get_display(tcore_window, &display_);
   } else {
-    // TODO(jsuya): tizen_core_wl_get_connected_display() will be deprecated.
-    tizen_core_wl_get_connected_display(nullptr, &display_);
+    if (tizen_core_wl_init() != TIZEN_CORE_WL_ERROR_NONE ||
+        tizen_core_wl_display_create(&display_) != TIZEN_CORE_WL_ERROR_NONE ||
+        tizen_core_wl_display_connect(display_, nullptr) !=
+            TIZEN_CORE_WL_ERROR_NONE) {
+      FT_LOG(Error) << "Failed to connect display for clipboard.";
+      display_ = nullptr;
+      return;
+    }
+    owns_display_ = true;
   }
 
-  tizen_core_wl_display_get_event(display_, &tcore_wl_event_);
+  if (tizen_core_wl_display_get_event(display_, &tcore_wl_event_) !=
+      TIZEN_CORE_WL_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to get event handle for clipboard.";
+    return;
+  }
 
   tizen_core_wl_event_add_listener(
       tcore_wl_event_, TIZEN_CORE_WL_EVENT_DATA_SOURCE_SEND,
@@ -62,6 +76,12 @@ TizenClipboard::~TizenClipboard() {
   }
   if (receive_listener_) {
     tizen_core_wl_event_remove_listener(tcore_wl_event_, receive_listener_);
+  }
+
+  if (owns_display_ && display_) {
+    tizen_core_wl_display_disconnect(display_);
+    tizen_core_wl_display_destroy(display_);
+    tizen_core_wl_shutdown();
   }
 }
 
@@ -101,7 +121,20 @@ void TizenClipboard::SendData(void* event) {
     return;
   }
 
-  write(fd, data_.c_str(), data_.length());
+  const char* buffer = data_.c_str();
+  size_t remaining = data_.length();
+  while (remaining > 0) {
+    ssize_t written = write(fd, buffer, remaining);
+    if (written < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+      FT_LOG(Error) << "Failed to write clipboard data: " << strerror(errno);
+      break;
+    }
+    buffer += written;
+    remaining -= written;
+  }
   close(fd);
 }
 

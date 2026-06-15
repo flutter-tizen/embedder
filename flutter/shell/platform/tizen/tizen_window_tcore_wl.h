@@ -83,6 +83,9 @@ class TizenWindowTcoreWl : public TizenWindow {
 
   void RegisterEventHandlers();
 
+  void AddEventListener(tizen_core_wl_event_type_e type,
+                        tizen_core_wl_event_cb callback);
+
   void UnregisterEventHandlers();
 
   void SetNotificationLevel(int level);
