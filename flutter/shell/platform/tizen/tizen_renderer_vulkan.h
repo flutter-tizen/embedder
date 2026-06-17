@@ -53,7 +53,7 @@ class TizenRendererVulkan : public TizenRenderer {
   void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
   bool FindMemoryType(uint32_t type_filter,
                       VkMemoryPropertyFlags properties,
-                      uint32_t& index_out);
+                      uint32_t* index_out);
 
  private:
   bool CreateCommandPool();

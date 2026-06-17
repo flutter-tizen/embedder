@@ -1023,7 +1023,7 @@ void TizenRendererVulkan::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
 
 bool TizenRendererVulkan::FindMemoryType(uint32_t type_filter,
                                          VkMemoryPropertyFlags properties,
-                                         uint32_t& index_out) {
+                                         uint32_t* index_out) {
   VkPhysicalDeviceMemoryProperties memory_properties;
   vkGetPhysicalDeviceMemoryProperties(physical_device_, &memory_properties);
 
@@ -1031,7 +1031,7 @@ bool TizenRendererVulkan::FindMemoryType(uint32_t type_filter,
     if ((type_filter & (1 << i)) &&
         (memory_properties.memoryTypes[i].propertyFlags & properties) ==
             properties) {
-      index_out = i;
+      *index_out = i;
       return true;
     }
   }

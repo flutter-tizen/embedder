@@ -237,7 +237,7 @@ bool ExternalTexturePixelVulkan::AllocateMemory(
     VkMemoryPropertyFlags properties) {
   uint32_t memory_type_index;
   if (!vulkan_renderer_->FindMemoryType(memory_requirements.memoryTypeBits,
-                                        properties, memory_type_index)) {
+                                        properties, &memory_type_index)) {
     FT_LOG(Error) << "Fail to find memory type";
     return false;
   }
