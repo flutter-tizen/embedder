@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/tizen/external_texture_surface_vulkan_buffer_dma.h"
+#include <unistd.h>
 #include "flutter/shell/platform/tizen/logger.h"
 
 namespace flutter {
@@ -129,6 +130,7 @@ bool ExternalTextureSurfaceVulkanBufferDma::AllocateAndBindMemory(
   if (vkAllocateMemory(GetDevice(), &alloc_info, nullptr,
                        &texture_device_memory_) != VK_SUCCESS) {
     FT_LOG(Error) << "Fail to allocate memory";
+    close(bo_fd);
     return false;
   }
 
@@ -137,7 +139,6 @@ bool ExternalTextureSurfaceVulkanBufferDma::AllocateAndBindMemory(
     FT_LOG(Error) << "Fail to bind image memory";
     return false;
   }
-  close(bo_fd);
   return true;
 }
 

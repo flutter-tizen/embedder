@@ -47,6 +47,7 @@ bool ExternalTextureSurfaceVulkan::CreateBuffer(
   }
   if (!vulkan_buffer_->AllocateAndBindMemory(tbm_surface)) {
     FT_LOG(Error) << "Fail to allocate memory";
+    vulkan_buffer_->ReleaseImage();
     return false;
   }
 

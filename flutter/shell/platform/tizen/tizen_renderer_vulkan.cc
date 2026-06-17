@@ -102,7 +102,7 @@ bool TizenRendererVulkan::InitVulkan(TizenViewBase* view) {
 }
 
 void TizenRendererVulkan::Cleanup() {
-  if (logical_device_) {
+  if (logical_device_ != VK_NULL_HANDLE) {
     // Ensure all GPU work is complete before destroying anything.
     vkDeviceWaitIdle(logical_device_);
 
@@ -749,7 +749,6 @@ bool TizenRendererVulkan::InitializeSwapchain() {
     FT_LOG(Error) << "Could not get swap chain images count";
     return false;
   }
-  // swapchain_images_.reserve(image_count);
   swapchain_images_.resize(image_count);
   if (vkGetSwapchainImagesKHR(logical_device_, swapchain_, &image_count,
                               swapchain_images_.data()) != VK_SUCCESS) {
