@@ -113,7 +113,7 @@ bool ExternalTextureSurfaceVulkanBufferDma::AllocateAndBindMemory(
   int bo_fd = tbm_bo_export_fd(bo);
   int bo_size = tbm_bo_size(bo);
 
-  uint32_t memory_type_index = -1;
+  uint32_t memory_type_index = 0;
   if (!GetFdMemoryTypeIndex(bo_fd, memory_type_index)) {
     FT_LOG(Error) << "Fail to get memory type index";
     return false;
