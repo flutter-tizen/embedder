@@ -32,7 +32,11 @@ VkDeviceMemory ExternalTextureSurfaceVulkanBufferDma::GetMemory() {
 bool ExternalTextureSurfaceVulkanBufferDma::CreateImage(
     tbm_surface_h tbm_surface) {
   tbm_surface_info_s tbm_surface_info;
-  tbm_surface_get_info(tbm_surface, &tbm_surface_info);
+  if (tbm_surface_get_info(tbm_surface, &tbm_surface_info) !=
+      TBM_SURFACE_ERROR_NONE) {
+    FT_LOG(Error) << "Fail to get tbm_surface info";
+    return false;
+  }
   texture_format_ = ConvertFormat(tbm_surface_info.format);
 
   VkExternalMemoryImageCreateInfoKHR external_image_create_info = {};
