@@ -32,7 +32,7 @@ class ExternalTexturePixelVulkan : public ExternalVulkanTexture {
   bool CreateImage(size_t width, size_t height);
   bool CreateOrUpdateBuffer(VkDeviceSize required_size);
   bool CreateOrUpdateImage(size_t width, size_t height);
-  void CopyBufferToImage(const uint8_t* src_buffer, VkDeviceSize size);
+  bool CopyBufferToImage(const uint8_t* src_buffer, VkDeviceSize size);
   VkDevice GetDevice() const;
   void ReleaseBuffer();
   void ReleaseImage();

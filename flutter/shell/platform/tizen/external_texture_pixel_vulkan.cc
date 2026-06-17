@@ -60,7 +60,10 @@ bool ExternalTexturePixelVulkan::PopulateVulkanTexture(
   width_ = pixel_buffer->width;
   height_ = pixel_buffer->height;
 
-  CopyBufferToImage(pixel_buffer->buffer, required_staging_size);
+  if (!CopyBufferToImage(pixel_buffer->buffer, required_staging_size)) {
+    FT_LOG(Error) << "Failed to copy buffer to image";
+    return false;
+  }
 
   FlutterVulkanTexture* vulkan_texture =
       static_cast<FlutterVulkanTexture*>(flutter_texture);
@@ -179,18 +182,23 @@ void ExternalTexturePixelVulkan::ReleaseBuffer() {
   staging_buffer_size_ = 0;
 }
 
-void ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
+bool ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
                                                    VkDeviceSize size) {
   void* data;
   VkResult result =
       vkMapMemory(GetDevice(), staging_buffer_memory_, 0, size, 0, &data);
   if (result != VK_SUCCESS) {
     FT_LOG(Error) << "Failed to map staging buffer memory";
-    return;
+    return false;
   }
   memcpy(data, src_buffer, static_cast<size_t>(size));
   vkUnmapMemory(GetDevice(), staging_buffer_memory_);
+
   VkCommandBuffer command_buffer = vulkan_renderer_->BeginSingleTimeCommands();
+  if (command_buffer == VK_NULL_HANDLE) {
+    FT_LOG(Error) << "Failed to begin single time commands";
+    return false;
+  }
 
   VkBufferImageCopy region{};
   region.bufferOffset = 0;
@@ -208,6 +216,7 @@ void ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
   vulkan_renderer_->EndSingleTimeCommands(command_buffer);
+  return true;
 }
 
 void ExternalTexturePixelVulkan::ReleaseImage() {
