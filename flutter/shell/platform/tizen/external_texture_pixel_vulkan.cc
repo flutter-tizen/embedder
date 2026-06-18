@@ -42,6 +42,12 @@ bool ExternalTexturePixelVulkan::PopulateVulkanTexture(
     return false;
   }
 
+  if (pixel_buffer->width == 0 || pixel_buffer->height == 0) {
+    FT_LOG(Error) << "Invalid pixel buffer dimensions: " << pixel_buffer->width
+                  << "x" << pixel_buffer->height;
+    return false;
+  }
+
   if (!CreateOrUpdateImage(pixel_buffer->width, pixel_buffer->height)) {
     FT_LOG(Error) << "Fail to create image";
     ReleaseImage();
