@@ -142,6 +142,7 @@ bool ExternalTextureSurfaceVulkanBufferDma::AllocateAndBindMemory(
   if (vkBindImageMemory(GetDevice(), texture_image_, texture_device_memory_,
                         0u) != VK_SUCCESS) {
     FT_LOG(Error) << "Fail to bind image memory";
+    close(bo_fd);
     return false;
   }
   return true;
