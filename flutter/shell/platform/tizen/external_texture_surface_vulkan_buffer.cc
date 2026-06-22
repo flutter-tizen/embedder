@@ -31,28 +31,7 @@ VkFormat ExternalTextureSurfaceVulkanBuffer::ConvertFormat(tbm_format& format) {
   }
 }
 
-bool ExternalTextureSurfaceVulkanBuffer::FindMemoryType(
-    uint32_t type_filter,
-    VkMemoryPropertyFlags properties,
-    uint32_t& index_out) {
-  VkPhysicalDeviceMemoryProperties memory_properties;
-  vkGetPhysicalDeviceMemoryProperties(
-      static_cast<VkPhysicalDevice>(
-          vulkan_renderer_->GetPhysicalDeviceHandle()),
-      &memory_properties);
-
-  for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
-    if ((type_filter & (1 << i)) &&
-        (memory_properties.memoryTypes[i].propertyFlags & properties) ==
-            properties) {
-      index_out = i;
-      return true;
-    }
-  }
-  return false;
-}
-
-VkDevice ExternalTextureSurfaceVulkanBuffer::GetDevice() {
+VkDevice ExternalTextureSurfaceVulkanBuffer::GetDevice() const {
   return static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle());
 }
 

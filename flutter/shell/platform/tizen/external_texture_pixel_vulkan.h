@@ -32,13 +32,10 @@ class ExternalTexturePixelVulkan : public ExternalVulkanTexture {
   bool CreateImage(size_t width, size_t height);
   bool CreateOrUpdateBuffer(VkDeviceSize required_size);
   bool CreateOrUpdateImage(size_t width, size_t height);
-  void CopyBufferToImage(const uint8_t* src_buffer, VkDeviceSize size);
-  VkDevice GetDevice();
+  bool CopyBufferToImage(const uint8_t* src_buffer, VkDeviceSize size);
+  VkDevice GetDevice() const;
   void ReleaseBuffer();
   void ReleaseImage();
-  bool FindMemoryType(uint32_t typeFilter,
-                      VkMemoryPropertyFlags properties,
-                      uint32_t& index_out);
   FlutterDesktopPixelBufferTextureCallback texture_callback_ = nullptr;
   size_t width_ = 0;
   size_t height_ = 0;

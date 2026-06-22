@@ -37,6 +37,17 @@ bool ExternalTexturePixelVulkan::PopulateVulkanTexture(
     return false;
   }
 
+  if (!pixel_buffer->buffer) {
+    FT_LOG(Error) << "pixel_buffer->buffer is nullptr";
+    return false;
+  }
+
+  if (pixel_buffer->width == 0 || pixel_buffer->height == 0) {
+    FT_LOG(Error) << "Invalid pixel buffer dimensions: " << pixel_buffer->width
+                  << "x" << pixel_buffer->height;
+    return false;
+  }
+
   if (!CreateOrUpdateImage(pixel_buffer->width, pixel_buffer->height)) {
     FT_LOG(Error) << "Fail to create image";
     ReleaseImage();
@@ -44,7 +55,8 @@ bool ExternalTexturePixelVulkan::PopulateVulkanTexture(
   }
 
   VkDeviceSize required_staging_size =
-      pixel_buffer->width * pixel_buffer->height * 4;
+      static_cast<VkDeviceSize>(pixel_buffer->width) *
+      static_cast<VkDeviceSize>(pixel_buffer->height) * 4;
   if (!CreateOrUpdateBuffer(required_staging_size)) {
     FT_LOG(Error) << "Fail to create buffer";
     ReleaseBuffer();
@@ -54,7 +66,10 @@ bool ExternalTexturePixelVulkan::PopulateVulkanTexture(
   width_ = pixel_buffer->width;
   height_ = pixel_buffer->height;
 
-  CopyBufferToImage(pixel_buffer->buffer, required_staging_size);
+  if (!CopyBufferToImage(pixel_buffer->buffer, required_staging_size)) {
+    FT_LOG(Error) << "Failed to copy buffer to image";
+    return false;
+  }
 
   FlutterVulkanTexture* vulkan_texture =
       static_cast<FlutterVulkanTexture*>(flutter_texture);
@@ -127,27 +142,6 @@ bool ExternalTexturePixelVulkan::CreateImage(size_t width, size_t height) {
   return true;
 }
 
-bool ExternalTexturePixelVulkan::FindMemoryType(
-    uint32_t type_filter,
-    VkMemoryPropertyFlags properties,
-    uint32_t& index_out) {
-  VkPhysicalDeviceMemoryProperties memory_properties;
-  vkGetPhysicalDeviceMemoryProperties(
-      static_cast<VkPhysicalDevice>(
-          vulkan_renderer_->GetPhysicalDeviceHandle()),
-      &memory_properties);
-
-  for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
-    if ((type_filter & (1 << i)) &&
-        (memory_properties.memoryTypes[i].propertyFlags & properties) ==
-            properties) {
-      index_out = i;
-      return true;
-    }
-  }
-  return false;
-}
-
 bool ExternalTexturePixelVulkan::CreateBuffer(VkDeviceSize required_size) {
   VkBufferCreateInfo buffer_info{};
   buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -194,13 +188,23 @@ void ExternalTexturePixelVulkan::ReleaseBuffer() {
   staging_buffer_size_ = 0;
 }
 
-void ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
+bool ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
                                                    VkDeviceSize size) {
   void* data;
-  vkMapMemory(GetDevice(), staging_buffer_memory_, 0, size, 0, &data);
+  VkResult result =
+      vkMapMemory(GetDevice(), staging_buffer_memory_, 0, size, 0, &data);
+  if (result != VK_SUCCESS) {
+    FT_LOG(Error) << "Failed to map staging buffer memory";
+    return false;
+  }
   memcpy(data, src_buffer, static_cast<size_t>(size));
   vkUnmapMemory(GetDevice(), staging_buffer_memory_);
+
   VkCommandBuffer command_buffer = vulkan_renderer_->BeginSingleTimeCommands();
+  if (command_buffer == VK_NULL_HANDLE) {
+    FT_LOG(Error) << "Failed to begin single time commands";
+    return false;
+  }
 
   VkBufferImageCopy region{};
   region.bufferOffset = 0;
@@ -218,6 +222,7 @@ void ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
   vulkan_renderer_->EndSingleTimeCommands(command_buffer);
+  return true;
 }
 
 void ExternalTexturePixelVulkan::ReleaseImage() {
@@ -237,8 +242,8 @@ bool ExternalTexturePixelVulkan::AllocateMemory(
     VkDeviceMemory& memory,
     VkMemoryPropertyFlags properties) {
   uint32_t memory_type_index;
-  if (!FindMemoryType(memory_requirements.memoryTypeBits, properties,
-                      memory_type_index)) {
+  if (!vulkan_renderer_->FindMemoryType(memory_requirements.memoryTypeBits,
+                                        properties, &memory_type_index)) {
     FT_LOG(Error) << "Fail to find memory type";
     return false;
   }
@@ -255,7 +260,7 @@ bool ExternalTexturePixelVulkan::AllocateMemory(
   return true;
 }
 
-VkDevice ExternalTexturePixelVulkan::GetDevice() {
+VkDevice ExternalTexturePixelVulkan::GetDevice() const {
   return static_cast<VkDevice>(vulkan_renderer_->GetDeviceHandle());
 }
 

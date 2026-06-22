@@ -102,7 +102,7 @@ bool TizenRendererVulkan::InitVulkan(TizenViewBase* view) {
 }
 
 void TizenRendererVulkan::Cleanup() {
-  if (logical_device_) {
+  if (logical_device_ != VK_NULL_HANDLE) {
     // Ensure all GPU work is complete before destroying anything.
     vkDeviceWaitIdle(logical_device_);
 
@@ -749,7 +749,6 @@ bool TizenRendererVulkan::InitializeSwapchain() {
     FT_LOG(Error) << "Could not get swap chain images count";
     return false;
   }
-  // swapchain_images_.reserve(image_count);
   swapchain_images_.resize(image_count);
   if (vkGetSwapchainImagesKHR(logical_device_, swapchain_, &image_count,
                               swapchain_images_.data()) != VK_SUCCESS) {
@@ -1020,6 +1019,26 @@ void TizenRendererVulkan::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
 
   vkFreeCommandBuffers(logical_device_, swapchain_command_pool_, 1,
                        &commandBuffer);
+}
+
+bool TizenRendererVulkan::FindMemoryType(uint32_t type_filter,
+                                         VkMemoryPropertyFlags properties,
+                                         uint32_t* index_out) {
+  if (!index_out) {
+    return false;
+  }
+  VkPhysicalDeviceMemoryProperties memory_properties;
+  vkGetPhysicalDeviceMemoryProperties(physical_device_, &memory_properties);
+
+  for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
+    if ((type_filter & (1 << i)) &&
+        (memory_properties.memoryTypes[i].propertyFlags & properties) ==
+            properties) {
+      *index_out = i;
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace flutter

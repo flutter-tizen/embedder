@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/tizen/external_texture_surface_vulkan_buffer_dma.h"
+#include <unistd.h>
 #include "flutter/shell/platform/tizen/logger.h"
 
 namespace flutter {
@@ -31,7 +32,11 @@ VkDeviceMemory ExternalTextureSurfaceVulkanBufferDma::GetMemory() {
 bool ExternalTextureSurfaceVulkanBufferDma::CreateImage(
     tbm_surface_h tbm_surface) {
   tbm_surface_info_s tbm_surface_info;
-  tbm_surface_get_info(tbm_surface, &tbm_surface_info);
+  if (tbm_surface_get_info(tbm_surface, &tbm_surface_info) !=
+      TBM_SURFACE_ERROR_NONE) {
+    FT_LOG(Error) << "Fail to get tbm_surface info";
+    return false;
+  }
   texture_format_ = ConvertFormat(tbm_surface_info.format);
 
   VkExternalMemoryImageCreateInfoKHR external_image_create_info = {};
@@ -108,9 +113,10 @@ bool ExternalTextureSurfaceVulkanBufferDma::AllocateAndBindMemory(
   int bo_fd = tbm_bo_export_fd(bo);
   int bo_size = tbm_bo_size(bo);
 
-  uint32_t memory_type_index = -1;
+  uint32_t memory_type_index = 0;
   if (!GetFdMemoryTypeIndex(bo_fd, memory_type_index)) {
     FT_LOG(Error) << "Fail to get memory type index";
+    close(bo_fd);
     return false;
   }
 
@@ -129,15 +135,16 @@ bool ExternalTextureSurfaceVulkanBufferDma::AllocateAndBindMemory(
   if (vkAllocateMemory(GetDevice(), &alloc_info, nullptr,
                        &texture_device_memory_) != VK_SUCCESS) {
     FT_LOG(Error) << "Fail to allocate memory";
+    close(bo_fd);
     return false;
   }
 
   if (vkBindImageMemory(GetDevice(), texture_image_, texture_device_memory_,
                         0u) != VK_SUCCESS) {
     FT_LOG(Error) << "Fail to bind image memory";
+    close(bo_fd);
     return false;
   }
-  close(bo_fd);
   return true;
 }
 
