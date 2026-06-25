@@ -26,7 +26,7 @@ class ExternalTexturePixelVulkan : public ExternalVulkanTexture {
 
  private:
   bool AllocateMemory(const VkMemoryRequirements& memory_requirements,
-                      VkDeviceMemory& memory,
+                      VkDeviceMemory* memory,
                       VkMemoryPropertyFlags properties);
   bool CreateBuffer(VkDeviceSize required_size);
   bool CreateImage(size_t width, size_t height);
