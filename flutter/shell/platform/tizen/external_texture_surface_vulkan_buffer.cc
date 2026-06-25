@@ -11,7 +11,8 @@ ExternalTextureSurfaceVulkanBuffer::ExternalTextureSurfaceVulkanBuffer(
     TizenRendererVulkan* vulkan_renderer)
     : vulkan_renderer_(vulkan_renderer) {}
 
-VkFormat ExternalTextureSurfaceVulkanBuffer::ConvertFormat(tbm_format& format) {
+VkFormat ExternalTextureSurfaceVulkanBuffer::ConvertFormat(
+    const tbm_format& format) {
   switch (format) {
     case TBM_FORMAT_NV12:
     case TBM_FORMAT_NV21:
