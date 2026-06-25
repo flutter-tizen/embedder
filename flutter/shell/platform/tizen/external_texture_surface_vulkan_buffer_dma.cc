@@ -70,7 +70,7 @@ bool ExternalTextureSurfaceVulkanBufferDma::CreateImage(
   return true;
 }
 
-VkResult ExternalTextureSurfaceVulkanBufferDma::GetMemoryFdPropertiesKHR(
+bool ExternalTextureSurfaceVulkanBufferDma::GetMemoryFdPropertiesKHR(
     VkDevice device,
     VkExternalMemoryHandleTypeFlagBits handleType,
     int fd,
@@ -80,9 +80,10 @@ VkResult ExternalTextureSurfaceVulkanBufferDma::GetMemoryFdPropertiesKHR(
           GetDevice(), "vkGetMemoryFdPropertiesKHR");
   if (!pfn_memory_fd_properties) {
     FT_LOG(Error) << "Fail to get vkGetMemoryFdPropertiesKHR";
-    return VK_ERROR_EXTENSION_NOT_PRESENT;
+    return false;
   }
-  return pfn_memory_fd_properties(device, handleType, fd, pMemoryFdProperties);
+  VkResult result = pfn_memory_fd_properties(device, handleType, fd, pMemoryFdProperties);
+  return result == VK_SUCCESS;
 }
 
 bool ExternalTextureSurfaceVulkanBufferDma::GetFdMemoryTypeIndex(
@@ -91,9 +92,9 @@ bool ExternalTextureSurfaceVulkanBufferDma::GetFdMemoryTypeIndex(
   VkMemoryFdPropertiesKHR memory_fd_properties = {};
   memory_fd_properties.sType = VK_STRUCTURE_TYPE_MEMORY_FD_PROPERTIES_KHR;
 
-  if (GetMemoryFdPropertiesKHR(GetDevice(),
-                               VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
-                               fd, &memory_fd_properties) != VK_SUCCESS) {
+  if (!GetMemoryFdPropertiesKHR(GetDevice(),
+                                VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
+                                fd, &memory_fd_properties)) {
     FT_LOG(Error) << "Fail to get memory fd properties";
     return false;
   }
