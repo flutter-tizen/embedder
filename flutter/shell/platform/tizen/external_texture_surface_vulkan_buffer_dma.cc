@@ -88,7 +88,11 @@ bool ExternalTextureSurfaceVulkanBufferDma::GetMemoryFdPropertiesKHR(
 
 bool ExternalTextureSurfaceVulkanBufferDma::GetFdMemoryTypeIndex(
     int fd,
-    uint32_t& index_out) {
+    uint32_t* index_out) {
+  if (index_out == nullptr) {
+    return false;
+  }
+
   VkMemoryFdPropertiesKHR memory_fd_properties = {};
   memory_fd_properties.sType = VK_STRUCTURE_TYPE_MEMORY_FD_PROPERTIES_KHR;
 
@@ -101,7 +105,7 @@ bool ExternalTextureSurfaceVulkanBufferDma::GetFdMemoryTypeIndex(
 
   for (uint32_t mem_idx = 0; mem_idx < VK_MAX_MEMORY_TYPES; mem_idx++) {
     if (memory_fd_properties.memoryTypeBits & (1 << mem_idx)) {
-      index_out = mem_idx;
+      *index_out = mem_idx;
       return true;
     }
   }
@@ -115,7 +119,7 @@ bool ExternalTextureSurfaceVulkanBufferDma::AllocateAndBindMemory(
   int bo_size = tbm_bo_size(bo);
 
   uint32_t memory_type_index = 0;
-  if (!GetFdMemoryTypeIndex(bo_fd, memory_type_index)) {
+  if (!GetFdMemoryTypeIndex(bo_fd, &memory_type_index)) {
     FT_LOG(Error) << "Fail to get memory type index";
     close(bo_fd);
     return false;

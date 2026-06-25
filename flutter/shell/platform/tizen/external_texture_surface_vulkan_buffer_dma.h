@@ -25,7 +25,7 @@ class ExternalTextureSurfaceVulkanBufferDma
   VkDeviceMemory GetMemory() override;
 
   private:
-   bool GetFdMemoryTypeIndex(int fd, uint32_t& index_out);
+   bool GetFdMemoryTypeIndex(int fd, uint32_t* index_out);
    bool GetMemoryFdPropertiesKHR(
        VkDevice device,
        VkExternalMemoryHandleTypeFlagBits handleType,
