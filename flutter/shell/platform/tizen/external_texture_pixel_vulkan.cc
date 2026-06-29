@@ -70,6 +70,8 @@ bool ExternalTexturePixelVulkan::PopulateVulkanTexture(
     FT_LOG(Error) << "Failed to copy buffer to image";
     ReleaseBuffer();
     ReleaseImage();
+    width_ = 0;
+    height_ = 0;
     return false;
   }
 
