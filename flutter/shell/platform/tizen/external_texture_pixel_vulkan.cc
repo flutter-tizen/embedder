@@ -246,6 +246,10 @@ bool ExternalTexturePixelVulkan::AllocateMemory(
     const VkMemoryRequirements& memory_requirements,
     VkDeviceMemory* memory,
     VkMemoryPropertyFlags properties) {
+  if (!memory) {
+    FT_LOG(Error) << "memory pointer is nullptr";
+    return false;
+  }
   uint32_t memory_type_index;
   if (!vulkan_renderer_->FindMemoryType(memory_requirements.memoryTypeBits,
                                         properties, &memory_type_index)) {
