@@ -30,7 +30,7 @@ class ExternalTextureSurfaceVulkanBuffer {
   virtual VkDeviceMemory GetMemory() = 0;
 
  protected:
-  VkFormat ConvertFormat(const tbm_format& format);
+  VkFormat ConvertFormat(tbm_format format);
   VkDevice GetDevice() const;
 
  private:
