@@ -205,6 +205,9 @@ bool ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
   VkCommandBuffer command_buffer = vulkan_renderer_->BeginSingleTimeCommands();
   if (command_buffer == VK_NULL_HANDLE) {
     FT_LOG(Error) << "Failed to begin single time commands";
+    // Note: staging buffer data was copied but won't be transferred to image
+    // due to command buffer allocation failure. The memory is properly
+    // unmapped.
     return false;
   }
 
