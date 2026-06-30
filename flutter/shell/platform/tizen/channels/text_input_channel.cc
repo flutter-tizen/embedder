@@ -136,13 +136,18 @@ void TextInputChannel::HandleMethodCall(
     if (input_type_ != kNoneInputType) {
       input_method_context_->ShowInputPanel();
     }
+    if (active_model_) {
+      input_method_context_->SetEditingActive(true);
+    }
   } else if (method.compare(kHideMethod) == 0) {
+    input_method_context_->SetEditingActive(false);
     input_method_context_->HideInputPanel();
     input_method_context_->ResetInputMethodContext();
   } else if (method.compare(kSetPlatformViewClient) == 0) {
     result->NotImplemented();
     return;
   } else if (method.compare(kClearClientMethod) == 0) {
+    input_method_context_->SetEditingActive(false);
     active_model_ = nullptr;
   } else if (method.compare(kSetClientMethod) == 0) {
     if (!method_call.arguments() || method_call.arguments()->IsNull()) {
@@ -212,14 +217,18 @@ void TextInputChannel::HandleMethodCall(
         // change. See https://github.com/flutter-tizen/engine/pull/194.
         input_method_context_->HideInputPanel();
         if (input_type_ != kNoneInputType) {
+          input_method_context_->SetInputPanelEnabled(true);
           input_method_context_->ShowInputPanel();
+        } else {
+          input_method_context_->SetInputPanelEnabled(false);
         }
       }
     }
 
-    active_model_ = std::make_unique<TextInputModel>();
-  } else if (method.compare(kSetEditingStateMethod) == 0) {
     input_method_context_->ResetInputMethodContext();
+    active_model_ = std::make_unique<TextInputModel>();
+    input_method_context_->SetEditingActive(true);
+  } else if (method.compare(kSetEditingStateMethod) == 0) {
     if (!method_call.arguments() || method_call.arguments()->IsNull()) {
       result->Error(kBadArgumentError, "Method invoked without args.");
       return;
@@ -250,8 +259,14 @@ void TextInputChannel::HandleMethodCall(
                     "Selection base/extent values invalid.");
       return;
     }
+
     int selection_base_value = selection_base->value.GetInt();
     int selection_extent_value = selection_extent->value.GetInt();
+    if (active_model_->GetText() != text->value.GetString() ||
+        !(active_model_->selection() ==
+          TextRange(selection_base_value, selection_extent_value))) {
+      input_method_context_->ResetInputMethodContext();
+    }
 
     active_model_->SetText(text->value.GetString());
     active_model_->SetSelection(
@@ -327,10 +342,16 @@ bool TextInputChannel::HandleKey(const char* key,
     active_model_->AddCodePoint(string[0]);
     needs_update = true;
   } else if (key_str == "Return") {
+    if (active_model_->composing()) {
+      input_method_context_->ResetInputMethodContext();
+    }
     EnterPressed();
     return true;
 #ifdef TV_PROFILE
   } else if (key_str == "Select") {
+    if (active_model_->composing()) {
+      input_method_context_->ResetInputMethodContext();
+    }
     SelectPressed();
     return true;
 #endif
