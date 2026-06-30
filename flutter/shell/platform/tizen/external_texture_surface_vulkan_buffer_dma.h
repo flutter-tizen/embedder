@@ -26,8 +26,7 @@ class ExternalTextureSurfaceVulkanBufferDma
 
  private:
   bool GetFdMemoryTypeIndex(int fd, uint32_t* index_out);
-  bool GetMemoryFdPropertiesKHR(VkDevice device,
-                                VkExternalMemoryHandleTypeFlagBits handleType,
+  bool GetMemoryFdPropertiesKHR(VkExternalMemoryHandleTypeFlagBits handleType,
                                 int fd,
                                 VkMemoryFdPropertiesKHR* pMemoryFdProperties);
   VkFormat texture_format_ = VK_FORMAT_UNDEFINED;
