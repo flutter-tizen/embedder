@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/tizen/external_texture_surface_vulkan_buffer.h"
 #include <vulkan/vulkan.h>
+#include "flutter/shell/platform/tizen/logger.h"
 
 namespace flutter {
 
@@ -11,7 +12,7 @@ ExternalTextureSurfaceVulkanBuffer::ExternalTextureSurfaceVulkanBuffer(
     TizenRendererVulkan* vulkan_renderer)
     : vulkan_renderer_(vulkan_renderer) {}
 
-VkFormat ExternalTextureSurfaceVulkanBuffer::ConvertFormat(tbm_format& format) {
+VkFormat ExternalTextureSurfaceVulkanBuffer::ConvertFormat(tbm_format format) {
   switch (format) {
     case TBM_FORMAT_NV12:
     case TBM_FORMAT_NV21:
@@ -27,6 +28,8 @@ VkFormat ExternalTextureSurfaceVulkanBuffer::ConvertFormat(tbm_format& format) {
     case TBM_FORMAT_BGRA8888:
       return VK_FORMAT_B8G8R8A8_UNORM;
     default:
+      FT_LOG(Warn) << "Unknown TBM format: " << format
+                   << ", returning VK_FORMAT_UNDEFINED";
       return VK_FORMAT_UNDEFINED;
   }
 }

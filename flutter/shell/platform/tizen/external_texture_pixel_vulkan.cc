@@ -68,6 +68,10 @@ bool ExternalTexturePixelVulkan::PopulateVulkanTexture(
 
   if (!CopyBufferToImage(pixel_buffer->buffer, required_staging_size)) {
     FT_LOG(Error) << "Failed to copy buffer to image";
+    ReleaseBuffer();
+    ReleaseImage();
+    width_ = 0;
+    height_ = 0;
     return false;
   }
 
@@ -129,7 +133,7 @@ bool ExternalTexturePixelVulkan::CreateImage(size_t width, size_t height) {
   VkMemoryRequirements memory_requirements;
   vkGetImageMemoryRequirements(GetDevice(), image_, &memory_requirements);
 
-  if (!AllocateMemory(memory_requirements, image_memory_,
+  if (!AllocateMemory(memory_requirements, &image_memory_,
                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
     FT_LOG(Error) << "Fail to allocate image memory";
     return false;
@@ -159,7 +163,7 @@ bool ExternalTexturePixelVulkan::CreateBuffer(VkDeviceSize required_size) {
   vkGetBufferMemoryRequirements(GetDevice(), staging_buffer_,
                                 &memory_requirements);
 
-  if (!AllocateMemory(memory_requirements, staging_buffer_memory_,
+  if (!AllocateMemory(memory_requirements, &staging_buffer_memory_,
                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
     FT_LOG(Error) << "Fail to allocate buffer memory";
@@ -203,6 +207,9 @@ bool ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
   VkCommandBuffer command_buffer = vulkan_renderer_->BeginSingleTimeCommands();
   if (command_buffer == VK_NULL_HANDLE) {
     FT_LOG(Error) << "Failed to begin single time commands";
+    // Note: staging buffer data was copied but won't be transferred to image
+    // due to command buffer allocation failure. The memory is properly
+    // unmapped.
     return false;
   }
 
@@ -239,8 +246,12 @@ void ExternalTexturePixelVulkan::ReleaseImage() {
 
 bool ExternalTexturePixelVulkan::AllocateMemory(
     const VkMemoryRequirements& memory_requirements,
-    VkDeviceMemory& memory,
+    VkDeviceMemory* memory,
     VkMemoryPropertyFlags properties) {
+  if (!memory) {
+    FT_LOG(Error) << "memory pointer is nullptr";
+    return false;
+  }
   uint32_t memory_type_index;
   if (!vulkan_renderer_->FindMemoryType(memory_requirements.memoryTypeBits,
                                         properties, &memory_type_index)) {
@@ -252,7 +263,7 @@ bool ExternalTexturePixelVulkan::AllocateMemory(
   alloc_info.allocationSize = memory_requirements.size;
   alloc_info.memoryTypeIndex = memory_type_index;
 
-  if (vkAllocateMemory(GetDevice(), &alloc_info, nullptr, &memory) !=
+  if (vkAllocateMemory(GetDevice(), &alloc_info, nullptr, memory) !=
       VK_SUCCESS) {
     FT_LOG(Error) << "Fail to allocate memory";
     return false;

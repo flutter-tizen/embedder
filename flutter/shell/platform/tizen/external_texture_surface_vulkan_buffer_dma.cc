@@ -70,8 +70,7 @@ bool ExternalTextureSurfaceVulkanBufferDma::CreateImage(
   return true;
 }
 
-VkResult ExternalTextureSurfaceVulkanBufferDma::GetMemoryFdPropertiesKHR(
-    VkDevice device,
+bool ExternalTextureSurfaceVulkanBufferDma::GetMemoryFdPropertiesKHR(
     VkExternalMemoryHandleTypeFlagBits handleType,
     int fd,
     VkMemoryFdPropertiesKHR* pMemoryFdProperties) {
@@ -80,27 +79,32 @@ VkResult ExternalTextureSurfaceVulkanBufferDma::GetMemoryFdPropertiesKHR(
           GetDevice(), "vkGetMemoryFdPropertiesKHR");
   if (!pfn_memory_fd_properties) {
     FT_LOG(Error) << "Fail to get vkGetMemoryFdPropertiesKHR";
-    return VK_ERROR_EXTENSION_NOT_PRESENT;
+    return false;
   }
-  return pfn_memory_fd_properties(device, handleType, fd, pMemoryFdProperties);
+  VkResult result = pfn_memory_fd_properties(GetDevice(), handleType, fd,
+                                             pMemoryFdProperties);
+  return result == VK_SUCCESS;
 }
 
 bool ExternalTextureSurfaceVulkanBufferDma::GetFdMemoryTypeIndex(
     int fd,
-    uint32_t& index_out) {
+    uint32_t* index_out) {
+  if (index_out == nullptr) {
+    return false;
+  }
+
   VkMemoryFdPropertiesKHR memory_fd_properties = {};
   memory_fd_properties.sType = VK_STRUCTURE_TYPE_MEMORY_FD_PROPERTIES_KHR;
 
-  if (GetMemoryFdPropertiesKHR(GetDevice(),
-                               VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
-                               fd, &memory_fd_properties) != VK_SUCCESS) {
+  if (!GetMemoryFdPropertiesKHR(VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
+                                fd, &memory_fd_properties)) {
     FT_LOG(Error) << "Fail to get memory fd properties";
     return false;
   }
 
   for (uint32_t mem_idx = 0; mem_idx < VK_MAX_MEMORY_TYPES; mem_idx++) {
     if (memory_fd_properties.memoryTypeBits & (1 << mem_idx)) {
-      index_out = mem_idx;
+      *index_out = mem_idx;
       return true;
     }
   }
@@ -114,7 +118,7 @@ bool ExternalTextureSurfaceVulkanBufferDma::AllocateAndBindMemory(
   int bo_size = tbm_bo_size(bo);
 
   uint32_t memory_type_index = 0;
-  if (!GetFdMemoryTypeIndex(bo_fd, memory_type_index)) {
+  if (!GetFdMemoryTypeIndex(bo_fd, &memory_type_index)) {
     FT_LOG(Error) << "Fail to get memory type index";
     close(bo_fd);
     return false;
