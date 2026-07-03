@@ -6,6 +6,7 @@
 #ifndef EMBEDDER_FLUTTER_TIZEN_ENGINE_H_
 #define EMBEDDER_FLUTTER_TIZEN_ENGINE_H_
 
+#include <functional>
 #include <memory>
 
 #include "flutter/shell/platform/common/accessibility_bridge.h"
@@ -170,6 +171,13 @@ class FlutterTizenEngine {
   // Notifies the engine about a new frame being available for the
   // given |texture_id|.
   bool MarkExternalTextureFrameAvailable(int64_t texture_id);
+
+  // Posts |task| onto the Flutter render (raster) thread. May be called from
+  // any thread while the engine is running. Used to tear down external-texture
+  // GPU resources on the thread that owns the GL context, after any in-flight
+  // frame callback for that texture has completed. Does nothing if the engine
+  // is not running.
+  void PostRenderThreadTask(std::function<void()> task);
 
   // Dispatch accessibility action back to the Flutter framework.
   void DispatchAccessibilityAction(uint64_t target,

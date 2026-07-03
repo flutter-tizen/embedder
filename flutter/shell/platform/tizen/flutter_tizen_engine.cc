@@ -412,6 +412,24 @@ bool FlutterTizenEngine::MarkExternalTextureFrameAvailable(int64_t texture_id) {
               engine_, texture_id) == kSuccess);
 }
 
+void FlutterTizenEngine::PostRenderThreadTask(std::function<void()> task) {
+  if (!engine_) {
+    // The engine is shutting down (or never started); posting is unsafe.
+    // Run inline so the task's cleanup still happens rather than leaking.
+    task();
+    return;
+  }
+  auto* heap_task = new std::function<void()>(std::move(task));
+  embedder_api_.PostRenderThreadTask(
+      engine_,
+      [](void* data) {
+        auto* fn = static_cast<std::function<void()>*>(data);
+        (*fn)();
+        delete fn;
+      },
+      heap_task);
+}
+
 void FlutterTizenEngine::UpdateAccessibilityFeatures(bool invert_colors,
                                                      bool high_contrast) {
   int32_t flags = 0;

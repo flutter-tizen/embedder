@@ -330,7 +330,8 @@ void FlutterDesktopTextureRegistrarUnregisterExternalTexture(
     int64_t texture_id,
     void (*callback)(void* user_data),
     void* user_data) {
-  TextureRegistrarFromHandle(texture_registrar)->UnregisterTexture(texture_id);
+  TextureRegistrarFromHandle(texture_registrar)->UnregisterTexture(
+      texture_id, callback, user_data);
 }
 
 bool FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(
