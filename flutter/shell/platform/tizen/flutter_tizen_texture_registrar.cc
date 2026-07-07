@@ -110,7 +110,15 @@ bool FlutterTizenTextureRegistrar::UnregisterTexture(int64_t texture_id,
         // glDeleteTextures in the texture's destructor targets the correct
         // context (the engine does not guarantee a current context when
         // running posted tasks).
-        if (gl_renderer) {
+        //
+        // If the engine has shut down between PostRenderThreadTask() being
+        // called and this task running, PostRenderThreadTask() runs the task
+        // inline and the renderer may already be destroyed, so skip
+        // OnMakeCurrent() to avoid touching a dangling GL context/renderer.
+        // UnregisterExternalTexture() stays unconditional: it is null-safe at
+        // the embedder boundary (a torn-down engine handle just yields an
+        // error) and is the registrar's core teardown step.
+        if (engine->IsRunning() && gl_renderer) {
           gl_renderer->OnMakeCurrent();
         }
         tex.reset();
