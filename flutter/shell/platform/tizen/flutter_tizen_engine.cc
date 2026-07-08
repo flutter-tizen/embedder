@@ -420,14 +420,19 @@ void FlutterTizenEngine::PostRenderThreadTask(std::function<void()> task) {
     return;
   }
   auto* heap_task = new std::function<void()>(std::move(task));
-  embedder_api_.PostRenderThreadTask(
-      engine_,
-      [](void* data) {
-        auto* fn = static_cast<std::function<void()>*>(data);
-        (*fn)();
-        delete fn;
-      },
-      heap_task);
+  auto callback = [](void* data) {
+    auto* fn = static_cast<std::function<void()>*>(data);
+    (*fn)();
+    delete fn;
+  };
+  if (embedder_api_.PostRenderThreadTask(engine_, callback, heap_task) !=
+      kSuccess) {
+    // The engine began shutting down between the IsRunning() check above and
+    // this call, so the render thread task runner is no longer available.
+    // Run the task inline (as the trampoline would have) so its cleanup
+    // still happens rather than leaking heap_task.
+    callback(heap_task);
+  }
 }
 
 void FlutterTizenEngine::UpdateAccessibilityFeatures(bool invert_colors,

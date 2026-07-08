@@ -175,8 +175,9 @@ class FlutterTizenEngine {
   // Posts |task| onto the Flutter render (raster) thread. May be called from
   // any thread while the engine is running. Used to tear down external-texture
   // GPU resources on the thread that owns the GL context, after any in-flight
-  // frame callback for that texture has completed. Does nothing if the engine
-  // is not running.
+  // frame callback for that texture has completed. If the engine is not
+  // running, or posting fails because shutdown began concurrently, |task|
+  // runs inline instead.
   void PostRenderThreadTask(std::function<void()> task);
 
   // Dispatch accessibility action back to the Flutter framework.
