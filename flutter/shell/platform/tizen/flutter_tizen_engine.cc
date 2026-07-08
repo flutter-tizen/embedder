@@ -412,6 +412,29 @@ bool FlutterTizenEngine::MarkExternalTextureFrameAvailable(int64_t texture_id) {
               engine_, texture_id) == kSuccess);
 }
 
+void FlutterTizenEngine::PostRenderThreadTask(std::function<void()> task) {
+  if (!engine_) {
+    // The engine is shutting down (or never started); posting is unsafe.
+    // Run inline so the task's cleanup still happens rather than leaking.
+    task();
+    return;
+  }
+  auto* heap_task = new std::function<void()>(std::move(task));
+  auto callback = [](void* data) {
+    auto* fn = static_cast<std::function<void()>*>(data);
+    (*fn)();
+    delete fn;
+  };
+  if (embedder_api_.PostRenderThreadTask(engine_, callback, heap_task) !=
+      kSuccess) {
+    // The engine began shutting down between the IsRunning() check above and
+    // this call, so the render thread task runner is no longer available.
+    // Run the task inline (as the trampoline would have) so its cleanup
+    // still happens rather than leaking heap_task.
+    callback(heap_task);
+  }
+}
+
 void FlutterTizenEngine::UpdateAccessibilityFeatures(bool invert_colors,
                                                      bool high_contrast) {
   int32_t flags = 0;

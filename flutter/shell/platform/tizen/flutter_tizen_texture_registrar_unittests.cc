@@ -98,7 +98,7 @@ TEST_F(FlutterTizenTextureRegistrarTest, RegisterUnregisterTexture) {
   EXPECT_TRUE(registrar.MarkTextureFrameAvailable(texture_id));
   EXPECT_TRUE(mark_frame_available_called);
 
-  EXPECT_TRUE(registrar.UnregisterTexture(texture_id));
+  EXPECT_TRUE(registrar.UnregisterTexture(texture_id, nullptr, nullptr));
   EXPECT_TRUE(unregister_called);
 }
 

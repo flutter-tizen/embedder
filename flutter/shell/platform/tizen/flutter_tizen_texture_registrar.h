@@ -29,8 +29,14 @@ class FlutterTizenTextureRegistrar {
 
   // Attempts to unregister the texture identified by |texture_id|.
   //
-  // Returns true if the texture was successfully unregistered.
-  bool UnregisterTexture(int64_t texture_id);
+  // The texture's GPU resources are torn down asynchronously on the render
+  // thread (after any in-flight frame callback for it has completed); the
+  // optional |callback| (invoked with |user_data|) fires once that teardown
+  // is done. Returns true if the texture was found and scheduled for
+  // unregistration.
+  bool UnregisterTexture(int64_t texture_id,
+                         void (*callback)(void* user_data),
+                         void* user_data);
 
   // Notifies the engine about a new frame being available.
   //
