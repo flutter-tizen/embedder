@@ -95,22 +95,6 @@ unified_packages = [
   'wayland-devel',
 ]
 
-# Only available for Tizen 6.5 and above.
-dali_packages = [
-  'dali2',
-  'dali2-adaptor',
-  'dali2-adaptor-devel',
-  'dali2-devel',
-  'dali2-toolkit',
-  'dali2-toolkit-devel',
-]
-
-dali_integration_devel_packages = [
-  'dali2-integration-devel',
-  'dali2-adaptor-integration-devel',
-  'dali2-toolkit-integration-devel',
-]
-
 def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
   target = 'standard'
 
@@ -153,10 +137,6 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
   existing_rpms = [f for f in download_path.iterdir() if f.suffix == '.rpm']
 
   packages = base_packages + unified_packages
-  if api_version >= 6.5:
-    packages += dali_packages
-    if api_version > 10.0:
-      packages += dali_integration_devel_packages
 
   for package in packages:
     quoted = urllib.parse.quote(package)
