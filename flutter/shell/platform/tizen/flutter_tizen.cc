@@ -220,76 +220,9 @@ FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindow(
   return HandleForView(view.release());
 }
 
-void* FlutterDesktopViewGetNativeHandle(FlutterDesktopViewRef view_ref) {
-  flutter::FlutterTizenView* view = ViewFromHandle(view_ref);
-  return view->tizen_view()->GetNativeHandle();
-}
-
 uint32_t FlutterDesktopViewGetResourceId(FlutterDesktopViewRef view_ref) {
   flutter::FlutterTizenView* view = ViewFromHandle(view_ref);
   return view->tizen_view()->GetResourceId();
-}
-
-void FlutterDesktopViewResize(FlutterDesktopViewRef view,
-                              int32_t width,
-                              int32_t height) {
-  ViewFromHandle(view)->Resize(width, height);
-}
-
-void FlutterDesktopViewOnPointerEvent(FlutterDesktopViewRef view,
-                                      FlutterDesktopPointerEventType type,
-                                      double x,
-                                      double y,
-                                      size_t timestamp,
-                                      int32_t device_id) {
-  // TODO(swift-kim): Add support for mouse devices.
-  FlutterPointerDeviceKind device_kind = kFlutterPointerDeviceKindTouch;
-  FlutterPointerMouseButtons button = kFlutterPointerButtonMousePrimary;
-
-  switch (type) {
-    case FlutterDesktopPointerEventType::kMouseDown:
-    default:
-      ViewFromHandle(view)->OnPointerDown(x, y, button, timestamp, device_kind,
-                                          device_id);
-      break;
-    case FlutterDesktopPointerEventType::kMouseUp:
-      ViewFromHandle(view)->OnPointerUp(x, y, button, timestamp, device_kind,
-                                        device_id);
-      break;
-    case FlutterDesktopPointerEventType::kMouseMove:
-      ViewFromHandle(view)->OnPointerMove(x, y, timestamp, device_kind,
-                                          device_id);
-      break;
-  }
-}
-
-void FlutterDesktopViewOnKeyEvent(FlutterDesktopViewRef view,
-                                  const char* device_name,
-                                  uint32_t device_class,
-                                  uint32_t device_subclass,
-                                  const char* key,
-                                  const char* string,
-                                  uint32_t modifiers,
-                                  uint32_t scan_code,
-                                  size_t timestamp,
-                                  bool is_down) {
-  ViewFromHandle(view)->OnKey(key, string, nullptr, modifiers, scan_code,
-                              device_name, is_down);
-}
-
-void FlutterDesktopViewSetFocus(FlutterDesktopViewRef view, bool focused) {
-  if (auto* tizen_view = dynamic_cast<flutter::TizenView*>(
-          ViewFromHandle(view)->tizen_view())) {
-    tizen_view->SetFocus(focused);
-  }
-}
-
-bool FlutterDesktopViewIsFocused(FlutterDesktopViewRef view) {
-  if (auto* tizen_view = dynamic_cast<flutter::TizenView*>(
-          ViewFromHandle(view)->tizen_view())) {
-    return tizen_view->focused();
-  }
-  return false;
 }
 
 void FlutterDesktopRegisterViewFactory(

@@ -183,47 +183,9 @@ FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindow(
 // @warning This API is a work-in-progress and may change.
 FLUTTER_EXPORT void FlutterDesktopViewDestroy(FlutterDesktopViewRef view);
 
-// Returns a native UI toolkit handle for manipulation in host application.
-//
-// Cast the returned void*
-// - window ecore wl2   : to Ecore_Wl2_Window*
-// @warning This API is a work-in-progress and may change.
-FLUTTER_EXPORT void* FlutterDesktopViewGetNativeHandle(
-    FlutterDesktopViewRef view);
-
 // Returns the resource id of current window.
 FLUTTER_EXPORT uint32_t
 FlutterDesktopViewGetResourceId(FlutterDesktopViewRef view);
-
-// Resizes the view.
-// @warning This API is a work-in-progress and may change.
-FLUTTER_EXPORT void FlutterDesktopViewResize(FlutterDesktopViewRef view,
-                                             int32_t width,
-                                             int32_t height);
-
-FLUTTER_EXPORT void FlutterDesktopViewOnPointerEvent(
-    FlutterDesktopViewRef view,
-    FlutterDesktopPointerEventType type,
-    double x,
-    double y,
-    size_t timestamp,
-    int32_t device_id);
-
-FLUTTER_EXPORT void FlutterDesktopViewOnKeyEvent(FlutterDesktopViewRef view,
-                                                 const char* device_name,
-                                                 uint32_t device_class,
-                                                 uint32_t device_subclass,
-                                                 const char* key,
-                                                 const char* string,
-                                                 uint32_t modifiers,
-                                                 uint32_t scan_code,
-                                                 size_t timestamp,
-                                                 bool is_down);
-
-FLUTTER_EXPORT void FlutterDesktopViewSetFocus(FlutterDesktopViewRef view,
-                                               bool focused);
-
-FLUTTER_EXPORT bool FlutterDesktopViewIsFocused(FlutterDesktopViewRef view);
 
 // ========== Plugin Registrar (extensions) ==========
 

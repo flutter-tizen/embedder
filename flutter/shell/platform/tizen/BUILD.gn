@@ -155,13 +155,9 @@ template("embedder") {
     }
 
     if (api_version != "6.0") {
-      sources += [
-        "tizen_clipboard.cc",
-      ]
+      sources += [ "tizen_clipboard.cc" ]
 
-      defines += [
-        "CLIPBOARD_SUPPORT",
-      ]
+      defines += [ "CLIPBOARD_SUPPORT" ]
     }
 
     configs += [
