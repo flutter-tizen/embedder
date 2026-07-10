@@ -13,9 +13,6 @@ config("flutter_tizen_config") {
   include_dirs = [
     "${sysroot_path}/usr/include/appfw",
     "${sysroot_path}/usr/include/base",
-    "${sysroot_path}/usr/include/dali",
-    "${sysroot_path}/usr/include/dali-adaptor",
-    "${sysroot_path}/usr/include/dali-toolkit",
     "${sysroot_path}/usr/include/dlog",
     "${sysroot_path}/usr/include/ecore-1",
     "${sysroot_path}/usr/include/ecore-imf-1",
@@ -159,19 +156,10 @@ template("embedder") {
 
     if (api_version != "6.0") {
       sources += [
-        "flutter_tizen_nui.cc",
         "tizen_clipboard.cc",
-        "tizen_renderer_nui_gl.cc",
-        "tizen_view_nui.cc",
-      ]
-
-      libs += [
-        "dali2-adaptor",
-        "dali2-core",
       ]
 
       defines += [
-        "NUI_SUPPORT",
         "CLIPBOARD_SUPPORT",
       ]
     }

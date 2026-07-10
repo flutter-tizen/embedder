@@ -15,10 +15,6 @@
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/public/flutter_platform_view.h"
 #include "flutter/shell/platform/tizen/tizen_view.h"
-#ifdef NUI_SUPPORT
-#include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
-#include "flutter/shell/platform/tizen/tizen_view_nui.h"
-#endif
 #include "flutter/shell/platform/tizen/tizen_window.h"
 #include "flutter/shell/platform/tizen/tizen_window_ecore_wl2.h"
 
@@ -277,16 +273,8 @@ void FlutterDesktopViewOnKeyEvent(FlutterDesktopViewRef view,
                                   uint32_t scan_code,
                                   size_t timestamp,
                                   bool is_down) {
-#ifdef NUI_SUPPORT
-  if (auto* nui_view = dynamic_cast<flutter::TizenViewNui*>(
-          ViewFromHandle(view)->tizen_view())) {
-    nui_view->OnKey(device_name, device_class, device_subclass, key, string,
-                    nullptr, modifiers, scan_code, timestamp, is_down);
-  }
-#else
   ViewFromHandle(view)->OnKey(key, string, nullptr, modifiers, scan_code,
                               device_name, is_down);
-#endif
 }
 
 void FlutterDesktopViewSetFocus(FlutterDesktopViewRef view, bool focused) {

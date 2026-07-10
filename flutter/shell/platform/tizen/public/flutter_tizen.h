@@ -83,14 +83,6 @@ typedef struct {
   bool floating_menu_support;
 } FlutterDesktopWindowProperties;
 
-// Properties for configuring the initial settings of a Flutter view.
-typedef struct {
-  // The width of the view, or the maximum width if the value is zero.
-  int32_t width;
-  // The height of the view, or the maximum height if the value is zero.
-  int32_t height;
-} FlutterDesktopViewProperties;
-
 // Properties for configuring a Flutter engine instance.
 typedef struct {
   // The path to the flutter_assets folder for the application to be run.
@@ -184,18 +176,6 @@ FLUTTER_EXPORT void FlutterDesktopEngineNotifyAppIsDetached(
 FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindow(
     const FlutterDesktopWindowProperties& window_properties,
     FlutterDesktopEngineRef engine);
-
-// Creates a view that hosts and displays the given engine instance.
-//
-// The type of |image_view| must be Dali::Toolkit::ImageView*.
-// The type of |native_image_queue| must be Dali::NativeImageSourceQueue*.
-// @warning This API is a work-in-progress and may change.
-FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopViewCreateFromImageView(
-    const FlutterDesktopViewProperties& view_properties,
-    FlutterDesktopEngineRef engine,
-    void* image_view,
-    void* native_image_queue,
-    int32_t default_window_id);
 
 // Destroys the view.
 //

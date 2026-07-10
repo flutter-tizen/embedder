@@ -8,9 +8,6 @@
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/system_utils.h"
 #include "flutter/shell/platform/tizen/tizen_view.h"
-#ifdef NUI_SUPPORT
-#include "flutter/shell/platform/tizen/tizen_view_nui.h"
-#endif
 #include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
 #include "flutter/shell/platform/tizen/tizen_window.h"
 

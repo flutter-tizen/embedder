@@ -22,11 +22,6 @@
 #include "flutter/shell/platform/tizen/tizen_renderer_vulkan.h"
 #endif
 
-#ifdef NUI_SUPPORT
-#include "flutter/shell/platform/tizen/tizen_renderer_nui_gl.h"
-#include "flutter/shell/platform/tizen/tizen_view_nui.h"
-#endif
-
 namespace flutter {
 
 namespace {
@@ -90,13 +85,6 @@ std::unique_ptr<TizenRenderer> FlutterTizenEngine::CreateRenderer(
     FlutterDesktopRendererType renderer_type) {
   switch (renderer_type) {
     case FlutterDesktopRendererType::kEGL:
-#ifdef NUI_SUPPORT
-      if (auto* nui_view =
-              dynamic_cast<flutter::TizenViewNui*>(view_->tizen_view())) {
-        return std::make_unique<TizenRendererNuiGL>(
-            nui_view, project_->HasArgument("--enable-impeller"));
-      }
-#endif
       return std::make_unique<TizenRendererEgl>(
           view_->tizen_view(), project_->HasArgument("--enable-impeller"));
     case FlutterDesktopRendererType::kEVulkan:
