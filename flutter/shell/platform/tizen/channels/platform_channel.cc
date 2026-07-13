@@ -16,7 +16,6 @@
 #include "flutter/shell/platform/tizen/channels/tizen_shell.h"
 #endif
 #include "flutter/shell/platform/tizen/logger.h"
-#include "flutter/shell/platform/tizen/tizen_view.h"
 #include "flutter/shell/platform/tizen/tizen_window.h"
 
 namespace flutter {
@@ -244,11 +243,7 @@ void PlatformChannel::HandleMethodCall(
 }
 
 void PlatformChannel::SystemNavigatorPop() {
-  if (auto* view = dynamic_cast<TizenView*>(view_)) {
-    view->SetFocus(false);
-  } else {
-    ui_app_exit();
-  }
+  ui_app_exit();
 }
 
 void PlatformChannel::PlaySystemSound(const std::string& sound_type) {

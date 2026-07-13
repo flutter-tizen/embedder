@@ -8,7 +8,6 @@
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/system_utils.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
-#include "flutter/shell/platform/tizen/tizen_view.h"
 #include "flutter/shell/platform/tizen/tizen_window.h"
 
 namespace {
@@ -95,13 +94,6 @@ void FlutterTizenView::SetupChannels() {
   input_device_channel_ = std::make_unique<InputDeviceChannel>(messenger);
   input_panel_channel_ = std::make_unique<InputPanelChannel>(
       messenger, tizen_view_->input_method_context());
-}
-
-void FlutterTizenView::Resize(int32_t width, int32_t height) {
-  TizenGeometry geometry = tizen_view_->GetGeometry();
-  geometry.width = width;
-  geometry.height = height;
-  tizen_view_->SetGeometry(geometry);
 }
 
 void FlutterTizenView::OnResize(int32_t left,
