@@ -5,7 +5,6 @@
 #include "flutter/shell/platform/tizen/tizen_renderer_gl.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
 #include "flutter/shell/platform/tizen/flutter_tizen_view.h"
-#include "flutter/shell/platform/tizen/tizen_view.h"
 #include "flutter/shell/platform/tizen/tizen_view_base.h"
 #include "flutter/shell/platform/tizen/tizen_window.h"
 

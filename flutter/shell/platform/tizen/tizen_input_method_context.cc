@@ -173,12 +173,6 @@ TizenInputMethodContext::~TizenInputMethodContext() {
   UnregisterInputPanelEventCallback();
   UnregisterEventCallbacks();
 
-#ifdef NUI_SUPPORT
-  if (ecore_device_) {
-    ecore_device_del(ecore_device_);
-  }
-#endif
-
   if (imf_context_) {
     ecore_imf_context_del(imf_context_);
   }
@@ -206,50 +200,6 @@ bool TizenInputMethodContext::HandleEcoreEventKey(Ecore_Event_Key* event,
                                           &imf_event);
   }
 }
-
-#ifdef NUI_SUPPORT
-bool TizenInputMethodContext::HandleNuiKeyEvent(const char* device_name,
-                                                uint32_t device_class,
-                                                uint32_t device_subclass,
-                                                const char* key,
-                                                const char* string,
-                                                uint32_t modifiers,
-                                                uint32_t scan_code,
-                                                size_t timestamp,
-                                                bool is_down) {
-  Ecore_Event_Key event = {};
-  event.keyname = event.key = key ? key : "";
-  event.string = string ? string : "";
-  event.modifiers = modifiers;
-  event.keycode = scan_code;
-  event.timestamp = timestamp;
-  if (device_name) {
-    if (!ecore_device_) {
-      ecore_device_ = ecore_device_add();
-    }
-
-    event.dev = ecore_device_;
-    ecore_device_name_set(event.dev, device_name);
-    ecore_device_class_set(event.dev,
-                           static_cast<Ecore_IMF_Device_Class>(device_class));
-    ecore_device_subclass_set(
-        event.dev, static_cast<Ecore_IMF_Device_Subclass>(device_subclass));
-  }
-
-  Ecore_IMF_Event imf_event;
-  if (is_down) {
-    imf_event.key_down =
-        EcoreEventKeyToEcoreImfEvent<Ecore_IMF_Event_Key_Down>(&event);
-    return ecore_imf_context_filter_event(imf_context_,
-                                          ECORE_IMF_EVENT_KEY_DOWN, &imf_event);
-  } else {
-    imf_event.key_up =
-        EcoreEventKeyToEcoreImfEvent<Ecore_IMF_Event_Key_Up>(&event);
-    return ecore_imf_context_filter_event(imf_context_, ECORE_IMF_EVENT_KEY_UP,
-                                          &imf_event);
-  }
-}
-#endif
 
 InputPanelGeometry TizenInputMethodContext::GetInputPanelGeometry() {
   InputPanelGeometry geometry;

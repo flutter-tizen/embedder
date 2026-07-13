@@ -44,8 +44,6 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   TizenViewBase* tizen_view() { return tizen_view_.get(); }
 
-  void Resize(int32_t width, int32_t height);
-
   void OnResize(int32_t left,
                 int32_t top,
                 int32_t width,
