@@ -9,8 +9,6 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include <tbm_dummy_display.h>
-#include <tbm_surface.h>
-#include <tbm_surface_queue.h>
 
 #include "flutter/shell/platform/tizen/external_texture_pixel_egl.h"
 #include "flutter/shell/platform/tizen/external_texture_surface_egl.h"

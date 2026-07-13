@@ -12,8 +12,11 @@ namespace flutter {
 TizenRenderer::TizenRenderer() {}
 
 bool TizenRenderer::CreateSurface(TizenViewBase* view) {
-  TizenGeometry geometry = view->GetGeometry();
   auto* window = dynamic_cast<TizenWindow*>(view);
+  if (!window) {
+    return false;
+  }
+  TizenGeometry geometry = view->GetGeometry();
   return CreateSurface(window->GetRenderTarget(),
                        window->GetRenderTargetDisplay(), geometry.width,
                        geometry.height);
