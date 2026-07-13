@@ -33,12 +33,6 @@ typedef enum {
 } FlutterDesktopRendererType;
 
 typedef enum {
-  kMouseDown,
-  kMouseUp,
-  kMouseMove,
-} FlutterDesktopPointerEventType;
-
-typedef enum {
   // No external output.
   kNone,
   // Display to the HDMI external output.
