@@ -1059,6 +1059,11 @@ typedef struct {
   /// that external texture details can be supplied to the engine for subsequent
   /// composition.
   FlutterVulkanTextureFrameCallback external_texture_frame_callback;
+  /// The path to the Vulkan pipeline cache data.
+  /// The string can be collected after the call to `FlutterEngineRun` returns.
+  /// The string must be NULL terminated.
+  /// If NULL, Impeller will not use the Vulkan pipeline cache.
+  const char* cache_path;
 } FlutterVulkanRendererConfig;
 
 typedef struct {

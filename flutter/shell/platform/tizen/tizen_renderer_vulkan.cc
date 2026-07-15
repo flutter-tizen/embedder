@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/tizen/tizen_renderer_vulkan.h"
 
+#include <app.h>
 #include <stddef.h>
 #include <optional>
 #include "flutter/shell/platform/tizen/external_texture_pixel_vulkan.h"
@@ -49,6 +50,11 @@ TizenRendererVulkan::TizenRendererVulkan(TizenViewBase* view) {
   FT_LOG(Info) << "Vulkan version: " << VK_VERSION_MAJOR(version) << "."
                << VK_VERSION_MINOR(version) << "." << VK_VERSION_PATCH(version);
 
+  char* cache_path = app_get_cache_path();
+  if (cache_path) {
+    cache_path_ = cache_path;
+    free(cache_path);
+  }
   InitVulkan(view);
 }
 
@@ -200,6 +206,7 @@ FlutterRendererConfig TizenRendererVulkan::GetRendererConfig() {
     return engine->texture_registrar()->PopulateVulkanTexture(texture_id, width,
                                                               height, texture);
   };
+  config.vulkan.cache_path = cache_path_.c_str();
   return config;
 }
 
