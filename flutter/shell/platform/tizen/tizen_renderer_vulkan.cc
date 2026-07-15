@@ -206,7 +206,8 @@ FlutterRendererConfig TizenRendererVulkan::GetRendererConfig() {
     return engine->texture_registrar()->PopulateVulkanTexture(texture_id, width,
                                                               height, texture);
   };
-  config.vulkan.cache_path = cache_path_.c_str();
+  config.vulkan.cache_path =
+      cache_path_.empty() ? nullptr : cache_path_.c_str();
   return config;
 }
 
