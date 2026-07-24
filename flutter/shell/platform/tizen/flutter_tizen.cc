@@ -167,15 +167,27 @@ void FlutterDesktopEngineNotifyLowMemoryWarning(
 }
 
 void FlutterDesktopEngineNotifyAppIsInactive(FlutterDesktopEngineRef engine) {
-  EngineFromHandle(engine)->lifecycle_channel()->AppIsInactive();
+  flutter::FlutterTizenEngine* tizen_engine = EngineFromHandle(engine);
+  tizen_engine->lifecycle_channel()->AppIsInactive();
+  if (tizen_engine->view()) {
+    tizen_engine->view()->OnFocus(kUnfocused);
+  }
 }
 
 void FlutterDesktopEngineNotifyAppIsResumed(FlutterDesktopEngineRef engine) {
-  EngineFromHandle(engine)->lifecycle_channel()->AppIsResumed();
+  flutter::FlutterTizenEngine* tizen_engine = EngineFromHandle(engine);
+  tizen_engine->lifecycle_channel()->AppIsResumed();
+  if (tizen_engine->view()) {
+    tizen_engine->view()->OnFocus(kFocused);
+  }
 }
 
 void FlutterDesktopEngineNotifyAppIsPaused(FlutterDesktopEngineRef engine) {
-  EngineFromHandle(engine)->lifecycle_channel()->AppIsPaused();
+  flutter::FlutterTizenEngine* tizen_engine = EngineFromHandle(engine);
+  tizen_engine->lifecycle_channel()->AppIsPaused();
+  if (tizen_engine->view()) {
+    tizen_engine->view()->OnFocus(kUnfocused);
+  }
 }
 
 void FlutterDesktopEngineNotifyAppIsDetached(FlutterDesktopEngineRef engine) {

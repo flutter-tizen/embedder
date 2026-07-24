@@ -195,6 +195,13 @@ bool FlutterTizenEngine::RunEngine() {
     auto* engine = static_cast<FlutterTizenEngine*>(user_data);
     engine->OnUpdateSemantics(update);
   };
+  args.view_focus_change_request_callback =
+      [](const FlutterViewFocusChangeRequest* request, void* user_data) {
+        auto* engine = static_cast<FlutterTizenEngine*>(user_data);
+        if (engine->view()) {
+          engine->view()->OnFocusChangeRequest(*request);
+        }
+      };
 
   if (IsHeaded() && dynamic_cast<TizenRendererEgl*>(renderer_.get())) {
     vsync_waiter_ = std::make_unique<TizenVsyncWaiter>(this);
@@ -339,6 +346,13 @@ void FlutterTizenEngine::SendKeyEvent(const FlutterKeyEvent& event,
 
 void FlutterTizenEngine::SendPointerEvent(const FlutterPointerEvent& event) {
   embedder_api_.SendPointerEvent(engine_, &event, 1);
+}
+
+void FlutterTizenEngine::SendViewFocusEvent(
+    const FlutterViewFocusEvent& event) {
+  if (engine_) {
+    embedder_api_.SendViewFocusEvent(engine_, &event);
+  }
 }
 
 void FlutterTizenEngine::SendWindowMetrics(int32_t x,

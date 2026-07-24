@@ -51,6 +51,10 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   void OnRotate(int32_t degree) override;
 
+  void OnFocus(FlutterViewFocusState focus_state);
+
+  void OnFocusChangeRequest(const FlutterViewFocusChangeRequest& request);
+
   void OnPointerMove(double x,
                      double y,
                      size_t timestamp,
