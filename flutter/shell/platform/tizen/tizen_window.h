@@ -36,6 +36,8 @@ class TizenWindow : public TizenViewBase {
 
   virtual void LowerWindow() = 0;
 
+  bool focusable() { return focusable_; }
+
  protected:
   explicit TizenWindow(TizenGeometry geometry,
                        bool transparent,

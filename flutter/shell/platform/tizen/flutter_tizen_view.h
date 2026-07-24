@@ -51,6 +51,10 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   void OnRotate(int32_t degree) override;
 
+  void OnFocus(FlutterViewFocusState focus_state);
+
+  void OnFocusChangeRequest(const FlutterViewFocusChangeRequest& request);
+
   void OnPointerMove(double x,
                      double y,
                      size_t timestamp,
@@ -165,6 +169,11 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   // Keeps track of pointer states.
   std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;
+
+  // The focus state most recently sent to the engine. Views start out
+  // unfocused. Used to avoid sending duplicate focus events when multiple
+  // lifecycle transitions map to the same focus state.
+  FlutterViewFocusState last_focus_state_ = kUnfocused;
 
   // The plugin registrar managing internal plugins.
   std::unique_ptr<PluginRegistrar> internal_plugin_registrar_;

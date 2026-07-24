@@ -144,6 +144,9 @@ class FlutterTizenEngine {
   // Informs the engine of an incoming pointer event.
   void SendPointerEvent(const FlutterPointerEvent& event);
 
+  // Informs the engine of a native view focus change.
+  void SendViewFocusEvent(const FlutterViewFocusEvent& event);
+
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical
   void SendWindowMetrics(int32_t x,
