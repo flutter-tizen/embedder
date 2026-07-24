@@ -151,6 +151,25 @@ void FlutterTizenView::OnRotate(int32_t degree) {
   SendWindowMetrics(geometry.left, geometry.top, width, height, 0.0);
 }
 
+void FlutterTizenView::OnFocus(FlutterViewFocusState focus_state) {
+  FlutterViewFocusEvent event = {};
+  event.struct_size = sizeof(event);
+  event.view_id = view_id_;
+  event.state = focus_state;
+  event.direction = FlutterViewFocusDirection::kUndefined;
+  engine_->SendViewFocusEvent(event);
+}
+
+void FlutterTizenView::OnFocusChangeRequest(
+    const FlutterViewFocusChangeRequest& request) {
+  if (request.view_id != view_id_ || request.state != kFocused) {
+    return;
+  }
+  if (auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get())) {
+    window->ActivateWindow();
+  }
+}
+
 FlutterTizenView::PointerState* FlutterTizenView::GetOrCreatePointerState(
     FlutterPointerDeviceKind device_kind,
     int32_t device_id) {
