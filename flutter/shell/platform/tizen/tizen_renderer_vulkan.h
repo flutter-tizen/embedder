@@ -105,6 +105,7 @@ class TizenRendererVulkan : public TizenRenderer {
   bool resize_pending_ = false;
   int32_t width_ = 0;
   int32_t height_ = 0;
+  std::string cache_path_;
 };
 }  // namespace flutter
 
