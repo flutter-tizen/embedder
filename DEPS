@@ -3,16 +3,16 @@
 # found in the LICENSE file.
 
 deps = {
-  'src/third_party/rapidjson': 'https://fuchsia.googlesource.com/third_party/rapidjson@ef3564c5c8824989393b87df25355baf35ff544b',
+  'src/third_party/rapidjson': 'https://flutter.googlesource.com/third_party/rapidjson@47253cab97e9cfe99dbd6b90836fc11589d7d802',
   'src/third_party/libcxx': 'https://llvm.googlesource.com/llvm-project/libcxx@bd557f6f764d1e40b62528a13b124ce740624f8f',
   'src/third_party/libcxxabi': 'https://llvm.googlesource.com/llvm-project/libcxxabi@a4dda1589d37a7e4b4f7a81ebad01b1083f2e726',
-  'src/third_party/googletest': 'https://github.com/google/googletest@7f036c5563af7d0329f20e8bb42effb04629f0c0',
-  'src/third_party/dart': 'https://dart.googlesource.com/sdk.git@e927f58e327ae13d056a16bb2ebf618e071c20a7',
+  'src/third_party/googletest': 'https://github.com/google/googletest@e9907112b47255d50b4d343e7e2160bce8dc85d1',
+  'src/third_party/dart': 'https://dart.googlesource.com/sdk.git@d684a576a6aa954ae107a03b2b4e1d61c3bebe93',
   'src/third_party/clang': {
     'packages': [
       {
         'package': 'fuchsia/third_party/clang/linux-amd64',
-        'version': 'git_revision:8c7a2ce01a77c96028fe2c8566f65c45ad9408d3'
+        'version': 'git_revision:80743bd43fd5b38fedc503308e7a652e23d3ec93'
       }
     ],
     'dep_type': 'cipd',
