@@ -177,6 +177,13 @@ FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindow(
 // @warning This API is a work-in-progress and may change.
 FLUTTER_EXPORT void FlutterDesktopViewDestroy(FlutterDesktopViewRef view);
 
+// Returns a native UI toolkit handle for manipulation in host application.
+//
+// Cast the returned void* to Ecore_Wl2_Window*.
+// @warning This API is a work-in-progress and may change.
+FLUTTER_EXPORT void* FlutterDesktopViewGetNativeHandle(
+    FlutterDesktopViewRef view);
+
 // Returns the resource id of current window.
 FLUTTER_EXPORT uint32_t
 FlutterDesktopViewGetResourceId(FlutterDesktopViewRef view);
