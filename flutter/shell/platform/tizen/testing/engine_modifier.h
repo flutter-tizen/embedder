@@ -23,6 +23,10 @@ class EngineModifier {
   // engine unless overwritten again.
   FlutterEngineProcTable& embedder_api() { return engine_->embedder_api_; }
 
+  void SetEngine(FLUTTER_API_SYMBOL(FlutterEngine) engine) {
+    engine_->engine_ = engine;
+  }
+
  private:
   FlutterTizenEngine* engine_;
 };

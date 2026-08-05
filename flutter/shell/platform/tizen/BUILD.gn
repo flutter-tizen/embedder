@@ -235,6 +235,7 @@ executable("flutter_tizen_unittests") {
     "flutter_project_bundle_unittests.cc",
     "flutter_tizen_engine_unittest.cc",
     "flutter_tizen_texture_registrar_unittests.cc",
+    "flutter_tizen_view_unittests.cc",
   ]
 
   ldflags = [ "-Wl,--unresolved-symbols=ignore-in-shared-libs" ]
