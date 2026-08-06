@@ -6,22 +6,19 @@
 #ifndef EMBEDDER_TIZEN_EVENT_LOOP_H_
 #define EMBEDDER_TIZEN_EVENT_LOOP_H_
 
-#include <Ecore.h>
+#include <glib.h>
 
-#include <atomic>
-#include <chrono>
-#include <deque>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <thread>
 
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/tizen/tizen_renderer.h"
 
 namespace flutter {
 
-typedef uint64_t (*CurrentTimeProc)();
+using CurrentTimeProc = uint64_t (*)();
 
 class TizenEventLoop {
  public:
@@ -32,61 +29,52 @@ class TizenEventLoop {
                  TaskExpiredCallback on_task_expired);
   virtual ~TizenEventLoop();
 
-  // Prevent copying.
   TizenEventLoop(const TizenEventLoop&) = delete;
   TizenEventLoop& operator=(const TizenEventLoop&) = delete;
 
   bool RunsTasksOnCurrentThread() const;
-
-  void ExecuteTaskEvents();
-
-  // Post a Flutter engine tasks to the event loop for delayed execution.
   void PostTask(FlutterTask flutter_task, uint64_t flutter_target_time_nanos);
 
-  virtual void OnTaskExpired() = 0;
+  virtual void OnTaskExpired(const FlutterTask* task) = 0;
 
  protected:
-  using TaskTimePoint = std::chrono::steady_clock::time_point;
-
-  struct Task {
-    uint64_t order;
-    TaskTimePoint fire_time;
-    FlutterTask task;
-
-    struct Comparer {
-      bool operator()(const Task& a, const Task& b) {
-        if (a.fire_time == b.fire_time) {
-          return a.order > b.order;
-        }
-        return a.fire_time > b.fire_time;
-      }
-    };
-  };
-
   std::thread::id main_thread_id_;
   CurrentTimeProc get_current_time_;
   TaskExpiredCallback on_task_expired_;
-  std::mutex task_queue_mutex_;
-  std::priority_queue<Task, std::deque<Task>, Task::Comparer> task_queue_;
-  std::vector<Task> expired_tasks_;
-  std::mutex expired_tasks_mutex_;
-  std::atomic<std::uint64_t> task_order_ = 0;
 
  private:
-  Ecore_Pipe* ecore_pipe_ = nullptr;
+  struct Task {
+    uint64_t target_time_nanos;
+    uint64_t order;
+    FlutterTask task;
 
-  // Returns a TaskTimePoint computed from the given target time from Flutter.
-  TaskTimePoint TimePointFromFlutterTime(uint64_t flutter_target_time_nanos);
+    bool operator<(const Task& other) const {
+      if (target_time_nanos == other.target_time_nanos) {
+        return order > other.order;
+      }
+      return target_time_nanos > other.target_time_nanos;
+    }
+  };
+
+  void ExecuteTaskEvents();
+  void UpdateSourceReadyTimeLocked(uint64_t now);
+
+  std::mutex task_queue_mutex_;
+  std::priority_queue<Task> task_queue_;
+  uint64_t task_order_ = 0;
+  GSource* task_source_ = nullptr;
+  // Detects destruction of this object by a task run in ExecuteTaskEvents.
+  std::shared_ptr<bool> alive_ = std::make_shared<bool>(true);
 };
 
-class TizenPlatformEventLoop : public TizenEventLoop {
+class TizenPlatformEventLoop final : public TizenEventLoop {
  public:
   TizenPlatformEventLoop(std::thread::id main_thread_id,
                          CurrentTimeProc get_current_time,
                          TaskExpiredCallback on_task_expired);
-  virtual ~TizenPlatformEventLoop();
+  ~TizenPlatformEventLoop() override = default;
 
-  virtual void OnTaskExpired() override;
+  void OnTaskExpired(const FlutterTask* task) override;
 };
 
 }  // namespace flutter

@@ -115,6 +115,7 @@ template("embedder") {
       "ecore_input",
       "ecore_wl2",
       "eina",
+      "glib-2.0",
       "gio-2.0",
       "feedback",
       "flutter_engine",
@@ -236,6 +237,7 @@ executable("flutter_tizen_unittests") {
     "flutter_tizen_engine_unittest.cc",
     "flutter_tizen_texture_registrar_unittests.cc",
     "flutter_tizen_view_unittests.cc",
+    "tizen_event_loop_unittests.cc",
   ]
 
   ldflags = [ "-Wl,--unresolved-symbols=ignore-in-shared-libs" ]

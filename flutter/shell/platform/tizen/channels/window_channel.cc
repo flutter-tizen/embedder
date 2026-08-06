@@ -8,7 +8,6 @@
 #include "flutter/shell/platform/tizen/channels/encodable_value_holder.h"
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/tizen_window.h"
-#include "flutter/shell/platform/tizen/tizen_window_ecore_wl2.h"
 
 namespace flutter {
 
