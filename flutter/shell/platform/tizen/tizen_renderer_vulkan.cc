@@ -54,6 +54,9 @@ TizenRendererVulkan::TizenRendererVulkan(TizenViewBase* view) {
   if (cache_path) {
     cache_path_ = cache_path;
     free(cache_path);
+  } else {
+    FT_LOG(Warn)
+        << "app_get_cache_path() failed. Vulkan pipeline cache is disabled.";
   }
   InitVulkan(view);
 }
