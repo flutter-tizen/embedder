@@ -34,7 +34,7 @@ FlutterTask MakeTask(uint64_t id) {
 class TizenEventLoopTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    event_loop_ = std::make_unique<TizenPlatformEventLoop>(
+    event_loop_ = std::make_unique<TizenEventLoop>(
         std::this_thread::get_id(), GetCurrentTimeNanos,
         [this](const FlutterTask* task) {
           executed_tasks_.push_back(task->task);
@@ -58,7 +58,7 @@ class TizenEventLoopTest : public ::testing::Test {
     return condition();
   }
 
-  std::unique_ptr<TizenPlatformEventLoop> event_loop_;
+  std::unique_ptr<TizenEventLoop> event_loop_;
   std::vector<uint64_t> executed_tasks_;
   uint64_t execution_time_ = 0;
   std::thread::id execution_thread_;

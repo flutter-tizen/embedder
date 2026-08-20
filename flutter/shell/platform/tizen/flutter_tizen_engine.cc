@@ -58,7 +58,7 @@ FlutterTizenEngine::FlutterTizenEngine(const FlutterProjectBundle& project)
   // Run flutter task on Tizen main loop.
   // Tizen engine has four threads (GPU thread, UI thread, IO thread, platform
   // thread). UI threads need to send flutter task to platform thread.
-  event_loop_ = std::make_unique<TizenPlatformEventLoop>(
+  event_loop_ = std::make_unique<TizenEventLoop>(
       std::this_thread::get_id(),  // main thread
       embedder_api_.GetCurrentTime, [this](const auto* task) {
         if (embedder_api_.RunTask(this->engine_, task) != kSuccess) {

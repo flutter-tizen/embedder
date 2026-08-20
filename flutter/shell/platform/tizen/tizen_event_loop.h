@@ -27,20 +27,13 @@ class TizenEventLoop {
   TizenEventLoop(std::thread::id main_thread_id,
                  CurrentTimeProc get_current_time,
                  TaskExpiredCallback on_task_expired);
-  virtual ~TizenEventLoop();
+  ~TizenEventLoop();
 
   TizenEventLoop(const TizenEventLoop&) = delete;
   TizenEventLoop& operator=(const TizenEventLoop&) = delete;
 
   bool RunsTasksOnCurrentThread() const;
   void PostTask(FlutterTask flutter_task, uint64_t flutter_target_time_nanos);
-
-  virtual void OnTaskExpired(const FlutterTask* task) = 0;
-
- protected:
-  std::thread::id main_thread_id_;
-  CurrentTimeProc get_current_time_;
-  TaskExpiredCallback on_task_expired_;
 
  private:
   struct Task {
@@ -59,22 +52,15 @@ class TizenEventLoop {
   void ExecuteTaskEvents();
   void UpdateSourceReadyTimeLocked(uint64_t now);
 
+  std::thread::id main_thread_id_;
+  CurrentTimeProc get_current_time_;
+  TaskExpiredCallback on_task_expired_;
   std::mutex task_queue_mutex_;
   std::priority_queue<Task> task_queue_;
   uint64_t task_order_ = 0;
   GSource* task_source_ = nullptr;
   // Detects destruction of this object by a task run in ExecuteTaskEvents.
   std::shared_ptr<bool> alive_ = std::make_shared<bool>(true);
-};
-
-class TizenPlatformEventLoop final : public TizenEventLoop {
- public:
-  TizenPlatformEventLoop(std::thread::id main_thread_id,
-                         CurrentTimeProc get_current_time,
-                         TaskExpiredCallback on_task_expired);
-  ~TizenPlatformEventLoop() override = default;
-
-  void OnTaskExpired(const FlutterTask* task) override;
 };
 
 }  // namespace flutter

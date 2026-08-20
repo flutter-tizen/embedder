@@ -276,7 +276,7 @@ class FlutterTizenEngine {
   std::unique_ptr<SettingsChannel> settings_channel_;
 
   // The event loop for the main thread that allows for delayed task execution.
-  std::unique_ptr<TizenPlatformEventLoop> event_loop_;
+  std::unique_ptr<TizenEventLoop> event_loop_;
 
   // An interface between the Flutter rasterizer and the platform.
   std::unique_ptr<TizenRenderer> renderer_;

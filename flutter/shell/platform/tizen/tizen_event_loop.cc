@@ -80,7 +80,7 @@ void TizenEventLoop::ExecuteTaskEvents() {
 
   std::shared_ptr<bool> alive = alive_;
   for (const FlutterTask& task : expired_tasks) {
-    OnTaskExpired(&task);
+    on_task_expired_(&task);
     if (!*alive) {
       return;
     }
@@ -103,18 +103,6 @@ void TizenEventLoop::UpdateSourceReadyTimeLocked(uint64_t now) {
   const uint64_t delay_micros = delay_nanos / 1000 + (delay_nanos % 1000 != 0);
   g_source_set_ready_time(
       task_source_, g_get_monotonic_time() + static_cast<gint64>(delay_micros));
-}
-
-TizenPlatformEventLoop::TizenPlatformEventLoop(
-    std::thread::id main_thread_id,
-    CurrentTimeProc get_current_time,
-    TaskExpiredCallback on_task_expired)
-    : TizenEventLoop(main_thread_id,
-                     get_current_time,
-                     std::move(on_task_expired)) {}
-
-void TizenPlatformEventLoop::OnTaskExpired(const FlutterTask* task) {
-  on_task_expired_(task);
 }
 
 }  // namespace flutter
