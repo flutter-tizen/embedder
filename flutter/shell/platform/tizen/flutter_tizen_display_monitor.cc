@@ -28,6 +28,8 @@ void FlutterTizenDisplayMonitor::UpdateDisplays() {
   display.display_id = 0;
   display.single_display = true;
 
+  // TODO(JSUYA): Query the actual refresh rate from the display.
+  // https://github.com/flutter-tizen/embedder/issues/193
   display.refresh_rate = 60.0;
 
   int32_t width = 0, height = 0, dpi = 0;
