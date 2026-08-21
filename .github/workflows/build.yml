@@ -152,7 +152,7 @@ jobs:
 
   release:
     needs: test
-    if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+    if: ${{ github.event_name == 'push' && (github.ref_name == 'master' || github.ref_name == 'main') }}
     runs-on: ubuntu-latest
 
     steps:
