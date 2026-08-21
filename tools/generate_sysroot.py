@@ -95,7 +95,7 @@ unified_packages = [
   'wayland-devel',
 ]
 
-# Required for --use-tcore builds. Only available for Tizen 10.0 and above.
+# Required for --use-tcore builds. Only available for Tizen 11.0 and above.
 tcore_packages = [
   'tizen-core',
   'tizen-core-devel',
@@ -149,7 +149,7 @@ def generate_sysroot(sysroot: Path, api_version: float, arch: str, quiet=False):
   existing_rpms = [f for f in download_path.iterdir() if f.suffix == '.rpm']
 
   packages = base_packages + unified_packages
-  if api_version > 10.0:
+  if api_version >= 11.0:
     packages += tcore_packages
 
   for package in packages:

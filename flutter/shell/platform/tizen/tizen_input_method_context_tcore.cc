@@ -6,6 +6,8 @@
 
 #include <tizen_core_wl.h>
 
+#include <cstring>
+
 #include "flutter/shell/platform/tizen/logger.h"
 
 namespace {
@@ -80,24 +82,25 @@ tizen_core_imf_event_key_h CreateImfKeyEventFromTcoreWlEvent(void* event) {
     return nullptr;
   }
 
+  // tcore's keysymbol is Ecore's key, and tcore's compose is Ecore's string.
   char* keyname = nullptr;
   tizen_core_wl_event_key_get_keyname(ev, &keyname);
   if (keyname) {
     tizen_core_imf_event_key_set_keyname(imf_key, keyname);
-    tizen_core_imf_event_key_set_key(imf_key, keyname);
     free(keyname);
   }
 
   char* keysymbol = nullptr;
   tizen_core_wl_event_key_get_keysymbol(ev, &keysymbol);
   if (keysymbol) {
-    tizen_core_imf_event_key_set_string(imf_key, keysymbol);
+    tizen_core_imf_event_key_set_key(imf_key, keysymbol);
     free(keysymbol);
   }
 
   char* compose = nullptr;
   tizen_core_wl_event_key_get_compose(ev, &compose);
   if (compose) {
+    tizen_core_imf_event_key_set_string(imf_key, compose);
     tizen_core_imf_event_key_set_compose(imf_key, compose);
     free(compose);
   }
@@ -124,6 +127,27 @@ tizen_core_imf_event_key_h CreateImfKeyEventFromTcoreWlEvent(void* event) {
   }
 
   return imf_key;
+}
+
+bool IsNavigationOrSystemKey(const char* key) {
+  if (!key) {
+    return false;
+  }
+  // Multimedia / system / TV remote keys.
+  if (strncmp(key, "XF86", 4) == 0) {
+    return true;
+  }
+  // Directional and action keys used for app/remote navigation.
+  static const char* kNavigationKeys[] = {
+      "Up",      "Down",     "Left",   "Right",    "KP_Up",  "KP_Down",
+      "KP_Left", "KP_Right", "Return", "KP_Enter", "Select",
+  };
+  for (const char* nav_key : kNavigationKeys) {
+    if (strcmp(key, nav_key) == 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace
@@ -159,8 +183,10 @@ TizenInputMethodContext::~TizenInputMethodContext() {
 }
 
 bool TizenInputMethodContext::HandleTcoreWlEventKey(void* event, bool is_down) {
-  FT_ASSERT(imf_context_);
   FT_ASSERT(event);
+  if (!imf_context_) {
+    return false;
+  }
 
   tizen_core_imf_event_key_h imf_key = CreateImfKeyEventFromTcoreWlEvent(event);
   if (!imf_key) {
@@ -187,6 +213,10 @@ bool TizenInputMethodContext::HandleNuiKeyEvent(const char* device_name,
                                                 uint32_t scan_code,
                                                 size_t timestamp,
                                                 bool is_down) {
+  if (!imf_context_) {
+    return false;
+  }
+
   tizen_core_imf_event_key_h imf_key = nullptr;
   tizen_core_imf_event_key_create(&imf_key);
   if (!imf_key) {
@@ -227,39 +257,63 @@ bool TizenInputMethodContext::HandleNuiKeyEvent(const char* device_name,
 #endif
 
 InputPanelGeometry TizenInputMethodContext::GetInputPanelGeometry() {
-  FT_ASSERT(imf_context_);
   InputPanelGeometry geometry;
+  if (!imf_context_) {
+    return geometry;
+  }
   tizen_core_imf_context_get_input_panel_geometry(
       imf_context_, &geometry.x, &geometry.y, &geometry.w, &geometry.h);
   return geometry;
 }
 
 void TizenInputMethodContext::ResetInputMethodContext() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
   tizen_core_imf_context_reset(imf_context_);
 }
 
 void TizenInputMethodContext::ShowInputPanel() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
   tizen_core_imf_context_input_panel_show(imf_context_);
   tizen_core_imf_context_focus_in(imf_context_);
 }
 
 void TizenInputMethodContext::HideInputPanel() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
   tizen_core_imf_context_focus_out(imf_context_);
   tizen_core_imf_context_input_panel_hide(imf_context_);
 }
 
 bool TizenInputMethodContext::IsInputPanelShown() {
+  if (!imf_context_) {
+    return false;
+  }
   tizen_core_imf_input_panel_state_e state;
   tizen_core_imf_context_get_input_panel_state(imf_context_, &state);
-  return state == TIZEN_CORE_IMF_INPUT_PANEL_STATE_SHOW;
+  return state == TIZEN_CORE_IMF_INPUT_PANEL_STATE_SHOW ||
+         state == TIZEN_CORE_IMF_INPUT_PANEL_STATE_WILL_SHOW;
+}
+
+bool TizenInputMethodContext::ShouldFilterKey(const char* key) {
+  if (!imf_context_) {
+    return false;
+  }
+  if (IsInputPanelShown()) {
+    return true;
+  }
+  return editing_active_ && !IsNavigationOrSystemKey(key);
 }
 
 void TizenInputMethodContext::SetInputPanelLayout(
     const std::string& input_type) {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
   tizen_core_imf_input_panel_layout_e panel_layout =
       TextInputTypeToImfInputPanelLayout(input_type);
   tizen_core_imf_context_set_input_panel_layout(imf_context_, panel_layout);
@@ -267,6 +321,9 @@ void TizenInputMethodContext::SetInputPanelLayout(
 
 void TizenInputMethodContext::SetInputPanelLayoutVariation(bool is_signed,
                                                            bool is_decimal) {
+  if (!imf_context_) {
+    return;
+  }
   tizen_core_imf_layout_numberonly_variation_e variation;
   if (is_signed && is_decimal) {
     variation = TIZEN_CORE_IMF_LAYOUT_NUMBERONLY_VARIATION_SIGNED_AND_DECIMAL;
@@ -282,6 +339,9 @@ void TizenInputMethodContext::SetInputPanelLayoutVariation(bool is_signed,
 }
 
 void TizenInputMethodContext::SetAutocapitalType(const std::string& type) {
+  if (!imf_context_) {
+    return;
+  }
   tizen_core_imf_autocapital_type_e autocapital_type =
       TIZEN_CORE_IMF_AUTOCAPITAL_TYPE_NONE;
 
@@ -301,6 +361,7 @@ void TizenInputMethodContext::SetEditingActive(bool active) {
   if (!imf_context_) {
     return;
   }
+  editing_active_ = active;
   if (active) {
     tizen_core_imf_context_focus_in(imf_context_);
   } else {
@@ -316,7 +377,9 @@ void TizenInputMethodContext::SetInputPanelEnabled(bool enabled) {
 }
 
 void TizenInputMethodContext::RegisterEventCallbacks() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
 
   // commit callback
   event_callbacks_[TIZEN_CORE_IMF_CALLBACK_COMMIT] =
@@ -376,7 +439,9 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
 }
 
 void TizenInputMethodContext::UnregisterEventCallbacks() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
   tizen_core_imf_context_del_event_callback(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_COMMIT,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_COMMIT]);
@@ -392,13 +457,17 @@ void TizenInputMethodContext::UnregisterEventCallbacks() {
 }
 
 void TizenInputMethodContext::SetContextOptions() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
   tizen_core_imf_context_set_autocapital_type(
       imf_context_, TIZEN_CORE_IMF_AUTOCAPITAL_TYPE_NONE);
 }
 
 void TizenInputMethodContext::SetInputPanelOptions() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
   tizen_core_imf_context_set_input_panel_layout(
       imf_context_, TIZEN_CORE_IMF_INPUT_PANEL_LAYOUT_NORMAL);
   tizen_core_imf_context_set_input_panel_return_key_type(
@@ -435,7 +504,9 @@ void TizenInputMethodContext::InputPanelStateChangedCallback(
 }
 
 void TizenInputMethodContext::RegisterInputPanelEventCallback() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
 
   tizen_core_imf_context_add_input_panel_event_callback(
       imf_context_, TIZEN_CORE_IMF_INPUT_PANEL_EVENT_STATE,
@@ -443,7 +514,9 @@ void TizenInputMethodContext::RegisterInputPanelEventCallback() {
 }
 
 void TizenInputMethodContext::UnregisterInputPanelEventCallback() {
-  FT_ASSERT(imf_context_);
+  if (!imf_context_) {
+    return;
+  }
 
   tizen_core_imf_context_del_input_panel_event_callback(
       imf_context_, TIZEN_CORE_IMF_INPUT_PANEL_EVENT_STATE,

@@ -45,6 +45,11 @@ TizenClipboard::TizenClipboard(TizenViewBase* view) {
     owns_display_ = true;
   }
 
+  if (!display_) {
+    FT_LOG(Error) << "Failed to get display for clipboard.";
+    return;
+  }
+
   if (tizen_core_wl_display_get_event(display_, &tcore_wl_event_) !=
       TIZEN_CORE_WL_ERROR_NONE) {
     FT_LOG(Error) << "Failed to get event handle for clipboard.";
@@ -97,7 +102,6 @@ void TizenClipboard::SendData(void* event) {
   int fd = -1;
   tizen_core_wl_event_data_source_send_get_fd(send_event, &fd);
 
-  // Get serial from base event.
   tizen_core_wl_event_data_source_base_h base_event =
       static_cast<tizen_core_wl_event_data_source_base_h>(event);
   unsigned int serial = 0;
@@ -172,15 +176,7 @@ void TizenClipboard::ReceiveData(void* event) {
     return;
   }
 
-  size_t data_length = strlen(data);
-  size_t buffer_size = len;
-  std::string content;
-
-  if (data_length < buffer_size) {
-    content.append(data, data_length);
-  } else {
-    content.append(data, buffer_size);
-  }
+  std::string content(data, strnlen(data, static_cast<size_t>(len)));
 
   if (on_data_callback_) {
     on_data_callback_(content);
@@ -189,6 +185,9 @@ void TizenClipboard::ReceiveData(void* event) {
 }
 
 void TizenClipboard::SetData(const std::string& data) {
+  if (!display_) {
+    return;
+  }
   data_ = data;
 
   const char* mime_types[3];
@@ -215,6 +214,9 @@ void TizenClipboard::SetData(const std::string& data) {
 }
 
 bool TizenClipboard::GetData(ClipboardCallback on_data_callback) {
+  if (!display_) {
+    return false;
+  }
   on_data_callback_ = std::move(on_data_callback);
 
   tizen_core_wl_seat_h default_seat = nullptr;
@@ -252,6 +254,9 @@ bool TizenClipboard::GetData(ClipboardCallback on_data_callback) {
 }
 
 bool TizenClipboard::HasStrings() {
+  if (!display_) {
+    return false;
+  }
   tizen_core_wl_seat_h default_seat = nullptr;
   tizen_core_wl_display_get_default_seat(display_, &default_seat);
   if (!default_seat) {

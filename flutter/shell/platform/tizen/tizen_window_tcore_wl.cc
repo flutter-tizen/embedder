@@ -43,18 +43,6 @@ FlutterPointerMouseButtons ToFlutterPointerButton(int32_t button) {
   }
 }
 
-// FlutterPointerDeviceKind GetDeviceKindFromEventType(int event_type) {
-//   if (event_type == TIZEN_CORE_WL_EVENT_MOUSE_BUTTON_DOWN ||
-//       event_type == TIZEN_CORE_WL_EVENT_MOUSE_BUTTON_UP ||
-//       event_type == TIZEN_CORE_WL_EVENT_MOUSE_MOVE ||
-//       event_type == TIZEN_CORE_WL_EVENT_MOUSE_WHEEL) {
-//     // The event system doesn't distinguish mouse vs touch at event level.
-//     // Default to touch; mouse events can be differentiated by touch_id == 0.
-//     return kFlutterPointerDeviceKindTouch;
-//   }
-//   return kFlutterPointerDeviceKindTouch;
-// }
-
 #ifdef TV_PROFILE
 time_t GetBootTimeEpoch() {
   struct timespec now, boot_time;
@@ -367,7 +355,6 @@ void TizenWindowTcoreWl::AddEventListener(tizen_core_wl_event_type_e type,
 }
 
 void TizenWindowTcoreWl::RegisterEventHandlers() {
-  // Window rotation event.
   AddEventListener(
       TIZEN_CORE_WL_EVENT_WINDOW_ROTATION,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
@@ -394,7 +381,6 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
         }
       });
 
-  // Window configure event.
   if (!is_vulkan_) {
     AddEventListener(
         TIZEN_CORE_WL_EVENT_WINDOW_CONFIGURE_COMPLETE,
@@ -420,7 +406,6 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
         });
   }
 
-  // Mouse button down.
   AddEventListener(
       TIZEN_CORE_WL_EVENT_MOUSE_BUTTON_DOWN,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
@@ -466,7 +451,6 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
         }
       });
 
-  // Mouse button up.
   AddEventListener(
       TIZEN_CORE_WL_EVENT_MOUSE_BUTTON_UP,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
@@ -493,7 +477,6 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
         }
       });
 
-  // Mouse move.
   AddEventListener(
       TIZEN_CORE_WL_EVENT_MOUSE_MOVE,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
@@ -518,7 +501,6 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
         }
       });
 
-  // Mouse wheel.
   AddEventListener(
       TIZEN_CORE_WL_EVENT_MOUSE_WHEEL,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
@@ -551,7 +533,6 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
         }
       });
 
-  // Key down.
   AddEventListener(
       TIZEN_CORE_WL_EVENT_KEY_DOWN,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
@@ -582,7 +563,7 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
 
         bool handled = false;
         if (self->input_method_context_ &&
-            self->input_method_context_->IsInputPanelShown()) {
+            self->input_method_context_->ShouldFilterKey(keysymbol)) {
           handled =
               self->input_method_context_->HandleTcoreWlEventKey(event, true);
         }
@@ -604,7 +585,6 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
         free(dev_identifier);
       });
 
-  // Key up.
   AddEventListener(
       TIZEN_CORE_WL_EVENT_KEY_UP,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
@@ -632,7 +612,7 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
 
         bool handled = false;
         if (self->input_method_context_ &&
-            self->input_method_context_->IsInputPanelShown()) {
+            self->input_method_context_->ShouldFilterKey(keysymbol)) {
           handled =
               self->input_method_context_->HandleTcoreWlEventKey(event, false);
         }
@@ -752,17 +732,26 @@ void TizenWindowTcoreWl::SetPreferredOrientations(
 }
 
 void TizenWindowTcoreWl::BindKeys(const std::vector<std::string>& keys) {
+  GList* list = nullptr;
   for (const std::string& key : keys) {
     tizen_core_wl_keygrab_info_h info = nullptr;
     tizen_core_wl_keygrab_info_create(key.c_str(),
                                       TIZEN_CORE_WL_KEYGRAB_TOPMOST, &info);
     if (info) {
-      GList* list = g_list_append(nullptr, info);
-      tizen_core_wl_window_set_keygrab_list(tcore_wl_window_, list);
-      g_list_free(list);
-      tizen_core_wl_keygrab_info_destroy(info);
+      list = g_list_append(list, info);
     }
   }
+  if (!list) {
+    return;
+  }
+
+  tizen_core_wl_window_set_keygrab_list(tcore_wl_window_, list);
+
+  for (GList* node = list; node; node = node->next) {
+    tizen_core_wl_keygrab_info_destroy(
+        static_cast<tizen_core_wl_keygrab_info_h>(node->data));
+  }
+  g_list_free(list);
 }
 
 void TizenWindowTcoreWl::Show() {

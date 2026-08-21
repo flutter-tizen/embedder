@@ -125,9 +125,10 @@ def main():
       api_value = float(args.api_version)
     except ValueError:
       api_value = 0.0
-    if api_value < 10.0:
-      sys.exit('--use-tcore requires --api-version 10.0 or higher '
-               '(tizen-core packages are only published for Tizen 11+). '
+    if api_value < 11.0:
+      sys.exit('--use-tcore requires --api-version 11.0 or higher '
+               '(the tizen-core-wl and tizen-core-imf packages are only '
+               'published for Tizen 11.0 and above). '
                'Got --api-version {}.'.format(args.api_version))
 
   root_dir = Path(__file__).parent.parent.resolve()

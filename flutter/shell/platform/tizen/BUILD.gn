@@ -23,7 +23,6 @@ config("flutter_tizen_config") {
     "${sysroot_path}/usr/lib/glib-2.0/include",
   ]
 
-  # tcore-specific includes
   if (use_tcore) {
     include_dirs += [
       "${sysroot_path}/usr/include/tizen-core",
@@ -31,7 +30,6 @@ config("flutter_tizen_config") {
       "${sysroot_path}/usr/include/tizen-core-wl",
     ]
   } else {
-    # ecore-specific includes
     include_dirs += [
       "${sysroot_path}/usr/include/ecore-1",
       "${sysroot_path}/usr/include/ecore-imf-1",
@@ -110,7 +108,6 @@ template("embedder") {
       "tizen_window_util.cc",
     ]
 
-    # Select window implementation based on use_tcore
     if (use_tcore) {
       sources += [
         "tizen_input_method_context_tcore.cc",
@@ -148,7 +145,6 @@ template("embedder") {
       "GLESv2",
     ]
 
-    # tcore-specific or ecore-specific libraries
     if (use_tcore) {
       libs += [
         "tizen-core",
@@ -178,7 +174,6 @@ template("embedder") {
     defines += invoker.defines
     defines += [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
 
-    # Add USE_TCORE_WL define when using tcore
     if (use_tcore) {
       defines += [ "USE_TCORE_WL" ]
     }

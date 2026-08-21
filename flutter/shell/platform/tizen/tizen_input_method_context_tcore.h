@@ -52,6 +52,8 @@ class TizenInputMethodContext {
 
   bool IsInputPanelShown();
 
+  bool ShouldFilterKey(const char* key);
+
   void SetInputPanelLayout(const std::string& layout);
 
   void SetInputPanelLayoutVariation(bool is_signed, bool is_decimal);
@@ -93,6 +95,7 @@ class TizenInputMethodContext {
   void SetInputPanelOptions();
 
   tizen_core_imf_context_h imf_context_ = nullptr;
+  bool editing_active_ = false;
   OnCommit on_commit_;
   OnPreeditChanged on_preedit_changed_;
   OnPreeditStart on_preedit_start_;
