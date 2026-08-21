@@ -4,8 +4,6 @@
 
 #include "flutter/shell/platform/tizen/flutter_tizen_view.h"
 
-#include <Ecore.h>
-
 #include <vector>
 
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
@@ -47,7 +45,6 @@ class TestTizenView : public TizenWindow {
 };
 
 TEST(FlutterTizenViewTest, SendsAndRequestsViewFocus) {
-  ecore_init();
   {
     FlutterDesktopEngineProperties properties = {};
     properties.assets_path = "/foo/flutter_assets";
@@ -110,7 +107,6 @@ TEST(FlutterTizenViewTest, SendsAndRequestsViewFocus) {
     view.OnFocusChangeRequest(request);
     EXPECT_FALSE(tizen_view_ptr->activated);
   }
-  ecore_shutdown();
 }
 
 }  // namespace
