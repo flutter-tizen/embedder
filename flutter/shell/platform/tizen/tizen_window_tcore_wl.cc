@@ -705,7 +705,13 @@ int32_t TizenWindowTcoreWl::GetDpi() {
 }
 
 uintptr_t TizenWindowTcoreWl::GetWindowId() {
-  return reinterpret_cast<uintptr_t>(tcore_wl_window_);
+  wl_surface* surface = nullptr;
+  tizen_core_wl_window_private_get_wl_surface(tcore_wl_window_, &surface);
+  if (!surface) {
+    FT_LOG(Error) << "Could not get the wl_surface of the window.";
+    return 0;
+  }
+  return wl_proxy_get_id(reinterpret_cast<wl_proxy*>(surface));
 }
 
 uint32_t TizenWindowTcoreWl::GetResourceId() {
@@ -827,8 +833,8 @@ void TizenWindowTcoreWl::SetNotificationLevel(int level) {
 }
 
 void TizenWindowTcoreWl::PrepareInputMethod() {
-  input_method_context_ =
-      std::make_unique<TizenInputMethodContext>(GetWindowId());
+  input_method_context_ = std::make_unique<TizenInputMethodContext>(
+      reinterpret_cast<uintptr_t>(tcore_wl_window_));
 
   input_method_context_->SetOnPreeditStart(
       [this]() { view_delegate_->OnComposeBegin(); });
