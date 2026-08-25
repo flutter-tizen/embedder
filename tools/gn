@@ -122,10 +122,10 @@ def main():
 
   if args.use_tcore:
     try:
-      api_value = float(args.api_version)
+      api_version = float(args.api_version)
     except ValueError:
-      api_value = 0.0
-    if api_value < 11.0:
+      api_version = 0.0
+    if api_version < 11.0:
       sys.exit('--use-tcore requires --api-version 11.0 or higher '
                '(the tizen-core-wl and tizen-core-imf packages are only '
                'published for Tizen 11.0 and above). '
