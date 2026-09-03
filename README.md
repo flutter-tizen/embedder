@@ -11,7 +11,7 @@ The Flutter embedder for Tizen.
 - Linux (x64)
 - [depot_tools](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up)
 - [LLVM](https://apt.llvm.org) (17 or later)
-  - `sudo apt install clang-17`
+  - `sudo apt install clang-17 llvm-17 lld-17`
 - Additional dependencies
   - `sudo apt install git python3 rpm2cpio cpio`
   - `sudo apt install binutils-arm-linux-gnueabi binutils-aarch64-linux-gnu binutils-i686-linux-gnu`
@@ -59,6 +59,7 @@ The Flutter embedder for Tizen.
 
 - To build an app (TPK) with the embedder generated in the above, copy the output artifacts (`libflutter_tizen*.so`) into the [flutter-tizen](https://github.com/flutter-tizen/flutter-tizen) tool's cached artifacts directory (`flutter/bin/cache/artifacts/engine`) and run `flutter-tizen run` or `flutter-tizen build tpk`.
 - To use the embedder's built-in libc++ (`third_party/libcxx`) instead of the target device's `libstdc++.so`, provide the `--no-system-cxx` option to `tools/gn`.
+- Release builds use `-Os` and full LTO.
 
 ## Repository structure
 

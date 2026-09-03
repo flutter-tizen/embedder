@@ -164,10 +164,16 @@ config("no_optimize") {
 config("optimize") {
   defines = [ "NDEBUG" ]
   cflags = [
-    "-O2",
+    "-Os",
+    "-flto",
     "-fno-ident",
   ]
   ldflags = [
+    "-fuse-ld=lld",
+
+    # Keep executable LOAD segments page-aligned for Tizen crash-manager.
+    "-Wl,-z,separate-code",
+    "-flto",
     "-Wl,-O2",
     "-Wl,--as-needed",
   ]
@@ -193,7 +199,11 @@ toolchain("clang") {
   cc = "${toolchain_path}/bin/clang"
   cxx = "${toolchain_path}/bin/clang++"
   ld = "${toolchain_path}/bin/clang++"
-  ar = "${target_triple}-ar"
+  if (is_unopt) {
+    ar = "${target_triple}-ar"
+  } else {
+    ar = "${toolchain_path}/bin/llvm-ar"
+  }
   nm = "${target_triple}-nm"
   readelf = "${target_triple}-readelf"
   strip = "${target_triple}-strip"
