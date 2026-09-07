@@ -94,8 +94,13 @@ bool TizenRendererEgl::CreateSurface(void* render_target,
 
     if (render_target_display) {
 #ifdef USE_TCORE_WL
-      void* egl_window = tizen_core_wl_egl_window_native_get(
-          static_cast<tizen_core_wl_egl_window_h>(render_target));
+      tizen_core_wl_native_egl_window_h egl_window = nullptr;
+      if (tizen_core_wl_egl_window_get_native_egl_window(
+              static_cast<tizen_core_wl_egl_window_h>(render_target),
+              &egl_window) != TIZEN_CORE_WL_ERROR_NONE) {
+        FT_LOG(Error) << "Could not get the native EGL window.";
+        return false;
+      }
 #else
       const auto egl_window = ecore_wl2_egl_window_native_get(
           static_cast<Ecore_Wl2_Egl_Window*>(render_target));
