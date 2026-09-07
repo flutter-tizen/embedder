@@ -50,8 +50,8 @@ bool TizenRendererEgl::CreateSurface(void* render_target,
                                      int32_t width,
                                      int32_t height) {
   if (render_target_display) {
-    egl_display_ =
-        eglGetDisplay(static_cast<wl_display*>(render_target_display));
+    egl_display_ = eglGetDisplay(
+        reinterpret_cast<EGLNativeDisplayType>(render_target_display));
   } else {
     egl_display_ = eglGetDisplay(tbm_dummy_display_create());
   }
