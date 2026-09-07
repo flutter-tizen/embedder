@@ -93,6 +93,7 @@ class TizenWindowTcoreWl : public TizenWindow {
   void PrepareInputMethod();
 
   tizen_core_wl_display_h tcore_wl_display_ = nullptr;
+  bool owns_display_ = false;
   tizen_core_wl_window_h tcore_wl_window_ = nullptr;
   tizen_core_wl_egl_window_h tcore_wl_egl_window_ = nullptr;
   tizen_core_event_h tcore_wl_event_ = nullptr;

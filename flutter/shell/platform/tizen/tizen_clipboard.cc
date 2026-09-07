@@ -111,11 +111,13 @@ void TizenClipboard::SendData(void* event) {
       (strlen(mime_type) != 0 && strcmp(mime_type, kMimeTypeTextPlain))) {
     FT_LOG(Error) << "Invaild mime type(" << (mime_type ? mime_type : "null")
                   << ").";
+    free(mime_type);
     if (fd >= 0) {
       close(fd);
     }
     return;
   }
+  free(mime_type);
 
   if (serial != selection_serial_) {
     FT_LOG(Error) << "The serial doesn't match.";
@@ -248,8 +250,13 @@ bool TizenClipboard::GetData(ClipboardCallback on_data_callback) {
     return false;
   }
 
-  tizen_core_wl_data_receive(selection_offer_,
-                             const_cast<char*>(kMimeTypeTextPlain));
+  if (tizen_core_wl_data_receive(selection_offer_,
+                                 const_cast<char*>(kMimeTypeTextPlain)) !=
+      TIZEN_CORE_WL_ERROR_NONE) {
+    FT_LOG(Error) << "tizen_core_wl_data_receive() failed.";
+    on_data_callback_ = nullptr;
+    return false;
+  }
   return true;
 }
 
@@ -290,6 +297,9 @@ bool TizenClipboard::HasStrings() {
       found = true;
       break;
     }
+  }
+  for (int i = 0; i < mime_count; ++i) {
+    free(mimes[i]);
   }
   free(mimes);
   return found;

@@ -170,16 +170,27 @@ bool TizenWindowTcoreWl::CreateWindow(void* window_handle) {
     return false;
   }
 
-  if (tizen_core_wl_display_create(&tcore_wl_display_) !=
-      TIZEN_CORE_WL_ERROR_NONE) {
-    FT_LOG(Error) << "Could not create tizen core wl display.";
-    return false;
-  }
+  if (window_handle) {
+    if (tizen_core_wl_window_get_display(
+            static_cast<tizen_core_wl_window_h>(window_handle),
+            &tcore_wl_display_) != TIZEN_CORE_WL_ERROR_NONE ||
+        !tcore_wl_display_) {
+      FT_LOG(Error) << "Could not get the supplied window's display.";
+      return false;
+    }
+  } else {
+    if (tizen_core_wl_display_create(&tcore_wl_display_) !=
+        TIZEN_CORE_WL_ERROR_NONE) {
+      FT_LOG(Error) << "Could not create tizen core wl display.";
+      return false;
+    }
+    owns_display_ = true;
 
-  if (tizen_core_wl_display_connect(tcore_wl_display_, nullptr) !=
-      TIZEN_CORE_WL_ERROR_NONE) {
-    FT_LOG(Error) << "Tizen core wl display not found.";
-    return false;
+    if (tizen_core_wl_display_connect(tcore_wl_display_, nullptr) !=
+        TIZEN_CORE_WL_ERROR_NONE) {
+      FT_LOG(Error) << "Tizen core wl display not found.";
+      return false;
+    }
   }
 
   tizen_core_wl_display_private_get_wl_display(tcore_wl_display_,
@@ -645,7 +656,7 @@ void TizenWindowTcoreWl::DestroyWindow() {
     tcore_wl_window_ = nullptr;
   }
 
-  if (tcore_wl_display_) {
+  if (owns_display_ && tcore_wl_display_) {
     tizen_core_wl_display_disconnect(tcore_wl_display_);
     tizen_core_wl_display_destroy(tcore_wl_display_);
     tcore_wl_display_ = nullptr;

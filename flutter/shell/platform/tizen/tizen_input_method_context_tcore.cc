@@ -424,12 +424,17 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
         auto* self = static_cast<TizenInputMethodContext*>(data);
         if (self->on_preedit_changed_) {
           char* str = nullptr;
+          tizen_core_imf_preedit_attr_h* attrs = nullptr;
+          int attrs_count = 0;
           int cursor_pos = 0;
-          tizen_core_imf_context_get_preedit_string(ctx, &str, nullptr, nullptr,
-                                                    &cursor_pos);
-          if (str) {
+          auto result = tizen_core_imf_context_get_preedit_string(
+              ctx, &str, &attrs, &attrs_count, &cursor_pos);
+          if (result == TIZEN_CORE_IMF_ERROR_NONE && str) {
             self->on_preedit_changed_(str, cursor_pos);
-            free(str);
+          }
+          free(str);
+          if (attrs) {
+            tizen_core_imf_preedit_attrs_destroy(attrs, attrs_count);
           }
         }
       };
