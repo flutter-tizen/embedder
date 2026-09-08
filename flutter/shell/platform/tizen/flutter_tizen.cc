@@ -4,6 +4,7 @@
 // found in the LICENSE file.
 
 #include "public/flutter_tizen.h"
+#include "public/flutter_tizen_window.h"
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h"
@@ -295,3 +296,95 @@ FlutterDesktopMessengerRef FlutterDesktopMessengerLock(
 }
 
 void FlutterDesktopMessengerUnlock(FlutterDesktopMessengerRef messenger) {}
+
+// ========== Window API ==========
+
+// Returns the TizenWindow associated with the given view, or nullptr if the
+// view does not have a TizenWindow.
+static flutter::TizenWindow* TizenWindowFromView(
+    FlutterDesktopViewRef view_ref) {
+  flutter::FlutterTizenView* view = ViewFromHandle(view_ref);
+  if (!view || !view->tizen_view()) {
+    return nullptr;
+  }
+  // The tizen_view() returns a TizenViewBase*. We need to check if it's
+  // actually a TizenWindow by dynamic_cast.
+  return dynamic_cast<flutter::TizenWindow*>(view->tizen_view());
+}
+
+FlutterDesktopWindowGeometry FlutterDesktopWindowGetGeometry(
+    FlutterDesktopViewRef view) {
+  FlutterDesktopWindowGeometry result = {0, 0, 0, 0};
+  flutter::TizenWindow* window = TizenWindowFromView(view);
+  if (!window) {
+    return result;
+  }
+  flutter::TizenGeometry geometry = window->GetGeometry();
+  result.x = geometry.left;
+  result.y = geometry.top;
+  result.width = geometry.width;
+  result.height = geometry.height;
+  return result;
+}
+
+bool FlutterDesktopWindowSetGeometry(
+    FlutterDesktopViewRef view,
+    const FlutterDesktopWindowGeometry* geometry) {
+  if (!geometry) {
+    return false;
+  }
+  flutter::TizenWindow* window = TizenWindowFromView(view);
+  if (!window) {
+    return false;
+  }
+  flutter::TizenGeometry current = window->GetGeometry();
+  flutter::TizenGeometry target = {
+      geometry->x != -1 ? geometry->x : current.left,
+      geometry->y != -1 ? geometry->y : current.top,
+      geometry->width != -1 ? geometry->width : current.width,
+      geometry->height != -1 ? geometry->height : current.height,
+  };
+  return window->SetGeometry(target);
+}
+
+FlutterDesktopScreenGeometry FlutterDesktopWindowGetScreenGeometry(
+    FlutterDesktopViewRef view) {
+  FlutterDesktopScreenGeometry result = {0, 0};
+  flutter::TizenWindow* window = TizenWindowFromView(view);
+  if (!window) {
+    return result;
+  }
+  flutter::TizenGeometry geometry = window->GetScreenGeometry();
+  result.width = geometry.width;
+  result.height = geometry.height;
+  return result;
+}
+
+int32_t FlutterDesktopWindowGetRotation(FlutterDesktopViewRef view) {
+  flutter::TizenWindow* window = TizenWindowFromView(view);
+  if (!window) {
+    return 0;
+  }
+  return window->GetRotation();
+}
+
+void FlutterDesktopWindowActivate(FlutterDesktopViewRef view) {
+  flutter::TizenWindow* window = TizenWindowFromView(view);
+  if (window) {
+    window->ActivateWindow();
+  }
+}
+
+void FlutterDesktopWindowRaise(FlutterDesktopViewRef view) {
+  flutter::TizenWindow* window = TizenWindowFromView(view);
+  if (window) {
+    window->RaiseWindow();
+  }
+}
+
+void FlutterDesktopWindowLower(FlutterDesktopViewRef view) {
+  flutter::TizenWindow* window = TizenWindowFromView(view);
+  if (window) {
+    window->LowerWindow();
+  }
+}
