@@ -4,6 +4,9 @@
 
 #include "tizen_window_ecore_wl2.h"
 
+#include <algorithm>
+#include <cmath>
+
 #ifdef TV_PROFILE
 #include <app.h>
 #include <app_preference.h>
@@ -325,6 +328,28 @@ void TizenWindowEcoreWl2::ShowUnsupportedToast() {
 #endif
 
 void TizenWindowEcoreWl2::RegisterEventHandlers() {
+  for (int event_type :
+       {ECORE_EVENT_DEVICE_DEL, ECORE_WL2_EVENT_SEAT_KEYMAP_CHANGED,
+        ECORE_WL2_EVENT_SEAT_KEYBOARD_REPEAT_CHANGED}) {
+    ecore_event_handlers_.push_back(ecore_event_handler_add(
+        event_type,
+        [](void* data, int type, void* event) -> Eina_Bool {
+          static_cast<TizenWindowEcoreWl2*>(data)->ResetKeyRepeat();
+          return ECORE_CALLBACK_PASS_ON;
+        },
+        this));
+  }
+  ecore_event_handlers_.push_back(ecore_event_handler_add(
+      ECORE_WL2_EVENT_FOCUS_OUT,
+      [](void* data, int type, void* event) -> Eina_Bool {
+        auto* self = static_cast<TizenWindowEcoreWl2*>(data);
+        auto* focus_event = static_cast<Ecore_Wl2_Event_Focus_Out*>(event);
+        if (focus_event->window == self->GetWindowId()) {
+          self->ResetKeyRepeat();
+        }
+        return ECORE_CALLBACK_PASS_ON;
+      },
+      this));
   ecore_event_handlers_.push_back(ecore_event_handler_add(
       ECORE_WL2_EVENT_WINDOW_ROTATE,
       [](void* data, int type, void* event) -> Eina_Bool {
@@ -482,10 +507,14 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
         if (self->view_delegate_) {
           auto* key_event = reinterpret_cast<Ecore_Event_Key*>(event);
           if (key_event->window == self->GetWindowId()) {
+            const bool is_modifier = self->UpdateKeyModifiers(*key_event, true);
             bool handled = false;
             if (self->input_method_context_->ShouldFilterKey(key_event->key)) {
               handled = self->input_method_context_->HandleEcoreEventKey(
                   key_event, true);
+            }
+            if (!is_modifier) {
+              self->StartKeyRepeat(*key_event, handled);
             }
             if (!handled) {
               self->view_delegate_->OnKey(
@@ -507,6 +536,10 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
         if (self->view_delegate_) {
           auto* key_event = reinterpret_cast<Ecore_Event_Key*>(event);
           if (key_event->window == self->GetWindowId()) {
+            self->UpdateKeyModifiers(*key_event, false);
+            if (self->repeat_scan_code_ == key_event->keycode) {
+              self->StopKeyRepeat();
+            }
             bool handled = false;
             if (self->input_method_context_->ShouldFilterKey(key_event->key)) {
               handled = self->input_method_context_->HandleEcoreEventKey(
@@ -526,10 +559,119 @@ void TizenWindowEcoreWl2::RegisterEventHandlers() {
 }
 
 void TizenWindowEcoreWl2::UnregisterEventHandlers() {
+  ResetKeyRepeat();
   for (Ecore_Event_Handler* handler : ecore_event_handlers_) {
     ecore_event_handler_del(handler);
   }
   ecore_event_handlers_.clear();
+}
+
+bool TizenWindowEcoreWl2::UpdateKeyModifiers(const Ecore_Event_Key& event,
+                                             bool is_down) {
+  key_modifiers_ = event.modifiers;
+  const auto modifier = event.key
+                            ? ecore_event_update_modifier(event.key, nullptr, 0)
+                            : ECORE_NONE;
+  const uint32_t bit = ecore_event_modifier_mask(modifier);
+  constexpr uint32_t kHeldModifiers =
+      ECORE_EVENT_MODIFIER_SHIFT | ECORE_EVENT_MODIFIER_CTRL |
+      ECORE_EVENT_MODIFIER_ALT | ECORE_EVENT_MODIFIER_WIN |
+      ECORE_EVENT_MODIFIER_ALTGR;
+  if (bit & kHeldModifiers) {
+    if (is_down) {
+      pressed_modifiers_[event.keycode] = bit;
+    } else {
+      pressed_modifiers_.erase(event.keycode);
+    }
+    key_modifiers_ &= ~bit;
+    for (const auto& entry : pressed_modifiers_) {
+      key_modifiers_ |= entry.second;
+    }
+  }
+  return modifier != ECORE_NONE;
+}
+
+void TizenWindowEcoreWl2::StartKeyRepeat(const Ecore_Event_Key& event,
+                                         bool imf_handled) {
+  bool native_repeat =
+      repeat_scan_code_ != 0 && repeat_scan_code_ == event.keycode;
+#ifdef DIRECTIONAL_KEY_REPEAT_SUPPORT
+  native_repeat |= (event.event_flags & ECORE_EVENT_FLAG_REPEAT) != 0;
+#endif
+  StopKeyRepeat();
+  const std::string key = event.key ? event.key : "";
+  const bool is_arrow =
+      key == "Up" || key == "Down" || key == "Left" || key == "Right";
+  if (imf_handled || !is_arrow || !event.dev || event.keycode == 0 ||
+      ecore_device_class_get(event.dev) != ECORE_DEVICE_CLASS_KEYBOARD ||
+      ecore_device_subclass_get(event.dev) == ECORE_DEVICE_SUBCLASS_REMOCON) {
+    return;
+  }
+  repeat_scan_code_ = event.keycode;
+  if (native_repeat) {
+    return;
+  }
+  repeat_key_ = key;
+  const char* name = ecore_device_name_get(event.dev);
+  repeat_device_name_ = name ? name : "";
+  ScheduleKeyRepeat(true);
+}
+
+void TizenWindowEcoreWl2::StopKeyRepeat() {
+  if (key_repeat_timer_id_) {
+    g_source_remove(key_repeat_timer_id_);
+    key_repeat_timer_id_ = 0;
+  }
+  repeat_scan_code_ = 0;
+}
+
+void TizenWindowEcoreWl2::ResetKeyRepeat() {
+  StopKeyRepeat();
+  key_modifiers_ = 0;
+  pressed_modifiers_.clear();
+}
+
+void TizenWindowEcoreWl2::ScheduleKeyRepeat(bool initial) {
+  auto* input = ecore_wl2_window_input_get(ecore_wl2_window_);
+  if (!input) {
+    return;
+  }
+  double rate = 0;
+  double delay = 0;
+  bool have_repeat = false;
+#ifdef DIRECTIONAL_KEY_REPEAT_SUPPORT
+  have_repeat = (repeat_key_ == "Left" || repeat_key_ == "Right")
+                    ? ecore_wl2_input_keyboard_horizontal_way_repeat_get(
+                          input, &rate, &delay)
+                    : ecore_wl2_input_keyboard_vertical_way_repeat_get(
+                          input, &rate, &delay);
+#endif
+  if (!have_repeat) {
+    have_repeat = ecore_wl2_input_keyboard_repeat_get(input, &rate, &delay);
+  }
+  const double interval_ms =
+      std::ceil(rate * 1000 + (initial ? delay * 1000 : 0));
+  if (!have_repeat || !std::isfinite(rate) || !std::isfinite(delay) ||
+      rate <= 0 || delay < 0 || !std::isfinite(interval_ms) ||
+      interval_ms > G_MAXUINT) {
+    return;
+  }
+  key_repeat_timer_id_ = g_timeout_add(
+      static_cast<guint>(std::max(interval_ms, 1.0)),
+      [](gpointer data) -> gboolean {
+        auto* self = static_cast<TizenWindowEcoreWl2*>(data);
+        self->key_repeat_timer_id_ = 0;
+        self->ScheduleKeyRepeat(false);
+        if (self->key_repeat_timer_id_ && self->view_delegate_) {
+          const auto key = self->repeat_key_;
+          const auto device_name = self->repeat_device_name_;
+          self->view_delegate_->OnKey(
+              key.c_str(), nullptr, nullptr, self->key_modifiers_,
+              self->repeat_scan_code_, device_name.c_str(), true);
+        }
+        return G_SOURCE_REMOVE;
+      },
+      this);
 }
 
 void TizenWindowEcoreWl2::DestroyWindow() {

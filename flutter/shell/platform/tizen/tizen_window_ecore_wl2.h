@@ -7,9 +7,11 @@
 
 #define EFL_BETA_API_SUPPORT
 #include <Ecore_Wl2.h>
+#include <glib.h>
 #include <tizen-extension-client-protocol.h>
 
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -89,6 +91,16 @@ class TizenWindowEcoreWl2 : public TizenWindow {
 
   void PrepareInputMethod();
 
+  bool UpdateKeyModifiers(const Ecore_Event_Key& event, bool is_down);
+
+  void StartKeyRepeat(const Ecore_Event_Key& event, bool imf_handled);
+
+  void StopKeyRepeat();
+
+  void ResetKeyRepeat();
+
+  void ScheduleKeyRepeat(bool initial);
+
   Ecore_Wl2_Display* ecore_wl2_display_ = nullptr;
   Ecore_Wl2_Window* ecore_wl2_window_ = nullptr;
   Ecore_Wl2_Egl_Window* ecore_wl2_egl_window_ = nullptr;
@@ -97,6 +109,12 @@ class TizenWindowEcoreWl2 : public TizenWindow {
   std::vector<Ecore_Event_Handler*> ecore_event_handlers_;
   tizen_policy* tizen_policy_ = nullptr;
   uint32_t resource_id_ = 0;
+  guint key_repeat_timer_id_ = 0;
+  uint32_t repeat_scan_code_ = 0;
+  std::string repeat_key_;
+  std::string repeat_device_name_;
+  uint32_t key_modifiers_ = 0;
+  std::map<uint32_t, uint32_t> pressed_modifiers_;
 
 #ifdef TV_PROFILE
   bool pointing_device_support_ = true;
