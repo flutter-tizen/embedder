@@ -31,6 +31,9 @@ declare_args() {
 
   # Use the system libstdc++ without building third_party/libcxx from source.
   use_system_cxx = false
+
+  # Use tizen-core-wl API instead of ecore.
+  use_tcore = false
 }
 
 _default_configs = [

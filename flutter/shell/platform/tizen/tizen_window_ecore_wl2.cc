@@ -7,10 +7,11 @@
 #ifdef TV_PROFILE
 #include <app.h>
 #include <app_preference.h>
-#include <dlfcn.h>
 #include <time.h>
 #include <vconf.h>
 #include <sstream>
+
+#include "flutter/shell/platform/tizen/tizen_window_util.h"
 #endif
 
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -268,29 +269,8 @@ void TizenWindowEcoreWl2::SetWindowOptions() {
 
 void TizenWindowEcoreWl2::EnableCursor() {
 #ifdef TV_PROFILE
-  // dlopen is used here because the TV-specific library libvd-win-util.so
-  // and the relevant headers are not present in the rootstrap.
-  void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
-  if (!handle) {
-    FT_LOG(Error) << "Could not open a shared library libvd-win-util.so.";
-    return;
-  }
-
-  // These functions are defined in vd-win-util's cursor_module.h.
-  int (*CursorModule_Initialize)(wl_display* display, wl_registry* registry,
-                                 wl_seat* seat, unsigned int id);
-  int (*Cursor_Set_Config)(wl_surface* surface, uint32_t config_type,
-                           void* data);
-  void (*CursorModule_Finalize)(void);
-  *(void**)(&CursorModule_Initialize) =
-      dlsym(handle, "CursorModule_Initialize");
-  *(void**)(&Cursor_Set_Config) = dlsym(handle, "Cursor_Set_Config");
-  *(void**)(&CursorModule_Finalize) = dlsym(handle, "CursorModule_Finalize");
-
-  if (!CursorModule_Initialize || !Cursor_Set_Config ||
-      !CursorModule_Finalize) {
-    FT_LOG(Error) << "Could not load symbols from the library.";
-    dlclose(handle);
+  TizenWindowUtil window_util;
+  if (!window_util.IsValid()) {
     return;
   }
 
@@ -300,7 +280,6 @@ void TizenWindowEcoreWl2::EnableCursor() {
   if (!registry || !seat) {
     FT_LOG(Error)
         << "Could not retreive wl_registry or wl_seat from the display.";
-    dlclose(handle);
     return;
   }
 
@@ -309,9 +288,8 @@ void TizenWindowEcoreWl2::EnableCursor() {
 
   EINA_ITERATOR_FOREACH(iter, global) {
     if (strcmp(global->interface, "tizen_cursor") == 0) {
-      if (!CursorModule_Initialize(wl2_display_, registry, seat, global->id)) {
-        FT_LOG(Error) << "Failed to initialize the cursor module.";
-      }
+      window_util.InitializeCursorModule(wl2_display_, registry, seat,
+                                         global->id);
     }
   }
   eina_iterator_free(iter);
@@ -319,92 +297,30 @@ void TizenWindowEcoreWl2::EnableCursor() {
   ecore_wl2_sync();
 
   wl_surface* surface = ecore_wl2_window_surface_get(ecore_wl2_window_);
-  // The config_type 1 refers to TIZEN_CURSOR_CONFIG_CURSOR_AVAILABLE
-  // defined in the TV extension protocol tizen-extension-tv.xml.
-  if (!Cursor_Set_Config(surface, 1, nullptr)) {
-    FT_LOG(Error) << "Failed to set a cursor config value.";
-  }
+  window_util.SetCursorConfig(
+      surface, TizenWindowUtil::kCursorConfigCursorAvailable, nullptr);
 
-  CursorModule_Finalize();
-  dlclose(handle);
+  window_util.FinalizeCursorModule();
 #endif
 }
 
 #ifdef TV_PROFILE
-typedef enum _MouseSupport { DISABLE = 0, ENABLE } MouseSupport;
-typedef enum _Device_Type { MOUSE_DEVICE = 3, TOUCH_DEVICE } Device_Type;
-
 void TizenWindowEcoreWl2::SetPointingDeviceSupport() {
-  // dlopen is used here because the TV-specific library libvd-win-util.so
-  // and the relevant headers are not present in the rootstrap.
-  void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
-  if (!handle) {
-    FT_LOG(Error) << "Could not open a shared library libvd-win-util.so.";
-    return;
-  }
-
-  // These functions are defined in vd-win-util's cursor_module.h.
-  int (*Mouse_Pointer_Support)(MouseSupport type, void* ecore_wl2_win);
-  *(void**)(&Mouse_Pointer_Support) = dlsym(handle, "Mouse_Pointer_Support");
-
-  if (!Mouse_Pointer_Support) {
-    FT_LOG(Error) << "Could not load symbols from the library.";
-    dlclose(handle);
-    return;
-  }
-
-  Mouse_Pointer_Support(pointing_device_support_ ? ENABLE : DISABLE,
-                        ecore_wl2_window_);
-  dlclose(handle);
+  TizenWindowUtil window_util;
+  window_util.SetMousePointerSupport(pointing_device_support_,
+                                     ecore_wl2_window_);
 }
 
 void TizenWindowEcoreWl2::SetFloatingMenuSupport() {
-  // dlopen is used here because the TV-specific library libvd-win-util.so
-  // and the relevant headers are not present in the rootstrap.
-  void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
-  if (!handle) {
-    FT_LOG(Error) << "Could not open a shared library libvd-win-util.so.";
-    return;
-  }
-
-  // These functions are defined in vd-win-util's cursor_module.h.
-  int (*Mouse_Pointer_Not_Allow)(int enable, void* ecore_wl2_win);
-  *(void**)(&Mouse_Pointer_Not_Allow) =
-      dlsym(handle, "Mouse_Pointer_Not_Allow");
-
-  if (!Mouse_Pointer_Not_Allow) {
-    FT_LOG(Error) << "Could not load symbols from the library.";
-    dlclose(handle);
-    return;
-  }
-
-  Mouse_Pointer_Not_Allow(!floating_menu_support_, ecore_wl2_window_);
-  dlclose(handle);
+  TizenWindowUtil window_util;
+  window_util.SetMousePointerNotAllow(!floating_menu_support_,
+                                      ecore_wl2_window_);
 }
 
 void TizenWindowEcoreWl2::ShowUnsupportedToast() {
-  // dlopen is used here because the TV-specific library libvd-win-util.so
-  // and the relevant headers are not present in the rootstrap.
-  void* handle = dlopen("libvd-win-util.so", RTLD_LAZY);
-  if (!handle) {
-    FT_LOG(Error) << "Could not open a shared library libvd-win-util.so.";
-    return;
-  }
-
-  // These functions are defined in vd-win-util's cursor_module.h.
-  void (*Unsupported_Toast_Launch)(Device_Type type, int show, int enable,
-                                   void* ecore_wl2_win);
-  *(void**)(&Unsupported_Toast_Launch) =
-      dlsym(handle, "Unsupported_Toast_Launch");
-
-  if (!Unsupported_Toast_Launch) {
-    FT_LOG(Error) << "Could not load symbols from the library.";
-    dlclose(handle);
-    return;
-  }
-
-  Unsupported_Toast_Launch(MOUSE_DEVICE, 1, 1, ecore_wl2_window_);
-  dlclose(handle);
+  TizenWindowUtil window_util;
+  window_util.LaunchUnsupportedToast(TizenWindowUtil::kDeviceTypeMouse, true,
+                                     true, ecore_wl2_window_);
 }
 #endif
 

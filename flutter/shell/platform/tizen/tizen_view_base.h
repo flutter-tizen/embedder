@@ -10,7 +10,11 @@
 #include <string>
 #include <vector>
 
+#ifdef USE_TCORE_WL
+#include "flutter/shell/platform/tizen/tizen_input_method_context_tcore.h"
+#else
 #include "flutter/shell/platform/tizen/tizen_input_method_context.h"
+#endif
 #include "flutter/shell/platform/tizen/tizen_view_event_handler_delegate.h"
 
 namespace flutter {

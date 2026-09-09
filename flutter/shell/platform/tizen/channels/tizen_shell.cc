@@ -9,7 +9,11 @@
 namespace flutter {
 
 TizenShell::TizenShell() {
+#ifdef USE_TCORE_WL
+  tizen_shell_ = tzsh_create(TZSH_TOOLKIT_TYPE_TCORE_WAYLAND);
+#else
   tizen_shell_ = tzsh_create(TZSH_TOOLKIT_TYPE_EFL);
+#endif
   if (!tizen_shell_) {
     FT_LOG(Error) << "tzsh_create() failed with error: "
                   << get_error_message(get_last_result());
