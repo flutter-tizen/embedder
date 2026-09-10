@@ -6,10 +6,12 @@
 #define EMBEDDER_TIZEN_WINDOW_TCORE_WL_H_
 
 #include <tizen-extension-client-protocol.h>
+#include <tizen_core.h>
 #include <tizen_core_wl.h>
 #include <tizen_core_wl_internal.h>
 
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -92,6 +94,23 @@ class TizenWindowTcoreWl : public TizenWindow {
 
   void PrepareInputMethod();
 
+  bool UpdateKeyModifiers(const char* key,
+                          uint32_t keycode,
+                          uint32_t modifiers,
+                          bool is_down);
+
+  void StartKeyRepeat(tizen_core_wl_event_input_base_h event,
+                      const char* key,
+                      uint32_t keycode,
+                      const char* device_identifier,
+                      bool imf_handled);
+
+  void StopKeyRepeat();
+
+  void ResetKeyRepeat();
+
+  void ScheduleKeyRepeat(bool initial);
+
   tizen_core_wl_display_h tcore_wl_display_ = nullptr;
   bool owns_display_ = false;
   tizen_core_wl_window_h tcore_wl_window_ = nullptr;
@@ -101,6 +120,13 @@ class TizenWindowTcoreWl : public TizenWindow {
   wl_surface* wl2_surface_ = nullptr;
   std::vector<tizen_core_wl_event_listener_h> tcore_event_listeners_;
   uint32_t resource_id_ = 0;
+  tizen_core_h key_repeat_core_ = nullptr;
+  tizen_core_source_h key_repeat_timer_ = nullptr;
+  uint32_t repeat_scan_code_ = 0;
+  std::string repeat_key_;
+  std::string repeat_device_identifier_;
+  uint32_t key_modifiers_ = 0;
+  std::map<uint32_t, uint32_t> pressed_modifiers_;
 
 #ifdef TV_PROFILE
   bool pointing_device_support_ = true;

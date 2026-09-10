@@ -4,6 +4,10 @@
 
 #include "tizen_window_tcore_wl.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+
 #ifdef TV_PROFILE
 #include <app.h>
 #include <app_preference.h>
@@ -366,6 +370,25 @@ void TizenWindowTcoreWl::AddEventListener(tizen_core_wl_event_type_e type,
 }
 
 void TizenWindowTcoreWl::RegisterEventHandlers() {
+  for (auto type :
+       {TIZEN_CORE_WL_EVENT_DEVICE_DEL, TIZEN_CORE_WL_EVENT_SEAT_KEYMAP_CHANGED,
+        TIZEN_CORE_WL_EVENT_SEAT_KEYREPEAT_CHANGED}) {
+    AddEventListener(
+        type, [](void* event, tizen_core_wl_event_type_e type, void* data) {
+          static_cast<TizenWindowTcoreWl*>(data)->ResetKeyRepeat();
+        });
+  }
+  AddEventListener(
+      TIZEN_CORE_WL_EVENT_FOCUS_OUT,
+      [](void* event, tizen_core_wl_event_type_e type, void* data) {
+        auto* self = static_cast<TizenWindowTcoreWl*>(data);
+        auto* ev = static_cast<tizen_core_wl_event_input_base_h>(event);
+        tizen_core_wl_window_h window = nullptr;
+        tizen_core_wl_event_input_base_get_window(ev, &window);
+        if (window == self->tcore_wl_window_) {
+          self->ResetKeyRepeat();
+        }
+      });
   AddEventListener(
       TIZEN_CORE_WL_EVENT_WINDOW_ROTATION,
       [](void* event, tizen_core_wl_event_type_e type, void* data) {
@@ -572,11 +595,16 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
         tizen_core_wl_event_input_base_get_device_identifier(ev,
                                                              &dev_identifier);
 
+        const bool is_modifier =
+            self->UpdateKeyModifiers(keysymbol, keycode, modifiers, true);
         bool handled = false;
         if (self->input_method_context_ &&
             self->input_method_context_->ShouldFilterKey(keysymbol)) {
           handled =
               self->input_method_context_->HandleTcoreWlEventKey(event, true);
+        }
+        if (!is_modifier) {
+          self->StartKeyRepeat(ev, keysymbol, keycode, dev_identifier, handled);
         }
         if (!handled) {
           // Match TizenWindowEcoreWl2 OnKey arg semantics:
@@ -621,6 +649,10 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
         unsigned int keycode = 0;
         tizen_core_wl_event_key_get_keycode(ev, &keycode);
 
+        self->UpdateKeyModifiers(keysymbol, keycode, modifiers, false);
+        if (self->repeat_scan_code_ == keycode) {
+          self->StopKeyRepeat();
+        }
         bool handled = false;
         if (self->input_method_context_ &&
             self->input_method_context_->ShouldFilterKey(keysymbol)) {
@@ -639,10 +671,164 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
 }
 
 void TizenWindowTcoreWl::UnregisterEventHandlers() {
+  ResetKeyRepeat();
   for (tizen_core_wl_event_listener_h listener : tcore_event_listeners_) {
     tizen_core_wl_event_remove_listener(tcore_wl_event_, listener);
   }
   tcore_event_listeners_.clear();
+}
+
+bool TizenWindowTcoreWl::UpdateKeyModifiers(const char* key,
+                                            uint32_t keycode,
+                                            uint32_t modifiers,
+                                            bool is_down) {
+  key_modifiers_ = modifiers;
+  const std::string symbol = key ? key : "";
+  uint32_t bit = 0;
+  if (symbol == "Shift_L" || symbol == "Shift_R") {
+    bit = TIZEN_CORE_WL_MODIFIER_SHIFT;
+  } else if (symbol == "Control_L" || symbol == "Control_R") {
+    bit = TIZEN_CORE_WL_MODIFIER_CTRL;
+  } else if (symbol == "Alt_L" || symbol == "Alt_R") {
+    bit = TIZEN_CORE_WL_MODIFIER_ALT;
+  } else if (symbol == "Super_L" || symbol == "Super_R") {
+    bit = TIZEN_CORE_WL_MODIFIER_WIN;
+  } else if (symbol == "ISO_Level3_Shift") {
+    bit = TIZEN_CORE_WL_MODIFIER_ALTGR;
+  }
+  if (bit) {
+    if (is_down) {
+      pressed_modifiers_[keycode] = bit;
+    } else {
+      pressed_modifiers_.erase(keycode);
+    }
+    key_modifiers_ &= ~bit;
+    for (const auto& entry : pressed_modifiers_) {
+      key_modifiers_ |= entry.second;
+    }
+  }
+  return bit || symbol == "Caps_Lock" || symbol == "Scroll_Lock";
+}
+
+void TizenWindowTcoreWl::StartKeyRepeat(tizen_core_wl_event_input_base_h event,
+                                        const char* key,
+                                        uint32_t keycode,
+                                        const char* device_identifier,
+                                        bool imf_handled) {
+  unsigned int flags = 0;
+  tizen_core_wl_event_key_get_event_flags(event, &flags);
+  const bool native_repeat =
+      (repeat_scan_code_ != 0 && repeat_scan_code_ == keycode) ||
+      (flags & TIZEN_CORE_WL_EVENT_FLAG_REPEAT);
+  StopKeyRepeat();
+  const std::string symbol = key ? key : "";
+  const bool is_arrow = symbol == "Up" || symbol == "Down" ||
+                        symbol == "Left" || symbol == "Right";
+  if (imf_handled || !is_arrow || !keycode || !device_identifier) {
+    return;
+  }
+
+  tizen_core_wl_seat_h seat = nullptr;
+  tizen_core_wl_display_get_default_seat(tcore_wl_display_, &seat);
+  GList* devices = nullptr;
+  if (tizen_core_wl_seat_get_input_device_list(seat, &devices) !=
+      TIZEN_CORE_WL_ERROR_NONE) {
+    return;
+  }
+  bool is_keyboard = false;
+  for (GList* node = devices; node; node = node->next) {
+    auto device = static_cast<tizen_core_wl_input_device_h>(node->data);
+    const char* identifier = nullptr;
+    tizen_core_wl_input_device_get_identifier(device, &identifier);
+    if (identifier && std::strcmp(identifier, device_identifier) == 0) {
+      tizen_core_wl_device_class_e device_class =
+          TIZEN_CORE_WL_DEVICE_CLASS_NONE;
+      tizen_core_wl_device_subclass_e subclass =
+          TIZEN_CORE_WL_DEVICE_SUBCLASS_NONE;
+      is_keyboard = tizen_core_wl_input_device_get_class(
+                        device, &device_class) == TIZEN_CORE_WL_ERROR_NONE &&
+                    tizen_core_wl_input_device_get_subclass(
+                        device, &subclass) == TIZEN_CORE_WL_ERROR_NONE &&
+                    device_class == TIZEN_CORE_WL_DEVICE_CLASS_KEYBOARD &&
+                    subclass != TIZEN_CORE_WL_DEVICE_SUBCLASS_REMOCON;
+      break;
+    }
+  }
+  g_list_free(devices);
+  if (!is_keyboard) {
+    return;
+  }
+  repeat_scan_code_ = keycode;
+  if (native_repeat) {
+    return;
+  }
+  repeat_key_ = symbol;
+  repeat_device_identifier_ = device_identifier;
+  ScheduleKeyRepeat(true);
+}
+
+void TizenWindowTcoreWl::StopKeyRepeat() {
+  if (key_repeat_timer_) {
+    tizen_core_remove_source(key_repeat_core_, key_repeat_timer_);
+    key_repeat_timer_ = nullptr;
+  }
+  repeat_scan_code_ = 0;
+}
+
+void TizenWindowTcoreWl::ResetKeyRepeat() {
+  StopKeyRepeat();
+  key_modifiers_ = 0;
+  pressed_modifiers_.clear();
+}
+
+void TizenWindowTcoreWl::ScheduleKeyRepeat(bool initial) {
+  tizen_core_wl_seat_h seat = nullptr;
+  if (tizen_core_wl_display_get_default_seat(tcore_wl_display_, &seat) !=
+          TIZEN_CORE_WL_ERROR_NONE ||
+      !seat ||
+      tizen_core_find_from_this_thread(&key_repeat_core_) !=
+          TIZEN_CORE_ERROR_NONE) {
+    return;
+  }
+  const auto type = (repeat_key_ == "Left" || repeat_key_ == "Right")
+                        ? TIZEN_CORE_WL_KEYBOARD_REPEAT_HORIZONTAL
+                        : TIZEN_CORE_WL_KEYBOARD_REPEAT_VERTICAL;
+  double rate = 0;
+  double delay = 0;
+  auto result =
+      tizen_core_wl_seat_get_keyboard_repeat(seat, type, &rate, &delay);
+  if (result != TIZEN_CORE_WL_ERROR_NONE) {
+    result = tizen_core_wl_seat_get_keyboard_repeat(
+        seat, TIZEN_CORE_WL_KEYBOARD_REPEAT_DEFAULT, &rate, &delay);
+  }
+  // Tizen stores both the repeat interval (rate) and delay in seconds.
+  const double interval_ms =
+      std::ceil(rate * 1000 + (initial ? delay * 1000 : 0));
+  if (result != TIZEN_CORE_WL_ERROR_NONE || !std::isfinite(rate) ||
+      !std::isfinite(delay) || rate <= 0 || delay < 0 ||
+      !std::isfinite(interval_ms) || interval_ms > G_MAXUINT) {
+    return;
+  }
+  if (tizen_core_add_timer(
+          key_repeat_core_,
+          static_cast<unsigned int>(std::max(interval_ms, 1.0)),
+          [](void* data) -> bool {
+            auto* self = static_cast<TizenWindowTcoreWl*>(data);
+            self->key_repeat_timer_ = nullptr;
+            self->ScheduleKeyRepeat(false);
+            if (self->key_repeat_timer_ && self->view_delegate_) {
+              const auto key = self->repeat_key_;
+              const auto device = self->repeat_device_identifier_;
+              self->view_delegate_->OnKey(
+                  key.c_str(), nullptr, nullptr, self->key_modifiers_,
+                  self->repeat_scan_code_, device.c_str(), true);
+            }
+            return false;
+          },
+          this, &key_repeat_timer_) != TIZEN_CORE_ERROR_NONE) {
+    key_repeat_timer_ = nullptr;
+    FT_LOG(Error) << "Failed to add a key repeat timer.";
+  }
 }
 
 void TizenWindowTcoreWl::DestroyWindow() {
