@@ -4,6 +4,8 @@
 
 #include "tizen_window_tcore_wl.h"
 
+#include <tizen_core_wl_notification.h>
+
 #ifdef TV_PROFILE
 #include <app.h>
 #include <app_preference.h>

@@ -449,16 +449,16 @@ void TizenInputMethodContext::UnregisterEventCallbacks() {
   }
   tizen_core_imf_context_del_event_callback(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_COMMIT,
-      event_callbacks_[TIZEN_CORE_IMF_CALLBACK_COMMIT]);
+      event_callbacks_[TIZEN_CORE_IMF_CALLBACK_COMMIT], this);
   tizen_core_imf_context_del_event_callback(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_CHANGED,
-      event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_CHANGED]);
+      event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_CHANGED], this);
   tizen_core_imf_context_del_event_callback(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_START,
-      event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_START]);
+      event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_START], this);
   tizen_core_imf_context_del_event_callback(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_END,
-      event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_END]);
+      event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_END], this);
 }
 
 void TizenInputMethodContext::SetContextOptions() {
@@ -525,7 +525,7 @@ void TizenInputMethodContext::UnregisterInputPanelEventCallback() {
 
   tizen_core_imf_context_del_input_panel_event_callback(
       imf_context_, TIZEN_CORE_IMF_INPUT_PANEL_EVENT_STATE,
-      InputPanelStateChangedCallback);
+      InputPanelStateChangedCallback, this);
 }
 
 }  // namespace flutter
