@@ -8,7 +8,7 @@ jobs:
 
     strategy:
       matrix:
-        api-version: ["6.0", "6.5", "8.0"]
+        api-version: ["6.0", "6.5", "8.0", "11.0"]
         arch: [arm, arm64, x86, x64]
         include:
           - arch: arm
@@ -19,6 +19,9 @@ jobs:
             triple: i686-linux-gnu
           - arch: x64
             triple: x86-64-linux-gnu
+          - api-version: "11.0"
+            use_tcore: true
+            suffix: _tcore
         exclude:
           - api-version: "6.0"
             arch: x64
@@ -29,6 +32,8 @@ jobs:
           - api-version: "8.0"
             arch: arm64
           - api-version: "8.0"
+            arch: x86
+          - api-version: "11.0"
             arch: x86
 
     steps:
@@ -66,46 +71,54 @@ jobs:
             --target-toolchain /usr/lib/llvm-17 \
             --target-sysroot src/sysroot-${{ matrix.api-version }}/${{ matrix.arch }} \
             --api-version ${{ matrix.api-version }} \
+            ${{ matrix.use_tcore && '--use-tcore' || '' }} \
             --target-dir build
           ninja -C src/out/build
 
+      - name: Rename tcore artifacts
+        if: ${{ matrix.use_tcore }}
+        run: |
+          for library in src/out/build/libflutter_tizen*.so src/out/build/so.unstripped/libflutter_tizen*.so; do
+            mv "$library" "${library%.so}_tcore.so"
+          done
+
       - uses: actions/upload-artifact@v4
         with:
-          name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}
+          name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}${{ matrix.suffix }}
           path: |
-            src/out/build/libflutter_tizen_common.so
-            src/out/build/libflutter_tizen_mobile.so
-            src/out/build/libflutter_tizen_tv.so
+            src/out/build/libflutter_tizen_common${{ matrix.suffix }}.so
+            src/out/build/libflutter_tizen_mobile${{ matrix.suffix }}.so
+            src/out/build/libflutter_tizen_tv${{ matrix.suffix }}.so
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
         with:
-          name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}_experimental
+          name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}_experimental${{ matrix.suffix }}
           path: |
-            src/out/build/libflutter_tizen*_experimental.so
+            src/out/build/libflutter_tizen*_experimental${{ matrix.suffix }}.so
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
         with:
-          name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}_unittests
+          name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}${{ matrix.suffix }}_unittests
           path: src/out/build/flutter_tizen_unittests
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
         if: ${{ github.event_name == 'push' }}
         with:
-          name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}_symbols
+          name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}${{ matrix.suffix }}_symbols
           path: |
-            src/out/build/so.unstripped/libflutter_tizen_common.so
-            src/out/build/so.unstripped/libflutter_tizen_mobile.so
-            src/out/build/so.unstripped/libflutter_tizen_tv.so
+            src/out/build/so.unstripped/libflutter_tizen_common${{ matrix.suffix }}.so
+            src/out/build/so.unstripped/libflutter_tizen_mobile${{ matrix.suffix }}.so
+            src/out/build/so.unstripped/libflutter_tizen_tv${{ matrix.suffix }}.so
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
         if: ${{ github.event_name == 'push' }}
         with:
-          name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}_experimental_symbols
-          path: src/out/build/so.unstripped/libflutter_tizen*_experimental.so
+          name: tizen-${{ matrix.api-version }}-${{ matrix.arch }}_experimental${{ matrix.suffix }}_symbols
+          path: src/out/build/so.unstripped/libflutter_tizen*_experimental${{ matrix.suffix }}.so
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
