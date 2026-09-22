@@ -198,6 +198,10 @@ template("embedder") {
       defines += [ "CLIPBOARD_SUPPORT" ]
     }
 
+    if (api_version != "6.0" && api_version != "6.5" && api_version != "7.0") {
+      defines += [ "DIRECTIONAL_KEY_REPEAT_SUPPORT" ]
+    }
+
     configs += [
       ":flutter_tizen_config",
       "//flutter/shell/platform/common:desktop_library_implementation",
