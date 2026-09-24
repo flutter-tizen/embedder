@@ -201,7 +201,7 @@ FlutterRendererConfig TizenRendererVulkan::GetRendererConfig() {
   };
   config.vulkan.external_texture_frame_callback =
       [](void* user_data, int64_t texture_id, size_t width, size_t height,
-         FlutterVulkanTexture* texture) -> bool {
+         FlutterVulkanExternalTexture* texture) -> bool {
     auto* engine = reinterpret_cast<FlutterTizenEngine*>(user_data);
     if (!engine->view()) {
       return false;

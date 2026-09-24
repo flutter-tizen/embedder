@@ -109,7 +109,7 @@ bool ExternalTextureSurfaceVulkan::IsSupportDisjoint(
 bool ExternalTextureSurfaceVulkan::PopulateVulkanTexture(
     size_t width,
     size_t height,
-    FlutterVulkanTexture* vulkan_texture) {
+    FlutterVulkanExternalTexture* vulkan_texture) {
   if (!texture_callback_ || !vulkan_texture) {
     return false;
   }
@@ -126,11 +126,12 @@ bool ExternalTextureSurfaceVulkan::PopulateVulkanTexture(
     return false;
   }
 
+  vulkan_texture->struct_size = sizeof(FlutterVulkanExternalTexture);
   vulkan_texture->image =
       reinterpret_cast<uint64_t>(vulkan_buffer_->GetImage());
   vulkan_texture->format = vulkan_buffer_->GetFormat();
-  vulkan_texture->image_memory =
-      reinterpret_cast<uint64_t>(vulkan_buffer_->GetMemory());
+  vulkan_texture->user_data = nullptr;
+  vulkan_texture->destruction_callback = nullptr;
   vulkan_texture->width = width;
   vulkan_texture->height = height;
   return true;

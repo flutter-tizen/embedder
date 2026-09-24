@@ -23,7 +23,7 @@ ExternalTexturePixelVulkan::~ExternalTexturePixelVulkan() {
 bool ExternalTexturePixelVulkan::PopulateVulkanTexture(
     size_t width,
     size_t height,
-    FlutterVulkanTexture* flutter_texture) {
+    FlutterVulkanExternalTexture* flutter_texture) {
   if (!texture_callback_) {
     FT_LOG(Error) << "texture_callback_ is nullptr";
     return false;
@@ -75,12 +75,13 @@ bool ExternalTexturePixelVulkan::PopulateVulkanTexture(
     return false;
   }
 
-  FlutterVulkanTexture* vulkan_texture =
-      static_cast<FlutterVulkanTexture*>(flutter_texture);
-  vulkan_texture->image = reinterpret_cast<uint64_t>(image_);
-  vulkan_texture->format = VK_FORMAT_R8G8B8A8_UNORM;
-  vulkan_texture->width = width_;
-  vulkan_texture->height = height_;
+  flutter_texture->struct_size = sizeof(FlutterVulkanExternalTexture);
+  flutter_texture->image = reinterpret_cast<uint64_t>(image_);
+  flutter_texture->format = VK_FORMAT_R8G8B8A8_UNORM;
+  flutter_texture->user_data = nullptr;
+  flutter_texture->destruction_callback = nullptr;
+  flutter_texture->width = width_;
+  flutter_texture->height = height_;
   return true;
 }
 
