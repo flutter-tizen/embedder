@@ -55,7 +55,7 @@ class FlutterTizenTextureRegistrar {
   bool PopulateVulkanTexture(int64_t texture_id,
                              size_t width,
                              size_t height,
-                             FlutterVulkanTexture* texture);
+                             FlutterVulkanExternalTexture* texture);
 
  private:
   FlutterTizenEngine* engine_ = nullptr;
