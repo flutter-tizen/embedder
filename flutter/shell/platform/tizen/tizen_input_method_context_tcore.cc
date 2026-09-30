@@ -390,7 +390,7 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
           self->on_commit_(str);
         }
       };
-  tizen_core_imf_context_add_event_callback(
+  tizen_core_imf_context_add_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_COMMIT,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_COMMIT], this);
 
@@ -402,7 +402,7 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
           self->on_preedit_start_();
         }
       };
-  tizen_core_imf_context_add_event_callback(
+  tizen_core_imf_context_add_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_START,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_START], this);
 
@@ -414,7 +414,7 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
           self->on_preedit_end_();
         }
       };
-  tizen_core_imf_context_add_event_callback(
+  tizen_core_imf_context_add_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_END,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_END], this);
 
@@ -438,7 +438,7 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
           }
         }
       };
-  tizen_core_imf_context_add_event_callback(
+  tizen_core_imf_context_add_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_CHANGED,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_CHANGED], this);
 }
@@ -447,16 +447,16 @@ void TizenInputMethodContext::UnregisterEventCallbacks() {
   if (!imf_context_) {
     return;
   }
-  tizen_core_imf_context_del_event_callback(
+  tizen_core_imf_context_del_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_COMMIT,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_COMMIT], this);
-  tizen_core_imf_context_del_event_callback(
+  tizen_core_imf_context_del_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_CHANGED,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_CHANGED], this);
-  tizen_core_imf_context_del_event_callback(
+  tizen_core_imf_context_del_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_START,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_START], this);
-  tizen_core_imf_context_del_event_callback(
+  tizen_core_imf_context_del_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_END,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_END], this);
 }
@@ -513,7 +513,7 @@ void TizenInputMethodContext::RegisterInputPanelEventCallback() {
     return;
   }
 
-  tizen_core_imf_context_add_input_panel_event_callback(
+  tizen_core_imf_context_add_input_panel_event_cb(
       imf_context_, TIZEN_CORE_IMF_INPUT_PANEL_EVENT_STATE,
       InputPanelStateChangedCallback, this);
 }
@@ -523,7 +523,7 @@ void TizenInputMethodContext::UnregisterInputPanelEventCallback() {
     return;
   }
 
-  tizen_core_imf_context_del_input_panel_event_callback(
+  tizen_core_imf_context_del_input_panel_event_cb(
       imf_context_, TIZEN_CORE_IMF_INPUT_PANEL_EVENT_STATE,
       InputPanelStateChangedCallback, this);
 }
