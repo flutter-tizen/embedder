@@ -75,6 +75,44 @@ tizen_core_imf_keyboard_locks_e ModifiersToImfLocks(unsigned int modifiers) {
   return static_cast<tizen_core_imf_keyboard_locks_e>(locks);
 }
 
+void SetImfKeyDeviceClass(tizen_core_imf_event_key_h imf_key,
+                          tizen_core_wl_event_input_base_h ev,
+                          const char* dev_identifier) {
+  tizen_core_wl_window_h window = nullptr;
+  tizen_core_wl_display_h display = nullptr;
+  tizen_core_wl_seat_h seat = nullptr;
+  GList* devices = nullptr;
+  if (tizen_core_wl_event_input_base_get_window(ev, &window) !=
+          TIZEN_CORE_WL_ERROR_NONE ||
+      tizen_core_wl_window_get_display(window, &display) !=
+          TIZEN_CORE_WL_ERROR_NONE ||
+      tizen_core_wl_display_get_default_seat(display, &seat) !=
+          TIZEN_CORE_WL_ERROR_NONE ||
+      tizen_core_wl_seat_get_input_device_list(seat, &devices) !=
+          TIZEN_CORE_WL_ERROR_NONE) {
+    return;
+  }
+
+  for (GList* node = devices; node; node = node->next) {
+    auto device = static_cast<tizen_core_wl_input_device_h>(node->data);
+    const char* identifier = nullptr;
+    tizen_core_wl_input_device_get_identifier(device, &identifier);
+    if (identifier && strcmp(identifier, dev_identifier) == 0) {
+      tizen_core_wl_device_class_e dev_class = TIZEN_CORE_WL_DEVICE_CLASS_NONE;
+      tizen_core_wl_device_subclass_e dev_subclass =
+          TIZEN_CORE_WL_DEVICE_SUBCLASS_NONE;
+      tizen_core_wl_input_device_get_class(device, &dev_class);
+      tizen_core_wl_input_device_get_subclass(device, &dev_subclass);
+      tizen_core_imf_event_key_set_device_class(
+          imf_key, static_cast<tizen_core_imf_device_class_e>(dev_class));
+      tizen_core_imf_event_key_set_device_subclass(
+          imf_key, static_cast<tizen_core_imf_device_subclass_e>(dev_subclass));
+      break;
+    }
+  }
+  g_list_free(devices);
+}
+
 tizen_core_imf_event_key_h CreateImfKeyEventFromTcoreWlEvent(void* event) {
   auto* ev = static_cast<tizen_core_wl_event_input_base_h>(event);
 
@@ -125,6 +163,7 @@ tizen_core_imf_event_key_h CreateImfKeyEventFromTcoreWlEvent(void* event) {
   tizen_core_wl_event_input_base_get_device_identifier(ev, &dev_identifier);
   if (dev_identifier) {
     tizen_core_imf_event_key_set_device_name(imf_key, dev_identifier);
+    SetImfKeyDeviceClass(imf_key, ev, dev_identifier);
     free(dev_identifier);
   }
 
