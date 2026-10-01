@@ -340,7 +340,8 @@ bool TizenInputMethodContext::IsInputPanelShown() {
   if (!imf_context_) {
     return false;
   }
-  tizen_core_imf_input_panel_state_e state;
+  tizen_core_imf_input_panel_state_e state =
+      TIZEN_CORE_IMF_INPUT_PANEL_STATE_HIDE;
   tizen_core_imf_context_get_input_panel_state(imf_context_, &state);
   return state == TIZEN_CORE_IMF_INPUT_PANEL_STATE_SHOW ||
          state == TIZEN_CORE_IMF_INPUT_PANEL_STATE_WILL_SHOW;
