@@ -12,6 +12,8 @@
 
 namespace {
 
+int imf_init_count = 0;
+
 tizen_core_imf_input_panel_layout_e TextInputTypeToImfInputPanelLayout(
     const std::string& text_input_type) {
   if (text_input_type == "TextInputType.text" ||
@@ -155,7 +157,11 @@ bool IsNavigationOrSystemKey(const char* key) {
 namespace flutter {
 
 TizenInputMethodContext::TizenInputMethodContext(uintptr_t window_id) {
-  tizen_core_imf_init();
+  if (imf_init_count++ == 0 &&
+      tizen_core_imf_init() != TIZEN_CORE_IMF_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to initialize tizen_core_imf.";
+    return;
+  }
 
   if (tizen_core_imf_context_create(&imf_context_) !=
       TIZEN_CORE_IMF_ERROR_NONE) {
@@ -179,7 +185,9 @@ TizenInputMethodContext::~TizenInputMethodContext() {
     tizen_core_imf_context_destroy(imf_context_);
   }
 
-  tizen_core_imf_shutdown();
+  if (--imf_init_count == 0) {
+    tizen_core_imf_shutdown();
+  }
 }
 
 bool TizenInputMethodContext::HandleTcoreWlEventKey(void* event, bool is_down) {
