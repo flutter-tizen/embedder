@@ -196,7 +196,7 @@ bool IsNavigationOrSystemKey(const char* key) {
 namespace flutter {
 
 TizenInputMethodContext::TizenInputMethodContext(uintptr_t window_id) {
-  if (imf_init_count++ == 0 &&
+  if (imf_init_count == 0 &&
       tizen_core_imf_init() != TIZEN_CORE_IMF_ERROR_NONE) {
     FT_LOG(Error) << "Failed to initialize tizen_core_imf.";
     return;
@@ -205,8 +205,13 @@ TizenInputMethodContext::TizenInputMethodContext(uintptr_t window_id) {
   if (tizen_core_imf_context_create(&imf_context_) !=
       TIZEN_CORE_IMF_ERROR_NONE) {
     FT_LOG(Error) << "Failed to create tizen_core_imf_context.";
+    imf_context_ = nullptr;
+    if (imf_init_count == 0) {
+      tizen_core_imf_shutdown();
+    }
     return;
   }
+  imf_init_count++;
 
   tizen_core_imf_context_set_client_window(imf_context_,
                                            reinterpret_cast<void*>(window_id));
@@ -222,10 +227,9 @@ TizenInputMethodContext::~TizenInputMethodContext() {
 
   if (imf_context_) {
     tizen_core_imf_context_destroy(imf_context_);
-  }
-
-  if (--imf_init_count == 0) {
-    tizen_core_imf_shutdown();
+    if (--imf_init_count == 0) {
+      tizen_core_imf_shutdown();
+    }
   }
 }
 
