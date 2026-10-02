@@ -12,7 +12,6 @@
 #endif
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
-#include <tbm_dummy_display.h>
 
 #include "flutter/shell/platform/tizen/external_texture_pixel_egl.h"
 #include "flutter/shell/platform/tizen/external_texture_surface_egl.h"
@@ -49,13 +48,13 @@ bool TizenRendererEgl::CreateSurface(void* render_target,
                                      void* render_target_display,
                                      int32_t width,
                                      int32_t height) {
-  if (render_target_display) {
-    egl_display_ = eglGetDisplay(
-        reinterpret_cast<EGLNativeDisplayType>(render_target_display));
-  } else {
-    egl_display_ = eglGetDisplay(tbm_dummy_display_create());
+  if (!render_target_display) {
+    FT_LOG(Error) << "No render target display.";
+    return false;
   }
 
+  egl_display_ = eglGetDisplay(
+      reinterpret_cast<EGLNativeDisplayType>(render_target_display));
   if (egl_display_ == EGL_NO_DISPLAY) {
     PrintEGLError();
     FT_LOG(Error) << "Could not get EGL display.";
@@ -92,24 +91,21 @@ bool TizenRendererEgl::CreateSurface(void* render_target,
   {
     const EGLint attribs[] = {EGL_NONE};
 
-    if (render_target_display) {
 #ifdef USE_TCORE_WL
-      tizen_core_wl_native_egl_window_h egl_window = nullptr;
-      if (tizen_core_wl_egl_window_get_native_egl_window(
-              static_cast<tizen_core_wl_egl_window_h>(render_target),
-              &egl_window) != TIZEN_CORE_WL_ERROR_NONE) {
-        FT_LOG(Error) << "Could not get the native EGL window.";
-        return false;
-      }
-#else
-      const auto egl_window = ecore_wl2_egl_window_native_get(
-          static_cast<Ecore_Wl2_Egl_Window*>(render_target));
-#endif
-      egl_surface_ = eglCreateWindowSurface(
-          egl_display_, egl_config_,
-          reinterpret_cast<EGLNativeWindowType>(egl_window), attribs);
+    tizen_core_wl_native_egl_window_h egl_window = nullptr;
+    if (tizen_core_wl_egl_window_get_native_egl_window(
+            static_cast<tizen_core_wl_egl_window_h>(render_target),
+            &egl_window) != TIZEN_CORE_WL_ERROR_NONE) {
+      FT_LOG(Error) << "Could not get the native EGL window.";
+      return false;
     }
-
+#else
+    const auto egl_window = ecore_wl2_egl_window_native_get(
+        static_cast<Ecore_Wl2_Egl_Window*>(render_target));
+#endif
+    egl_surface_ = eglCreateWindowSurface(
+        egl_display_, egl_config_,
+        reinterpret_cast<EGLNativeWindowType>(egl_window), attribs);
     if (egl_surface_ == EGL_NO_SURFACE) {
       FT_LOG(Error) << "Could not create an onscreen window surface.";
       return false;

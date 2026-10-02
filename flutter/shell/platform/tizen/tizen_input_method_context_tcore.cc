@@ -203,59 +203,6 @@ bool TizenInputMethodContext::HandleTcoreWlEventKey(void* event, bool is_down) {
   return filter_result;
 }
 
-#ifdef NUI_SUPPORT
-bool TizenInputMethodContext::HandleNuiKeyEvent(const char* device_name,
-                                                uint32_t device_class,
-                                                uint32_t device_subclass,
-                                                const char* key,
-                                                const char* string,
-                                                uint32_t modifiers,
-                                                uint32_t scan_code,
-                                                size_t timestamp,
-                                                bool is_down) {
-  if (!imf_context_) {
-    return false;
-  }
-
-  tizen_core_imf_event_key_h imf_key = nullptr;
-  tizen_core_imf_event_key_create(&imf_key);
-  if (!imf_key) {
-    return false;
-  }
-
-  if (key) {
-    tizen_core_imf_event_key_set_keyname(imf_key, key);
-    tizen_core_imf_event_key_set_key(imf_key, key);
-  }
-  if (string) {
-    tizen_core_imf_event_key_set_string(imf_key, string);
-  }
-
-  tizen_core_imf_event_key_set_modifiers(imf_key,
-                                         ModifiersToImfModifiers(modifiers));
-  tizen_core_imf_event_key_set_locks(imf_key, ModifiersToImfLocks(modifiers));
-  tizen_core_imf_event_key_set_keycode(imf_key, scan_code);
-  tizen_core_imf_event_key_set_timestamp(imf_key, timestamp);
-
-  if (device_name) {
-    tizen_core_imf_event_key_set_device_name(imf_key, device_name);
-  }
-  tizen_core_imf_event_key_set_device_class(
-      imf_key, static_cast<tizen_core_imf_device_class_e>(device_class));
-  tizen_core_imf_event_key_set_device_subclass(
-      imf_key, static_cast<tizen_core_imf_device_subclass_e>(device_subclass));
-
-  bool filter_result = false;
-  tizen_core_imf_context_filter_event(imf_context_,
-                                      is_down
-                                          ? TIZEN_CORE_IMF_EVENT_TYPE_KEY_DOWN
-                                          : TIZEN_CORE_IMF_EVENT_TYPE_KEY_UP,
-                                      imf_key, &filter_result);
-  tizen_core_imf_event_key_destroy(imf_key);
-  return filter_result;
-}
-#endif
-
 InputPanelGeometry TizenInputMethodContext::GetInputPanelGeometry() {
   InputPanelGeometry geometry;
   if (!imf_context_) {

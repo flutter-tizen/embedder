@@ -354,10 +354,6 @@ void FlutterTizenView::OnCommit(const std::string& str) {
 void FlutterTizenView::SendInitialGeometry() {
   if (auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get())) {
     OnRotate(window->GetRotation());
-  } else {
-    TizenGeometry geometry = tizen_view_->GetGeometry();
-    SendWindowMetrics(geometry.left, geometry.top, geometry.width,
-                      geometry.height, 0.0);
   }
 }
 
