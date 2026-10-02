@@ -281,6 +281,9 @@ bool FlutterTizenEngine::StopEngine() {
       }
     }
 
+    if (renderer_) {
+      PostRenderThreadTask([this] { renderer_->OnEngineShutdown(); });
+    }
     FlutterEngineResult result = embedder_api_.Shutdown(engine_);
     view_ = nullptr;
     engine_ = nullptr;
