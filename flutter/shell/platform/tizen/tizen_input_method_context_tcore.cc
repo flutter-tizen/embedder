@@ -12,6 +12,8 @@
 
 namespace {
 
+int imf_init_count = 0;
+
 tizen_core_imf_input_panel_layout_e TextInputTypeToImfInputPanelLayout(
     const std::string& text_input_type) {
   if (text_input_type == "TextInputType.text" ||
@@ -73,6 +75,44 @@ tizen_core_imf_keyboard_locks_e ModifiersToImfLocks(unsigned int modifiers) {
   return static_cast<tizen_core_imf_keyboard_locks_e>(locks);
 }
 
+void SetImfKeyDeviceClass(tizen_core_imf_event_key_h imf_key,
+                          tizen_core_wl_event_input_base_h ev,
+                          const char* dev_identifier) {
+  tizen_core_wl_window_h window = nullptr;
+  tizen_core_wl_display_h display = nullptr;
+  tizen_core_wl_seat_h seat = nullptr;
+  GList* devices = nullptr;
+  if (tizen_core_wl_event_input_base_get_window(ev, &window) !=
+          TIZEN_CORE_WL_ERROR_NONE ||
+      tizen_core_wl_window_get_display(window, &display) !=
+          TIZEN_CORE_WL_ERROR_NONE ||
+      tizen_core_wl_display_get_default_seat(display, &seat) !=
+          TIZEN_CORE_WL_ERROR_NONE ||
+      tizen_core_wl_seat_get_input_device_list(seat, &devices) !=
+          TIZEN_CORE_WL_ERROR_NONE) {
+    return;
+  }
+
+  for (GList* node = devices; node; node = node->next) {
+    auto device = static_cast<tizen_core_wl_input_device_h>(node->data);
+    const char* identifier = nullptr;
+    tizen_core_wl_input_device_get_identifier(device, &identifier);
+    if (identifier && strcmp(identifier, dev_identifier) == 0) {
+      tizen_core_wl_device_class_e dev_class = TIZEN_CORE_WL_DEVICE_CLASS_NONE;
+      tizen_core_wl_device_subclass_e dev_subclass =
+          TIZEN_CORE_WL_DEVICE_SUBCLASS_NONE;
+      tizen_core_wl_input_device_get_class(device, &dev_class);
+      tizen_core_wl_input_device_get_subclass(device, &dev_subclass);
+      tizen_core_imf_event_key_set_device_class(
+          imf_key, static_cast<tizen_core_imf_device_class_e>(dev_class));
+      tizen_core_imf_event_key_set_device_subclass(
+          imf_key, static_cast<tizen_core_imf_device_subclass_e>(dev_subclass));
+      break;
+    }
+  }
+  g_list_free(devices);
+}
+
 tizen_core_imf_event_key_h CreateImfKeyEventFromTcoreWlEvent(void* event) {
   auto* ev = static_cast<tizen_core_wl_event_input_base_h>(event);
 
@@ -123,6 +163,7 @@ tizen_core_imf_event_key_h CreateImfKeyEventFromTcoreWlEvent(void* event) {
   tizen_core_wl_event_input_base_get_device_identifier(ev, &dev_identifier);
   if (dev_identifier) {
     tizen_core_imf_event_key_set_device_name(imf_key, dev_identifier);
+    SetImfKeyDeviceClass(imf_key, ev, dev_identifier);
     free(dev_identifier);
   }
 
@@ -155,13 +196,22 @@ bool IsNavigationOrSystemKey(const char* key) {
 namespace flutter {
 
 TizenInputMethodContext::TizenInputMethodContext(uintptr_t window_id) {
-  tizen_core_imf_init();
+  if (imf_init_count == 0 &&
+      tizen_core_imf_init() != TIZEN_CORE_IMF_ERROR_NONE) {
+    FT_LOG(Error) << "Failed to initialize tizen_core_imf.";
+    return;
+  }
 
   if (tizen_core_imf_context_create(&imf_context_) !=
       TIZEN_CORE_IMF_ERROR_NONE) {
     FT_LOG(Error) << "Failed to create tizen_core_imf_context.";
+    imf_context_ = nullptr;
+    if (imf_init_count == 0) {
+      tizen_core_imf_shutdown();
+    }
     return;
   }
+  imf_init_count++;
 
   tizen_core_imf_context_set_client_window(imf_context_,
                                            reinterpret_cast<void*>(window_id));
@@ -177,9 +227,10 @@ TizenInputMethodContext::~TizenInputMethodContext() {
 
   if (imf_context_) {
     tizen_core_imf_context_destroy(imf_context_);
+    if (--imf_init_count == 0) {
+      tizen_core_imf_shutdown();
+    }
   }
-
-  tizen_core_imf_shutdown();
 }
 
 bool TizenInputMethodContext::HandleTcoreWlEventKey(void* event, bool is_down) {
@@ -293,7 +344,8 @@ bool TizenInputMethodContext::IsInputPanelShown() {
   if (!imf_context_) {
     return false;
   }
-  tizen_core_imf_input_panel_state_e state;
+  tizen_core_imf_input_panel_state_e state =
+      TIZEN_CORE_IMF_INPUT_PANEL_STATE_HIDE;
   tizen_core_imf_context_get_input_panel_state(imf_context_, &state);
   return state == TIZEN_CORE_IMF_INPUT_PANEL_STATE_SHOW ||
          state == TIZEN_CORE_IMF_INPUT_PANEL_STATE_WILL_SHOW;
@@ -390,7 +442,7 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
           self->on_commit_(str);
         }
       };
-  tizen_core_imf_context_add_event_callback(
+  tizen_core_imf_context_add_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_COMMIT,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_COMMIT], this);
 
@@ -402,7 +454,7 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
           self->on_preedit_start_();
         }
       };
-  tizen_core_imf_context_add_event_callback(
+  tizen_core_imf_context_add_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_START,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_START], this);
 
@@ -414,7 +466,7 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
           self->on_preedit_end_();
         }
       };
-  tizen_core_imf_context_add_event_callback(
+  tizen_core_imf_context_add_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_END,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_END], this);
 
@@ -438,7 +490,7 @@ void TizenInputMethodContext::RegisterEventCallbacks() {
           }
         }
       };
-  tizen_core_imf_context_add_event_callback(
+  tizen_core_imf_context_add_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_CHANGED,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_CHANGED], this);
 }
@@ -447,16 +499,16 @@ void TizenInputMethodContext::UnregisterEventCallbacks() {
   if (!imf_context_) {
     return;
   }
-  tizen_core_imf_context_del_event_callback(
+  tizen_core_imf_context_del_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_COMMIT,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_COMMIT], this);
-  tizen_core_imf_context_del_event_callback(
+  tizen_core_imf_context_del_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_CHANGED,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_CHANGED], this);
-  tizen_core_imf_context_del_event_callback(
+  tizen_core_imf_context_del_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_START,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_START], this);
-  tizen_core_imf_context_del_event_callback(
+  tizen_core_imf_context_del_event_cb(
       imf_context_, TIZEN_CORE_IMF_CALLBACK_PREEDIT_END,
       event_callbacks_[TIZEN_CORE_IMF_CALLBACK_PREEDIT_END], this);
 }
@@ -513,7 +565,7 @@ void TizenInputMethodContext::RegisterInputPanelEventCallback() {
     return;
   }
 
-  tizen_core_imf_context_add_input_panel_event_callback(
+  tizen_core_imf_context_add_input_panel_event_cb(
       imf_context_, TIZEN_CORE_IMF_INPUT_PANEL_EVENT_STATE,
       InputPanelStateChangedCallback, this);
 }
@@ -523,7 +575,7 @@ void TizenInputMethodContext::UnregisterInputPanelEventCallback() {
     return;
   }
 
-  tizen_core_imf_context_del_input_panel_event_callback(
+  tizen_core_imf_context_del_input_panel_event_cb(
       imf_context_, TIZEN_CORE_IMF_INPUT_PANEL_EVENT_STATE,
       InputPanelStateChangedCallback, this);
 }
