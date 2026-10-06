@@ -30,18 +30,6 @@ class TizenInputMethodContext {
 
   bool HandleTcoreWlEventKey(void* event, bool is_down);
 
-#ifdef NUI_SUPPORT
-  bool HandleNuiKeyEvent(const char* device_name,
-                         uint32_t device_class,
-                         uint32_t device_subclass,
-                         const char* key,
-                         const char* string,
-                         uint32_t modifiers,
-                         uint32_t scan_code,
-                         size_t timestamp,
-                         bool is_down);
-#endif
-
   InputPanelGeometry GetInputPanelGeometry();
 
   void ResetInputMethodContext();
