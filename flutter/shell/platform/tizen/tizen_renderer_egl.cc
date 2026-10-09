@@ -251,8 +251,17 @@ bool TizenRendererEgl::ChooseEGLConfiguration() {
   return true;
 }
 
+void TizenRendererEgl::OnEngineShutdown() {
+  is_shutting_down_ = true;
+}
+
 bool TizenRendererEgl::OnMakeCurrent() {
   if (!IsValid()) {
+    return false;
+  }
+  if (enable_impeller_ && is_shutting_down_) {
+    eglMakeCurrent(egl_display_, EGL_NO_SURFACE, EGL_NO_SURFACE,
+                   EGL_NO_CONTEXT);
     return false;
   }
   if (eglMakeCurrent(egl_display_, egl_surface_, egl_surface_, egl_context_) !=

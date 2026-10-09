@@ -25,6 +25,8 @@ class TizenRenderer {
   virtual std::unique_ptr<ExternalTexture> CreateExternalTexture(
       const FlutterDesktopTextureInfo* texture_info) = 0;
 
+  virtual void OnEngineShutdown() {}
+
  protected:
   bool CreateSurface(TizenViewBase* view);
   virtual bool CreateSurface(void* render_target,

@@ -7,6 +7,7 @@
 
 #include <EGL/egl.h>
 
+#include <atomic>
 #include <string>
 
 #include "flutter/shell/platform/tizen/external_texture.h"
@@ -41,6 +42,8 @@ class TizenRendererEgl : public TizenRendererGL {
   virtual std::unique_ptr<ExternalTexture> CreateExternalTexture(
       const FlutterDesktopTextureInfo* texture_info) override;
 
+  virtual void OnEngineShutdown() override;
+
  protected:
   bool CreateSurface(void* render_target,
                      void* render_target_display,
@@ -63,6 +66,7 @@ class TizenRendererEgl : public TizenRendererGL {
 
   std::string egl_extension_str_;
   bool enable_impeller_;
+  std::atomic<bool> is_shutting_down_ = false;
 };
 
 }  // namespace flutter
