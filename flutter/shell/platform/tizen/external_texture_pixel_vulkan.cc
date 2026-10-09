@@ -226,8 +226,48 @@ bool ExternalTexturePixelVulkan::CopyBufferToImage(const uint8_t* src_buffer,
   region.imageExtent = {static_cast<uint32_t>(width_),
                         static_cast<uint32_t>(height_), 1};
 
+  {
+    VkImageMemoryBarrier pre_copy_barrier = {};
+    pre_copy_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    pre_copy_barrier.srcAccessMask = 0;
+    pre_copy_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    pre_copy_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    pre_copy_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    pre_copy_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    pre_copy_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    pre_copy_barrier.image = image_;
+    pre_copy_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    pre_copy_barrier.subresourceRange.baseMipLevel = 0;
+    pre_copy_barrier.subresourceRange.levelCount = 1;
+    pre_copy_barrier.subresourceRange.baseArrayLayer = 0;
+    pre_copy_barrier.subresourceRange.layerCount = 1;
+    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                         nullptr, 1, &pre_copy_barrier);
+  }
+
   vkCmdCopyBufferToImage(command_buffer, staging_buffer_, image_,
                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+  {
+    VkImageMemoryBarrier post_copy_barrier = {};
+    post_copy_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    post_copy_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    post_copy_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    post_copy_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    post_copy_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    post_copy_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    post_copy_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    post_copy_barrier.image = image_;
+    post_copy_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    post_copy_barrier.subresourceRange.baseMipLevel = 0;
+    post_copy_barrier.subresourceRange.levelCount = 1;
+    post_copy_barrier.subresourceRange.baseArrayLayer = 0;
+    post_copy_barrier.subresourceRange.layerCount = 1;
+    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                         0, nullptr, 1, &post_copy_barrier);
+  }
 
   vulkan_renderer_->EndSingleTimeCommands(command_buffer);
   return true;

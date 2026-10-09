@@ -51,6 +51,12 @@ bool ExternalTextureSurfaceVulkan::CreateBuffer(
     return false;
   }
 
+  if (!vulkan_buffer_->TransitionToShaderReadLayout(
+          vulkan_buffer_->GetImage())) {
+    FT_LOG(Error) << "Fail to transition image layout";
+    vulkan_buffer_->ReleaseImage();
+    return false;
+  }
   return true;
 }
 
