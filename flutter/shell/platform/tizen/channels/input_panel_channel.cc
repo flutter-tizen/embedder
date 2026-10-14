@@ -6,6 +6,7 @@
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/event_stream_handler_functions.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
+#include "flutter/shell/platform/tizen/flutter_tizen_view.h"
 #include "flutter/shell/platform/tizen/logger.h"
 #ifdef USE_TCORE_WL
 #include "flutter/shell/platform/tizen/tizen_input_method_context_tcore.h"
@@ -22,8 +23,11 @@ constexpr char kChannelName[] = "tizen/internal/inputpanel";
 namespace flutter {
 
 InputPanelChannel::InputPanelChannel(BinaryMessenger* messenger,
-                                     TizenInputMethodContext* imf_context)
-    : imf_context_(imf_context) {
+                                     TizenInputMethodContext* imf_context,
+                                     FlutterTizenView* view)
+    : imf_context_(imf_context), view_(view) {
+  imf_context_->SetOnInputPanelStateChanged(
+      [this](const std::string& state) { SendInputPanelStateEvent(state); });
   event_channel_ = std::make_unique<EventChannel<EncodableValue>>(
       messenger, kChannelName, &StandardMethodCodec::GetInstance());
   auto event_channel_handler = std::make_unique<StreamHandlerFunctions<>>(
@@ -31,15 +35,10 @@ InputPanelChannel::InputPanelChannel(BinaryMessenger* messenger,
              std::unique_ptr<EventSink<>>&& events)
           -> std::unique_ptr<StreamHandlerError<>> {
         event_sink_ = std::move(events);
-        imf_context_->SetOnInputPanelStateChanged(
-            [this](const std::string& state) {
-              SendInputPanelStateEvent(state);
-            });
         return nullptr;
       },
       [this](const EncodableValue* arguments)
           -> std::unique_ptr<StreamHandlerError<>> {
-        imf_context_->SetOnInputPanelStateChanged(nullptr);
         event_sink_.reset();
         return nullptr;
       });
@@ -54,11 +53,15 @@ InputPanelChannel::~InputPanelChannel() {
 }
 
 void InputPanelChannel::SendInputPanelStateEvent(const std::string& state) {
-  if (!event_sink_) {
+  InputPanelGeometry geometry = imf_context_->GetInputPanelGeometry();
+  if (state == "show" || state == "geometry") {
+    view_->OnInputPanelGeometryChanged(geometry);
+  } else if (state == "hide") {
+    view_->OnInputPanelGeometryChanged({});
+  }
+  if (!event_sink_ || state == "geometry") {
     return;
   }
-
-  InputPanelGeometry geometry = imf_context_->GetInputPanelGeometry();
   EncodableMap event;
   event[EncodableValue("state")] = EncodableValue(state);
   event[EncodableValue("x")] = EncodableValue(geometry.x);
