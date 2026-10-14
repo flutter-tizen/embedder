@@ -76,6 +76,10 @@ class TizenInputMethodContext {
                                              int value,
                                              void* data);
 
+  static void InputPanelGeometryChangedCallback(tizen_core_imf_context_h ctx,
+                                                int value,
+                                                void* data);
+
   void RegisterEventCallbacks();
   void UnregisterEventCallbacks();
 

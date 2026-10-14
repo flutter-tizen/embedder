@@ -77,6 +77,10 @@ class TizenInputMethodContext {
                                              Ecore_IMF_Context* ctx,
                                              int value);
 
+  static void InputPanelGeometryChangedCallback(void* data,
+                                                Ecore_IMF_Context* ctx,
+                                                int value);
+
   void RegisterEventCallbacks();
   void UnregisterEventCallbacks();
 

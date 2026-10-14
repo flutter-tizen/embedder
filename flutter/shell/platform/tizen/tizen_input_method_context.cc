@@ -441,6 +441,16 @@ void TizenInputMethodContext::InputPanelStateChangedCallback(
   }
 }
 
+void TizenInputMethodContext::InputPanelGeometryChangedCallback(
+    void* data,
+    Ecore_IMF_Context* ctx,
+    int value) {
+  auto* self = static_cast<TizenInputMethodContext*>(data);
+  if (self->on_input_panel_state_changed_ && self->IsInputPanelShown()) {
+    self->on_input_panel_state_changed_("geometry");
+  }
+}
+
 void TizenInputMethodContext::RegisterInputPanelEventCallback() {
   if (!imf_context_) {
     return;
@@ -449,6 +459,9 @@ void TizenInputMethodContext::RegisterInputPanelEventCallback() {
   ecore_imf_context_input_panel_event_callback_add(
       imf_context_, ECORE_IMF_INPUT_PANEL_STATE_EVENT,
       InputPanelStateChangedCallback, this);
+  ecore_imf_context_input_panel_event_callback_add(
+      imf_context_, ECORE_IMF_INPUT_PANEL_GEOMETRY_EVENT,
+      InputPanelGeometryChangedCallback, this);
 }
 
 void TizenInputMethodContext::UnregisterInputPanelEventCallback() {
@@ -459,6 +472,9 @@ void TizenInputMethodContext::UnregisterInputPanelEventCallback() {
   ecore_imf_context_input_panel_event_callback_del(
       imf_context_, ECORE_IMF_INPUT_PANEL_STATE_EVENT,
       InputPanelStateChangedCallback);
+  ecore_imf_context_input_panel_event_callback_del(
+      imf_context_, ECORE_IMF_INPUT_PANEL_GEOMETRY_EVENT,
+      InputPanelGeometryChangedCallback);
 }
 
 }  // namespace flutter
