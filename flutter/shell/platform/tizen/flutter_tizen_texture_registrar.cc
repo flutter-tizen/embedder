@@ -157,7 +157,7 @@ bool FlutterTizenTextureRegistrar::PopulateVulkanTexture(
     int64_t texture_id,
     size_t width,
     size_t height,
-    FlutterVulkanTexture* vulkan_texture) {
+    FlutterVulkanExternalTexture* vulkan_texture) {
   ExternalTexture* texture;
   {
     std::lock_guard<std::mutex> lock(map_mutex_);

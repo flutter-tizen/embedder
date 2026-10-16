@@ -28,9 +28,10 @@ class ExternalTextureSurfaceVulkan : public ExternalVulkanTexture {
 
   virtual ~ExternalTextureSurfaceVulkan();
 
-  bool PopulateVulkanTexture(size_t width,
-                             size_t height,
-                             FlutterVulkanTexture* vulkan_texture) override;
+  bool PopulateVulkanTexture(
+      size_t width,
+      size_t height,
+      FlutterVulkanExternalTexture* vulkan_texture) override;
 
  private:
   bool CreateOrUpdateImage(

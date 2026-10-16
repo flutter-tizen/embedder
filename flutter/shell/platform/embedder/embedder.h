@@ -930,9 +930,6 @@ typedef void* FlutterVulkanQueueHandle;
 /// Alias for VkImage.
 typedef uint64_t FlutterVulkanImageHandle;
 
-/// Alias for VkDeviceMemory.
-typedef uint64_t FlutterVulkanDeviceMemoryHandle;
-
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterVulkanImage).
   size_t struct_size;
@@ -962,25 +959,27 @@ typedef bool (*FlutterVulkanPresentCallback)(
     const FlutterVulkanImage* /* image */);
 
 typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterVulkanExternalTexture).
+  size_t struct_size;
   /// Handle to the VkImage that is owned by the embedder. The engine will
-  /// bind this image for writing the frame.
+  /// sample from this image during composition. The VkImage must be in the
+  /// VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL layout when provided to the
+  /// engine.
   FlutterVulkanImageHandle image;
-  /// The VkDeviceMemory that backs the iamge.
-  FlutterVulkanDeviceMemoryHandle image_memory;
   /// The VkFormat of the image (for example: VK_FORMAT_R8G8B8A8_UNORM).
   uint32_t format;
   /// User data to be returned on the invocation of the destruction callback.
   void* user_data;
   /// Callback invoked (on an engine managed thread) that asks the embedder to
-  /// collect the texture.
+  /// collect the texture. This is optional and can be null.
   VoidCallback destruction_callback;
   /// Optional parameters for texture height/width, default is 0, non-zero means
   /// the texture has the specified width/height.
-  /// Width of the texture.
+  /// Physical width of the texture.
   size_t width;
-  /// Height of the texture.
+  /// Physical height of the texture.
   size_t height;
-} FlutterVulkanTexture;
+} FlutterVulkanExternalTexture;
 
 /// Callback to provide an external texture for a given texture_id.
 /// See: external_texture_frame_callback.
@@ -989,7 +988,7 @@ typedef bool (*FlutterVulkanTextureFrameCallback)(
     int64_t /* texture identifier */,
     size_t /* width */,
     size_t /* height */,
-    FlutterVulkanTexture* /* texture out */);
+    FlutterVulkanExternalTexture* /* texture out */);
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterVulkanRendererConfig).
@@ -1057,7 +1056,9 @@ typedef struct {
   /// When the embedder specifies that a texture has a frame available, the
   /// engine will call this method (on an internal engine managed thread) so
   /// that external texture details can be supplied to the engine for subsequent
-  /// composition.
+  /// composition. Prior to returning from this callback, the embedder must
+  /// perform a host sync, and so the engine can sample the VkImage without any
+  /// additional synchronization.
   FlutterVulkanTextureFrameCallback external_texture_frame_callback;
   /// The path to the Vulkan pipeline cache data.
   /// The string can be collected after the call to `FlutterEngineRun` returns.

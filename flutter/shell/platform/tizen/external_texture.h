@@ -55,9 +55,10 @@ class ExternalVulkanTexture : public ExternalTexture {
  public:
   ExternalVulkanTexture() : ExternalTexture() {}
 
-  virtual bool PopulateVulkanTexture(size_t width,
-                                     size_t height,
-                                     FlutterVulkanTexture* vulkan_texture) = 0;
+  virtual bool PopulateVulkanTexture(
+      size_t width,
+      size_t height,
+      FlutterVulkanExternalTexture* vulkan_texture) = 0;
 };
 
 }  // namespace flutter

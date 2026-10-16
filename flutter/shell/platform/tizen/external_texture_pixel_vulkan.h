@@ -20,9 +20,10 @@ class ExternalTexturePixelVulkan : public ExternalVulkanTexture {
 
   virtual ~ExternalTexturePixelVulkan();
 
-  bool PopulateVulkanTexture(size_t width,
-                             size_t height,
-                             FlutterVulkanTexture* flutter_texture) override;
+  bool PopulateVulkanTexture(
+      size_t width,
+      size_t height,
+      FlutterVulkanExternalTexture* flutter_texture) override;
 
  private:
   bool AllocateMemory(const VkMemoryRequirements& memory_requirements,

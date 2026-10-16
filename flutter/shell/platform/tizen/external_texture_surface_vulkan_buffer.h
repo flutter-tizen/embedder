@@ -29,6 +29,8 @@ class ExternalTextureSurfaceVulkanBuffer {
   virtual VkImage GetImage() = 0;
   virtual VkDeviceMemory GetMemory() = 0;
 
+  bool TransitionToShaderReadLayout(VkImage image);
+
  protected:
   VkFormat ConvertFormat(tbm_format format);
   VkDevice GetDevice() const;
