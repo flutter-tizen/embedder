@@ -24,7 +24,7 @@ class TestTizenView : public TizenWindow {
   void* GetRenderTarget() override { return nullptr; }
   void* GetNativeHandle() override { return nullptr; }
   uintptr_t GetWindowId() override { return 0; }
-  TizenGeometry GetGeometry() override { return {0, 0, 100, 100}; }
+  TizenGeometry GetGeometry() override { return geometry; }
   bool SetGeometry(TizenGeometry geometry) override { return true; }
   int32_t GetDpi() override { return 160; }
   uint32_t GetResourceId() override { return 0; }
@@ -41,6 +41,7 @@ class TestTizenView : public TizenWindow {
 
   void SetFocusable(bool focusable) { focusable_ = focusable; }
 
+  TizenGeometry geometry = {0, 0, 100, 100};
   bool activated = false;
 };
 
@@ -107,6 +108,81 @@ TEST(FlutterTizenViewTest, SendsAndRequestsViewFocus) {
     view.OnFocusChangeRequest(request);
     EXPECT_FALSE(tizen_view_ptr->activated);
   }
+}
+
+TEST(FlutterTizenViewTest, ReportsInputPanelInsets) {
+  FlutterDesktopEngineProperties properties = {};
+  properties.assets_path = "/foo/flutter_assets";
+  properties.icu_data_path = "/foo/icudtl.dat";
+  properties.aot_library_path = "/foo/libapp.so";
+  FlutterProjectBundle project(properties);
+  auto engine = std::make_unique<FlutterTizenEngine>(project);
+  std::vector<FlutterWindowMetricsEvent> events;
+  EngineModifier modifier(engine.get());
+  modifier.SetEngine(reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(1));
+  modifier.embedder_api().SendWindowMetricsEvent = MOCK_ENGINE_PROC(
+      SendWindowMetricsEvent,
+      ([&events](auto engine, const FlutterWindowMetricsEvent* event) {
+        events.push_back(*event);
+        return kSuccess;
+      }));
+  modifier.embedder_api().Shutdown = [](auto engine) { return kSuccess; };
+  auto native_view = std::make_unique<TestTizenView>();
+  auto* native = native_view.get();
+  native->geometry = {10, 20, 200, 100};
+  FlutterTizenView view(kImplicitViewId, std::move(native_view),
+                        std::move(engine), kEVulkan, 2.0);
+  view.OnInputPanelGeometryChanged({});
+  ASSERT_EQ(events.size(), 1u);
+  EXPECT_DOUBLE_EQ(events.back().physical_view_inset_bottom, 0);
+
+  view.OnInputPanelGeometryChanged({0, 90, 300, 100});
+  EXPECT_DOUBLE_EQ(events.back().physical_view_inset_bottom, 30);
+  EXPECT_DOUBLE_EQ(events.back().pixel_ratio, 2);
+  EXPECT_EQ(events.back().width, 200u);
+  EXPECT_EQ(events.back().height, 100u);
+  EXPECT_EQ(events.back().left, 10u);
+  EXPECT_EQ(events.back().top, 20u);
+  EXPECT_EQ(events.back().view_id, kImplicitViewId);
+
+  view.OnInputPanelGeometryChanged({0, 80, 300, 100});
+  EXPECT_DOUBLE_EQ(events.back().physical_view_inset_bottom, 40);
+  native->geometry.height = 60;
+  view.OnInputPanelGeometryChanged({0, 80, 300, 100});
+  EXPECT_DOUBLE_EQ(events.back().physical_view_inset_bottom, 0);
+  native->geometry.height = 100;
+  view.OnInputPanelGeometryChanged({0, 80, 300, 100});
+  EXPECT_DOUBLE_EQ(events.back().physical_view_inset_bottom, 40);
+
+  for (const auto& panel : std::vector<InputPanelGeometry>{{},
+                                                           {0, 200, 300, 100},
+                                                           {300, 80, 200, 100},
+                                                           {30, 40, 100, 30},
+                                                           {30, 80, 100, 40},
+                                                           {0, 80, -1, 40}}) {
+    view.OnInputPanelGeometryChanged(panel);
+    EXPECT_DOUBLE_EQ(events.back().physical_view_inset_top, 0);
+    EXPECT_DOUBLE_EQ(events.back().physical_view_inset_right, 0);
+    EXPECT_DOUBLE_EQ(events.back().physical_view_inset_bottom, 0);
+    EXPECT_DOUBLE_EQ(events.back().physical_view_inset_left, 0);
+  }
+  view.OnInputPanelGeometryChanged({0, 0, 300, 300});
+  EXPECT_DOUBLE_EQ(events.back().physical_view_inset_bottom, 100);
+  EXPECT_DOUBLE_EQ(events.back().physical_view_inset_top, 0);
+  view.OnInputPanelGeometryChanged({0, 0, 300, 40});
+  EXPECT_DOUBLE_EQ(events.back().physical_view_inset_top, 20);
+  view.OnInputPanelGeometryChanged({180, 0, 200, 200});
+  EXPECT_DOUBLE_EQ(events.back().physical_view_inset_right, 30);
+  view.OnInputPanelGeometryChanged({0, 0, 40, 200});
+  EXPECT_DOUBLE_EQ(events.back().physical_view_inset_left, 30);
+
+  view.OnInputPanelGeometryChanged({});
+  EXPECT_DOUBLE_EQ(events.back().physical_view_inset_left, 0);
+
+  modifier.SetEngine(nullptr);
+  const size_t count = events.size();
+  view.OnInputPanelGeometryChanged({0, 90, 300, 100});
+  EXPECT_EQ(events.size(), count);
 }
 
 }  // namespace
