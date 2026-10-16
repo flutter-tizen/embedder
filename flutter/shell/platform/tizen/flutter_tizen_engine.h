@@ -192,7 +192,9 @@ class FlutterTizenEngine {
   void SetSemanticsEnabled(bool enabled);
 
   // Notifies the engine about enabled accessibility features.
-  void UpdateAccessibilityFeatures(bool invert_colors, bool high_contrast);
+  void UpdateAccessibilityFeatures(bool invert_colors,
+                                   bool high_contrast,
+                                   bool accessible_navigation);
 
   // Notifies the engine about a display update.
   void UpdateDisplay(const std::vector<FlutterEngineDisplay>& displays);
