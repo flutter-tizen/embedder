@@ -505,6 +505,13 @@ void TizenInputMethodContext::InputPanelStateChangedCallback(
       break;
   }
 
+  if (self->on_input_panel_geometry_changed_) {
+    if (state == TIZEN_CORE_IMF_INPUT_PANEL_STATE_SHOW) {
+      self->on_input_panel_geometry_changed_(self->GetInputPanelGeometry());
+    } else if (state == TIZEN_CORE_IMF_INPUT_PANEL_STATE_HIDE) {
+      self->on_input_panel_geometry_changed_({});
+    }
+  }
   if (self->on_input_panel_state_changed_) {
     self->on_input_panel_state_changed_(state_str);
   }
@@ -515,8 +522,8 @@ void TizenInputMethodContext::InputPanelGeometryChangedCallback(
     int value,
     void* data) {
   auto* self = static_cast<TizenInputMethodContext*>(data);
-  if (self->on_input_panel_state_changed_ && self->IsInputPanelShown()) {
-    self->on_input_panel_state_changed_("geometry");
+  if (self->on_input_panel_geometry_changed_ && self->IsInputPanelShown()) {
+    self->on_input_panel_geometry_changed_(self->GetInputPanelGeometry());
   }
 }
 

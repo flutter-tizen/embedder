@@ -60,7 +60,6 @@ FlutterTizenView::FlutterTizenView(FlutterViewId view_id,
 }
 
 FlutterTizenView::~FlutterTizenView() {
-  input_panel_channel_.reset();
   if (engine_) {
     if (platform_view_channel_) {
       platform_view_channel_->Dispose();
@@ -97,7 +96,11 @@ void FlutterTizenView::SetupChannels() {
 
   input_device_channel_ = std::make_unique<InputDeviceChannel>(messenger);
   input_panel_channel_ = std::make_unique<InputPanelChannel>(
-      messenger, tizen_view_->input_method_context(), this);
+      messenger, tizen_view_->input_method_context());
+  tizen_view_->input_method_context()->SetOnInputPanelGeometryChanged(
+      [this](const InputPanelGeometry& geometry) {
+        OnInputPanelGeometryChanged(geometry);
+      });
 }
 
 void FlutterTizenView::OnResize(int32_t left,

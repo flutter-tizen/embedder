@@ -15,13 +15,11 @@
 namespace flutter {
 
 class TizenInputMethodContext;
-class FlutterTizenView;
 
 class InputPanelChannel {
  public:
   explicit InputPanelChannel(BinaryMessenger* messenger,
-                             TizenInputMethodContext* imf_context,
-                             FlutterTizenView* view);
+                             TizenInputMethodContext* imf_context);
   virtual ~InputPanelChannel();
 
  private:
@@ -30,7 +28,6 @@ class InputPanelChannel {
   std::unique_ptr<EventChannel<EncodableValue>> event_channel_;
   std::unique_ptr<EventSink<EncodableValue>> event_sink_;
   TizenInputMethodContext* imf_context_;
-  FlutterTizenView* view_;
 };
 
 }  // namespace flutter
