@@ -3,7 +3,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
+#include <utility>
+
 #include "flutter/shell/platform/tizen/flutter_tizen_engine.h"
+#include "flutter/shell/platform/tizen/tizen_renderer.h"
 
 namespace flutter {
 
@@ -25,6 +29,10 @@ class EngineModifier {
 
   void SetEngine(FLUTTER_API_SYMBOL(FlutterEngine) engine) {
     engine_->engine_ = engine;
+  }
+
+  void SetRenderer(std::unique_ptr<TizenRenderer> renderer) {
+    engine_->renderer_ = std::move(renderer);
   }
 
  private:
