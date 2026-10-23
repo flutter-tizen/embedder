@@ -395,34 +395,27 @@ void FlutterTizenView::SendWindowMetrics(int32_t left,
     }
   }
 
-  int32_t native_width = width;
-  int32_t native_height = height;
-  if (rotation_degree_ == 90 || rotation_degree_ == 270) {
-    std::swap(native_width, native_height);
-  }
   const auto& panel = input_panel_geometry_;
   const double x = static_cast<double>(panel.x) - left;
   const double y = static_cast<double>(panel.y) - top;
   const double right = x + panel.w;
   const double bottom = y + panel.h;
   std::array<double, 4> insets = {};
-  if (panel.w > 0 && panel.h > 0 && native_width > 0 && native_height > 0) {
-    if (x <= 0 && right >= native_width) {
-      if (y < native_height && bottom >= native_height) {
-        insets[2] = native_height - std::max(0.0, y);
+  if (panel.w > 0 && panel.h > 0 && width > 0 && height > 0) {
+    if (x <= 0 && right >= width) {
+      if (y < height && bottom >= height) {
+        insets[2] = height - std::max(0.0, y);
       } else if (y <= 0 && bottom > 0) {
-        insets[0] = std::min(bottom, static_cast<double>(native_height));
+        insets[0] = std::min(bottom, static_cast<double>(height));
       }
-    } else if (y <= 0 && bottom >= native_height) {
-      if (x < native_width && right >= native_width) {
-        insets[1] = native_width - std::max(0.0, x);
+    } else if (y <= 0 && bottom >= height) {
+      if (x < width && right >= width) {
+        insets[1] = width - std::max(0.0, x);
       } else if (x <= 0 && right > 0) {
-        insets[3] = std::min(right, static_cast<double>(native_width));
+        insets[3] = std::min(right, static_cast<double>(width));
       }
     }
   }
-  std::rotate(insets.begin(), insets.end() - rotation_degree_ / 90,
-              insets.end());
   engine_->SendWindowMetrics(left, top, width, height, pixel_ratio, insets[0],
                              insets[1], insets[2], insets[3]);
 }
