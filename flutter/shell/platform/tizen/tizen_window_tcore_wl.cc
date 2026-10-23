@@ -583,8 +583,6 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
           return;
         }
 
-        char* keyname = nullptr;
-        tizen_core_wl_event_key_get_keyname(ev, &keyname);
         char* keysymbol = nullptr;
         tizen_core_wl_event_key_get_keysymbol(ev, &keysymbol);
         char* compose = nullptr;
@@ -620,7 +618,6 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
           self->view_delegate_->OnKey(keysymbol, compose, compose, modifiers,
                                       keycode, dev_identifier, true);
         }
-        free(keyname);
         free(keysymbol);
         free(compose);
         free(dev_identifier);
@@ -640,8 +637,6 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
           return;
         }
 
-        char* keyname = nullptr;
-        tizen_core_wl_event_key_get_keyname(ev, &keyname);
         char* keysymbol = nullptr;
         tizen_core_wl_event_key_get_keysymbol(ev, &keysymbol);
         char* compose = nullptr;
@@ -666,7 +661,6 @@ void TizenWindowTcoreWl::RegisterEventHandlers() {
           self->view_delegate_->OnKey(keysymbol, compose, compose, modifiers,
                                       keycode, nullptr, false);
         }
-        free(keyname);
         free(keysymbol);
         free(compose);
       });
