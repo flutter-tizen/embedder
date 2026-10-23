@@ -105,6 +105,8 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   void SendInitialGeometry();
 
+  void OnInputPanelGeometryChanged(const InputPanelGeometry& geometry);
+
   PlatformViewChannel* platform_view_channel() {
     return platform_view_channel_.get();
   }
@@ -198,6 +200,8 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
 
   // A plugin to report input panel information.
   std::unique_ptr<InputPanelChannel> input_panel_channel_;
+
+  InputPanelGeometry input_panel_geometry_;
 
   // The current view rotation degree.
   int32_t rotation_degree_ = 0;
