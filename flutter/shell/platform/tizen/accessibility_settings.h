@@ -19,6 +19,7 @@ class AccessibilitySettings {
 
  private:
   void UpdateSemanticsState();
+  void UpdateAccessibilityFeatures();
   void ConnectToA11yBus();
   void InitializeHighContrast();
   void SetupDBusPropertyMonitoring();
@@ -39,6 +40,7 @@ class AccessibilitySettings {
   bool semantics_enabled_ = false;
   bool dbus_is_enabled_ = false;
   bool dbus_screen_reader_enabled_ = false;
+  bool high_contrast_enabled_ = false;
   GDBusProxy* dbus_proxy_ = nullptr;
   GCancellable* cancellable_ = nullptr;
 };

@@ -444,11 +444,16 @@ void FlutterTizenEngine::PostRenderThreadTask(std::function<void()> task) {
   }
 }
 
-void FlutterTizenEngine::UpdateAccessibilityFeatures(bool invert_colors,
-                                                     bool high_contrast) {
+void FlutterTizenEngine::UpdateAccessibilityFeatures(
+    bool invert_colors,
+    bool high_contrast,
+    bool accessible_navigation) {
   int32_t flags = 0;
   flags |= invert_colors ? kFlutterAccessibilityFeatureInvertColors : 0;
   flags |= high_contrast ? kFlutterAccessibilityFeatureHighContrast : 0;
+  flags |= accessible_navigation
+               ? kFlutterAccessibilityFeatureAccessibleNavigation
+               : 0;
   embedder_api_.UpdateAccessibilityFeatures(engine_,
                                             FlutterAccessibilityFeature(flags));
 }

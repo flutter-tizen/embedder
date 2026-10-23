@@ -57,6 +57,7 @@ void AccessibilitySettings::SetupDBusPropertyMonitoring() {
   UpdateStateFromProxy("IsEnabled", dbus_is_enabled_);
   UpdateStateFromProxy("ScreenReaderEnabled", dbus_screen_reader_enabled_);
   UpdateSemanticsState();
+  UpdateAccessibilityFeatures();
 
   g_signal_connect_data(dbus_proxy_, "g-properties-changed",
                         G_CALLBACK(OnDBusPropertiesChanged), this, nullptr,
@@ -87,7 +88,8 @@ void AccessibilitySettings::InitializeHighContrast() {
   system_settings_set_changed_cb(SYSTEM_SETTINGS_KEY_ACCESSIBILITY_HIGHCONTRAST,
                                  OnHighContrastStateChanged, this);
 
-  engine_->UpdateAccessibilityFeatures(false, high_contrast);
+  high_contrast_enabled_ = high_contrast;
+  UpdateAccessibilityFeatures();
 #endif
 }
 
@@ -102,6 +104,11 @@ void AccessibilitySettings::UpdateSemanticsState() {
                   << ", a11y: " << (dbus_is_enabled_ ? "enabled" : "disabled")
                   << ")";
   }
+}
+
+void AccessibilitySettings::UpdateAccessibilityFeatures() {
+  engine_->UpdateAccessibilityFeatures(false, high_contrast_enabled_,
+                                       dbus_screen_reader_enabled_);
 }
 
 AccessibilitySettings::~AccessibilitySettings() {
@@ -138,7 +145,8 @@ void AccessibilitySettings::OnHighContrastStateChanged(
     return;
   }
 
-  self->engine_->UpdateAccessibilityFeatures(false, enabled);
+  self->high_contrast_enabled_ = enabled;
+  self->UpdateAccessibilityFeatures();
 #endif
 }
 
@@ -174,6 +182,7 @@ void AccessibilitySettings::OnDBusPropertiesChanged(
 
   if (is_changed) {
     self->UpdateSemanticsState();
+    self->UpdateAccessibilityFeatures();
   }
 }
 

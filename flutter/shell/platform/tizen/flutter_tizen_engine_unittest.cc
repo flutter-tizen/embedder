@@ -203,6 +203,34 @@ TEST_F(FlutterTizenEngineTest, SendPlatformMessageWithResponse) {
   EXPECT_TRUE(send_message_called);
 }
 
+TEST_F(FlutterTizenEngineTest, UpdateAccessibilityFeatures) {
+  EngineModifier modifier(engine_);
+  int32_t received_flags = -1;
+  modifier.embedder_api().UpdateAccessibilityFeatures = MOCK_ENGINE_PROC(
+      UpdateAccessibilityFeatures,
+      ([&received_flags](auto engine, FlutterAccessibilityFeature flags) {
+        received_flags = flags;
+        return kSuccess;
+      }));
+
+  for (bool invert_colors : {false, true}) {
+    for (bool high_contrast : {false, true}) {
+      for (bool accessible_navigation : {true, false}) {
+        received_flags = -1;
+        engine_->UpdateAccessibilityFeatures(invert_colors, high_contrast,
+                                             accessible_navigation);
+        EXPECT_EQ(
+            received_flags,
+            (invert_colors ? kFlutterAccessibilityFeatureInvertColors : 0) |
+                (high_contrast ? kFlutterAccessibilityFeatureHighContrast : 0) |
+                (accessible_navigation
+                     ? kFlutterAccessibilityFeatureAccessibleNavigation
+                     : 0));
+      }
+    }
+  }
+}
+
 TEST_F(FlutterTizenEngineTest, AddPluginRegistrarDestructionCallback) {
   EngineModifier modifier(engine_);
   modifier.embedder_api().Run = MOCK_ENGINE_PROC(
