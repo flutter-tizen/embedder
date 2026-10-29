@@ -60,32 +60,13 @@ bool TizenRendererEgl::CreateSurface(void* render_target,
     return false;
   }
 
-  if (!ChooseEGLConfiguration()) {
-    FT_LOG(Error) << "Could not choose an EGL configuration.";
-    return false;
+  if (!InitializeEGL(enable_impeller_ ? 3 : 2)) {
+    if (!enable_impeller_ || !InitializeEGL(2)) {
+      return false;
+    }
   }
 
   egl_extension_str_ = eglQueryString(egl_display_, EGL_EXTENSIONS);
-
-  {
-    const EGLint attribs[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
-
-    egl_context_ =
-        eglCreateContext(egl_display_, egl_config_, EGL_NO_CONTEXT, attribs);
-    if (egl_context_ == EGL_NO_CONTEXT) {
-      PrintEGLError();
-      FT_LOG(Error) << "Could not create an onscreen context.";
-      return false;
-    }
-
-    egl_resource_context_ =
-        eglCreateContext(egl_display_, egl_config_, egl_context_, attribs);
-    if (egl_resource_context_ == EGL_NO_CONTEXT) {
-      PrintEGLError();
-      FT_LOG(Error) << "Could not create an offscreen context.";
-      return false;
-    }
-  }
 
   {
     const EGLint attribs[] = {EGL_NONE};
@@ -156,7 +137,8 @@ void TizenRendererEgl::DestroySurface() {
   }
 }
 
-bool TizenRendererEgl::ChooseEGLConfiguration() {
+bool TizenRendererEgl::InitializeEGL(EGLint client_version) {
+  egl_config_ = nullptr;
   if (!eglInitialize(egl_display_, nullptr, nullptr)) {
     PrintEGLError();
     FT_LOG(Error) << "Could not initialize the EGL display.";
@@ -182,6 +164,8 @@ bool TizenRendererEgl::ChooseEGLConfiguration() {
     return false;
   }
   EGLint num_config;
+  const EGLint renderable_type =
+      client_version == 3 ? EGL_OPENGL_ES3_BIT : EGL_OPENGL_ES2_BIT;
   if (enable_impeller_) {
     EGLint impeller_config_attribs[] = {
         // clang-format off
@@ -190,7 +174,7 @@ bool TizenRendererEgl::ChooseEGLConfiguration() {
         EGL_GREEN_SIZE,      8,
         EGL_BLUE_SIZE,       8,
         EGL_ALPHA_SIZE,      8,
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+        EGL_RENDERABLE_TYPE, renderable_type,
         EGL_SAMPLE_BUFFERS,  1,
         EGL_SAMPLES,         4,
         EGL_STENCIL_SIZE,    8,
@@ -240,6 +224,26 @@ bool TizenRendererEgl::ChooseEGLConfiguration() {
   free(configs);
   if (!egl_config_) {
     FT_LOG(Error) << "No matching configuration found.";
+    return false;
+  }
+
+  const EGLint attribs[] = {EGL_CONTEXT_CLIENT_VERSION, client_version,
+                            EGL_NONE};
+  egl_context_ =
+      eglCreateContext(egl_display_, egl_config_, EGL_NO_CONTEXT, attribs);
+  if (egl_context_ == EGL_NO_CONTEXT) {
+    PrintEGLError();
+    FT_LOG(Error) << "Could not create an onscreen context.";
+    return false;
+  }
+
+  egl_resource_context_ =
+      eglCreateContext(egl_display_, egl_config_, egl_context_, attribs);
+  if (egl_resource_context_ == EGL_NO_CONTEXT) {
+    PrintEGLError();
+    FT_LOG(Error) << "Could not create an offscreen context.";
+    eglDestroyContext(egl_display_, egl_context_);
+    egl_context_ = EGL_NO_CONTEXT;
     return false;
   }
 

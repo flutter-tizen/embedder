@@ -53,7 +53,7 @@ class TizenRendererEgl : public TizenRendererGL {
   void DestroySurface() override;
 
  private:
-  bool ChooseEGLConfiguration();
+  bool InitializeEGL(EGLint client_version);
 
   void PrintEGLError();
 
