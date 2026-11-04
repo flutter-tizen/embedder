@@ -153,7 +153,11 @@ class FlutterTizenEngine {
                          int32_t y,
                          int32_t width,
                          int32_t height,
-                         double pixel_ratio);
+                         double pixel_ratio,
+                         double inset_top,
+                         double inset_right,
+                         double inset_bottom,
+                         double inset_left);
 
   void OnVsync(intptr_t baton,
                uint64_t frame_start_time_nanos,

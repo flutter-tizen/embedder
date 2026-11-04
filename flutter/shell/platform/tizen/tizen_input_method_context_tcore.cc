@@ -259,8 +259,11 @@ InputPanelGeometry TizenInputMethodContext::GetInputPanelGeometry() {
   if (!imf_context_) {
     return geometry;
   }
-  tizen_core_imf_context_get_input_panel_geometry(
-      imf_context_, &geometry.x, &geometry.y, &geometry.w, &geometry.h);
+  if (tizen_core_imf_context_get_input_panel_geometry(
+          imf_context_, &geometry.x, &geometry.y, &geometry.w, &geometry.h) !=
+      TIZEN_CORE_IMF_ERROR_NONE) {
+    return {};
+  }
   return geometry;
 }
 
@@ -502,8 +505,25 @@ void TizenInputMethodContext::InputPanelStateChangedCallback(
       break;
   }
 
+  if (self->on_input_panel_geometry_changed_) {
+    if (state == TIZEN_CORE_IMF_INPUT_PANEL_STATE_SHOW) {
+      self->on_input_panel_geometry_changed_(self->GetInputPanelGeometry());
+    } else if (state == TIZEN_CORE_IMF_INPUT_PANEL_STATE_HIDE) {
+      self->on_input_panel_geometry_changed_({});
+    }
+  }
   if (self->on_input_panel_state_changed_) {
     self->on_input_panel_state_changed_(state_str);
+  }
+}
+
+void TizenInputMethodContext::InputPanelGeometryChangedCallback(
+    tizen_core_imf_context_h ctx,
+    int value,
+    void* data) {
+  auto* self = static_cast<TizenInputMethodContext*>(data);
+  if (self->on_input_panel_geometry_changed_ && self->IsInputPanelShown()) {
+    self->on_input_panel_geometry_changed_(self->GetInputPanelGeometry());
   }
 }
 
@@ -515,6 +535,9 @@ void TizenInputMethodContext::RegisterInputPanelEventCallback() {
   tizen_core_imf_context_add_input_panel_event_cb(
       imf_context_, TIZEN_CORE_IMF_INPUT_PANEL_EVENT_STATE,
       InputPanelStateChangedCallback, this);
+  tizen_core_imf_context_add_input_panel_event_cb(
+      imf_context_, TIZEN_CORE_IMF_INPUT_PANEL_EVENT_GEOMETRY,
+      InputPanelGeometryChangedCallback, this);
 }
 
 void TizenInputMethodContext::UnregisterInputPanelEventCallback() {
@@ -525,6 +548,9 @@ void TizenInputMethodContext::UnregisterInputPanelEventCallback() {
   tizen_core_imf_context_del_input_panel_event_cb(
       imf_context_, TIZEN_CORE_IMF_INPUT_PANEL_EVENT_STATE,
       InputPanelStateChangedCallback, this);
+  tizen_core_imf_context_del_input_panel_event_cb(
+      imf_context_, TIZEN_CORE_IMF_INPUT_PANEL_EVENT_GEOMETRY,
+      InputPanelGeometryChangedCallback, this);
 }
 
 }  // namespace flutter

@@ -366,7 +366,11 @@ void FlutterTizenEngine::SendWindowMetrics(int32_t x,
                                            int32_t y,
                                            int32_t width,
                                            int32_t height,
-                                           double pixel_ratio) {
+                                           double pixel_ratio,
+                                           double inset_top,
+                                           double inset_right,
+                                           double inset_bottom,
+                                           double inset_left) {
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(FlutterWindowMetricsEvent);
   event.left = static_cast<size_t>(x);
@@ -374,6 +378,10 @@ void FlutterTizenEngine::SendWindowMetrics(int32_t x,
   event.width = static_cast<size_t>(width);
   event.height = static_cast<size_t>(height);
   event.pixel_ratio = pixel_ratio;
+  event.physical_view_inset_top = inset_top;
+  event.physical_view_inset_right = inset_right;
+  event.physical_view_inset_bottom = inset_bottom;
+  event.physical_view_inset_left = inset_left;
   embedder_api_.SendWindowMetricsEvent(engine_, &event);
 }
 

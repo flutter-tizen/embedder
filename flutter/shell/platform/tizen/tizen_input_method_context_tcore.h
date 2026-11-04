@@ -23,6 +23,9 @@ struct InputPanelGeometry {
   int32_t x = 0, y = 0, w = 0, h = 0;
 };
 
+using OnInputPanelGeometryChanged =
+    std::function<void(const InputPanelGeometry& geometry)>;
+
 class TizenInputMethodContext {
  public:
   TizenInputMethodContext(uintptr_t window_id);
@@ -68,6 +71,10 @@ class TizenInputMethodContext {
     on_input_panel_state_changed_ = callback;
   }
 
+  void SetOnInputPanelGeometryChanged(OnInputPanelGeometryChanged callback) {
+    on_input_panel_geometry_changed_ = callback;
+  }
+
   void RegisterInputPanelEventCallback();
   void UnregisterInputPanelEventCallback();
 
@@ -75,6 +82,10 @@ class TizenInputMethodContext {
   static void InputPanelStateChangedCallback(tizen_core_imf_context_h ctx,
                                              int value,
                                              void* data);
+
+  static void InputPanelGeometryChangedCallback(tizen_core_imf_context_h ctx,
+                                                int value,
+                                                void* data);
 
   void RegisterEventCallbacks();
   void UnregisterEventCallbacks();
@@ -89,6 +100,7 @@ class TizenInputMethodContext {
   OnPreeditStart on_preedit_start_;
   OnPreeditEnd on_preedit_end_;
   OnInputPanelStateChanged on_input_panel_state_changed_;
+  OnInputPanelGeometryChanged on_input_panel_geometry_changed_;
   std::unordered_map<tizen_core_imf_callback_type_e, tizen_core_imf_event_cb>
       event_callbacks_;
 };

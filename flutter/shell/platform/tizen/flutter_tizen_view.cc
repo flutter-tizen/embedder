@@ -5,6 +5,8 @@
 
 #include "flutter_tizen_view.h"
 
+#include <algorithm>
+
 #include "flutter/shell/platform/tizen/logger.h"
 #include "flutter/shell/platform/tizen/system_utils.h"
 #include "flutter/shell/platform/tizen/tizen_renderer_egl.h"
@@ -94,6 +96,10 @@ void FlutterTizenView::SetupChannels() {
   input_device_channel_ = std::make_unique<InputDeviceChannel>(messenger);
   input_panel_channel_ = std::make_unique<InputPanelChannel>(
       messenger, tizen_view_->input_method_context());
+  tizen_view_->input_method_context()->SetOnInputPanelGeometryChanged(
+      [this](const InputPanelGeometry& geometry) {
+        OnInputPanelGeometryChanged(geometry);
+      });
 }
 
 void FlutterTizenView::OnResize(int32_t left,
@@ -361,6 +367,20 @@ void FlutterTizenView::SendInitialGeometry() {
   }
 }
 
+void FlutterTizenView::OnInputPanelGeometryChanged(
+    const InputPanelGeometry& panel) {
+  input_panel_geometry_ = panel;
+  if (!engine_->IsRunning()) {
+    return;
+  }
+  TizenGeometry geometry = tizen_view_->GetGeometry();
+  if (rotation_degree_ == 90 || rotation_degree_ == 270) {
+    std::swap(geometry.width, geometry.height);
+  }
+  SendWindowMetrics(geometry.left, geometry.top, geometry.width,
+                    geometry.height, 0.0);
+}
+
 void FlutterTizenView::SendWindowMetrics(int32_t left,
                                          int32_t top,
                                          int32_t width,
@@ -374,7 +394,32 @@ void FlutterTizenView::SendWindowMetrics(int32_t left,
     }
   }
 
-  engine_->SendWindowMetrics(left, top, width, height, pixel_ratio);
+  const auto& panel = input_panel_geometry_;
+  const double x = static_cast<double>(panel.x) - left;
+  const double y = static_cast<double>(panel.y) - top;
+  const double right = x + panel.w;
+  const double bottom = y + panel.h;
+  double inset_top = 0.0;
+  double inset_right = 0.0;
+  double inset_bottom = 0.0;
+  double inset_left = 0.0;
+  if (panel.w > 0 && panel.h > 0 && width > 0 && height > 0) {
+    if (x <= 0 && right >= width) {
+      if (y < height && bottom >= height) {
+        inset_bottom = height - std::max(0.0, y);
+      } else if (y <= 0 && bottom > 0) {
+        inset_top = std::min(bottom, static_cast<double>(height));
+      }
+    } else if (y <= 0 && bottom >= height) {
+      if (x < width && right >= width) {
+        inset_right = width - std::max(0.0, x);
+      } else if (x <= 0 && right > 0) {
+        inset_left = std::min(right, static_cast<double>(width));
+      }
+    }
+  }
+  engine_->SendWindowMetrics(left, top, width, height, pixel_ratio, inset_top,
+                             inset_right, inset_bottom, inset_left);
 }
 
 void FlutterTizenView::SendFlutterPointerEvent(FlutterPointerPhase phase,
