@@ -90,7 +90,8 @@ std::unique_ptr<TizenRenderer> FlutterTizenEngine::CreateRenderer(
   switch (renderer_type) {
     case FlutterDesktopRendererType::kEGL:
       return std::make_unique<TizenRendererEgl>(
-          view_->tizen_view(), project_->HasArgument("--enable-impeller"));
+          view_->tizen_view(), project_->HasArgument("--enable-impeller"),
+          project_->HasArgument("--enable-flutter-gpu"));
     case FlutterDesktopRendererType::kEVulkan:
 #ifdef FLUTTER_TIZEN_EXPERIMENTAL
       return std::make_unique<TizenRendererVulkan>(view_->tizen_view());

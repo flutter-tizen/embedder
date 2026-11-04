@@ -21,8 +21,10 @@
 namespace flutter {
 
 TizenRendererEgl::TizenRendererEgl(TizenViewBase* view_base,
-                                   bool enable_impeller)
-    : enable_impeller_(enable_impeller) {
+                                   bool enable_impeller,
+                                   bool enable_flutter_gpu)
+    : enable_impeller_(enable_impeller),
+      enable_flutter_gpu_(enable_flutter_gpu) {
   TizenRenderer::CreateSurface(view_base);
 }
 
@@ -62,8 +64,11 @@ bool TizenRendererEgl::CreateSurface(void* render_target,
     return false;
   }
 
-  if (!InitializeEGL(enable_impeller_ ? 3 : 2)) {
-    if (!enable_impeller_ || !InitializeEGL(2)) {
+  // NOTE(jsuya): Flutter GPU shader bundles target GLSL ES 3.00, while the
+  // engine's own GLES shaders are GLSL ES 1.00 and runtime stages follow the
+  // context version. Only Flutter GPU apps get a GLES 3 context for now.
+  if (!InitializeEGL(enable_impeller_ && enable_flutter_gpu_ ? 3 : 2)) {
+    if (!enable_impeller_ || !enable_flutter_gpu_ || !InitializeEGL(2)) {
       return false;
     }
   }
