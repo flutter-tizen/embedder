@@ -19,7 +19,9 @@ namespace flutter {
 
 class TizenRendererEgl : public TizenRendererGL {
  public:
-  explicit TizenRendererEgl(TizenViewBase* view_base, bool enable_impeller);
+  explicit TizenRendererEgl(TizenViewBase* view_base,
+                            bool enable_impeller,
+                            bool enable_flutter_gpu);
 
   virtual ~TizenRendererEgl();
 
@@ -53,7 +55,7 @@ class TizenRendererEgl : public TizenRendererGL {
   void DestroySurface() override;
 
  private:
-  bool ChooseEGLConfiguration();
+  bool InitializeEGL(EGLint client_version);
 
   void PrintEGLError();
 
@@ -66,6 +68,7 @@ class TizenRendererEgl : public TizenRendererGL {
 
   std::string egl_extension_str_;
   bool enable_impeller_;
+  bool enable_flutter_gpu_;
   std::atomic<bool> is_shutting_down_ = false;
 };
 
