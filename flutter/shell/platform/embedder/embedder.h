@@ -3802,6 +3802,46 @@ typedef FlutterEngineResult (*FlutterEngineSendViewFocusEventFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterViewFocusEvent* event);
 
+/// The configuration of an engine spawned by |FlutterEngineSpawn|.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterSpawnConfig).
+  size_t struct_size;
+
+  /// The name of the Dart entrypoint to run in the spawned engine, or null
+  /// to run "main". The entrypoint must be annotated with
+  /// `@pragma('vm:entry-point')` to be accessible in AOT mode. The entrypoint
+  /// runs in the same isolate group as the parent engine's root isolate, so
+  /// the kernel snapshot loaded by the group is reused.
+  const char* dart_entrypoint;
+
+  /// The name of the library containing the Dart entrypoint, or null for the
+  /// root library. Specifying a library without also specifying an entrypoint
+  /// is an error.
+  const char* dart_entrypoint_library;
+
+  /// The initial route of the spawned engine's root isolate, exposed to Dart
+  /// as the default route name. Null or empty means "/".
+  const char* initial_route;
+
+  /// The command line style arguments passed to the Dart entrypoint. May be
+  /// null when |dart_entrypoint_argc| is 0.
+  const char* const* dart_entrypoint_args;
+
+  /// The number of entries in |dart_entrypoint_args|.
+  int dart_entrypoint_argc;
+
+  /// The user data baton handed to the callbacks of the spawned engine. May
+  /// be null, in which case the spawned engine's callbacks are called with a
+  /// null user data. The callbacks themselves are inherited from the parent
+  /// engine; see |FlutterEngineSpawn| for details.
+  void* user_data;
+} FlutterSpawnConfig;
+
+typedef FlutterEngineResult (*FlutterEngineSpawnFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterSpawnConfig* spawn_config,
+    FLUTTER_API_SYMBOL(FlutterEngine) * engine_out);
+
 /// Function-pointer-based versions of the APIs above.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterEngineProcs).
@@ -3851,7 +3891,65 @@ typedef struct {
   FlutterEngineRemoveViewFnPtr RemoveView;
   FlutterEngineSendViewFocusEventFnPtr SendViewFocusEvent;
   FlutterEngineSendSemanticsActionFnPtr SendSemanticsAction;
+  FlutterEngineSpawnFnPtr Spawn;
 } FlutterEngineProcTable;
+
+/// @brief      Spawns a new engine in the same isolate group as the given
+///             engine. The spawned engine shares its parent's threads, Dart
+///             VM, isolate snapshot, and isolate group heap, which makes it
+///             considerably cheaper to create and run than an independent
+///             engine.
+///
+///             The spawned engine is returned in a running state: the shell
+///             is launched and the root isolate is started with the Dart
+///             entrypoint described by |spawn_config| before this call
+///             returns. |FlutterEngineInitialize|, |FlutterEngineRun| and
+///             |FlutterEngineRunInitialized| must not be called on a spawned
+///             engine.
+///
+///             The parent engine must be running (i.e. it must have been
+///             launched with |FlutterEngineRun| or
+///             |FlutterEngineRunInitialized|) and must remain alive until all
+///             engines spawned from it have been shut down with
+///             |FlutterEngineShutdown|. Spawned engines are otherwise
+///             independent: once running, a spawned engine keeps functioning
+///             even if its parent stops running, but the parent engine
+///             instance must not be collected while spawns are alive.
+///
+///             Spawning is not supported when the parent engine was launched
+///             with the platform and UI threads set to merge after launch;
+///             this call fails in that case.
+///
+///             The spawned engine reuses the callbacks supplied via
+///             |FlutterProjectArgs| and |FlutterRendererConfig| when the
+///             parent engine was initialized, except that every callback is
+///             handed the |spawn_config.user_data| baton instead of the
+///             parent engine's user data. Consequently, those callbacks, the
+///             compositor (if any) and any data referenced from the parent's
+///             renderer configuration must remain valid until the spawned
+///             engine is shut down.
+///
+///             A spawned engine may itself be used to spawn further engines.
+///             Make all |FlutterEngineSpawn| calls for a given parent engine
+///             on the thread that made the |FlutterEngineRun| call for that
+///             engine.
+///
+/// @param[in]  engine        A running parent engine instance.
+/// @param[in]  spawn_config  The spawn configuration. May be null, in which
+///                           case all defaults are used: the "main" method in
+///                           the root library is run with no arguments, the
+///                           initial route is "/", and the parent engine's
+///                           user data baton is reused.
+/// @param[out] engine_out    The spawned engine instance on success.
+///                            Unchanged on failure.
+///
+/// @return     The result of the call.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineSpawn(FLUTTER_API_SYMBOL(FlutterEngine) engine,
+                                       const FlutterSpawnConfig* spawn_config,
+                                       FLUTTER_API_SYMBOL(FlutterEngine) *
+                                           engine_out);
 
 //------------------------------------------------------------------------------
 /// @brief      Gets the table of engine function pointers.
