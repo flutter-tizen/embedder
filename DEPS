@@ -7,12 +7,12 @@ deps = {
   'src/third_party/libcxx': 'https://llvm.googlesource.com/llvm-project/libcxx@bd557f6f764d1e40b62528a13b124ce740624f8f',
   'src/third_party/libcxxabi': 'https://llvm.googlesource.com/llvm-project/libcxxabi@a4dda1589d37a7e4b4f7a81ebad01b1083f2e726',
   'src/third_party/googletest': 'https://github.com/google/googletest@e9907112b47255d50b4d343e7e2160bce8dc85d1',
-  'src/third_party/dart': 'https://dart.googlesource.com/sdk.git@b530c21f7de367b94fb04787bfed9d8e989d75e8',
+  'src/third_party/dart': 'https://dart.googlesource.com/sdk.git@fa8c1270c374c1346931583a17c3b7f278d3822d',
   'src/third_party/clang': {
     'packages': [
       {
         'package': 'fuchsia/third_party/clang/linux-amd64',
-        'version': 'git_revision:80743bd43fd5b38fedc503308e7a652e23d3ec93'
+        'version': 'git_revision:07d67299a15ce03b053736e2d31a668ee0576987'
       }
     ],
     'dep_type': 'cipd',

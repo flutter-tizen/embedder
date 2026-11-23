@@ -48,7 +48,7 @@ TEST_F(FlutterTizenEngineTest, RunDoesExpectedInitialization) {
       Run, ([&run_called, engine_instance = engine_](
                 size_t version, const FlutterRendererConfig* config,
                 const FlutterProjectArgs* args, void* user_data,
-                FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
+                FLUTTER_API_SYMBOL(FlutterEngine)* engine_out) {
         run_called = true;
         *engine_out = reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(1);
 
@@ -236,7 +236,7 @@ TEST_F(FlutterTizenEngineTest, AddPluginRegistrarDestructionCallback) {
   modifier.embedder_api().Run = MOCK_ENGINE_PROC(
       Run, ([](size_t version, const FlutterRendererConfig* config,
                const FlutterProjectArgs* args, void* user_data,
-               FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
+               FLUTTER_API_SYMBOL(FlutterEngine)* engine_out) {
         *engine_out = reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(1);
         return kSuccess;
       }));
