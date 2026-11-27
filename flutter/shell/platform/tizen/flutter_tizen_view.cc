@@ -47,7 +47,26 @@ FlutterTizenView::FlutterTizenView(FlutterViewId view_id,
                                    double user_pixel_ratio)
     : view_id_(view_id),
       tizen_view_(std::move(tizen_view)),
-      engine_(std::move(engine)),
+      owned_engine_(std::move(engine)),
+      engine_(owned_engine_.get()),
+      user_pixel_ratio_(user_pixel_ratio) {
+  tizen_view_->SetView(this);
+  engine_->SetView(this, renderer_type);
+  SetupChannels();
+
+  if (auto* window = dynamic_cast<TizenWindow*>(tizen_view_.get())) {
+    window->BindKeys(kBindableSystemKeys);
+  }
+}
+
+FlutterTizenView::FlutterTizenView(FlutterViewId view_id,
+                                   std::unique_ptr<TizenViewBase> tizen_view,
+                                   FlutterTizenEngine* engine,
+                                   FlutterDesktopRendererType renderer_type,
+                                   double user_pixel_ratio)
+    : view_id_(view_id),
+      tizen_view_(std::move(tizen_view)),
+      engine_(engine),
       user_pixel_ratio_(user_pixel_ratio) {
   tizen_view_->SetView(this);
   engine_->SetView(this, renderer_type);
@@ -63,7 +82,11 @@ FlutterTizenView::~FlutterTizenView() {
     if (platform_view_channel_) {
       platform_view_channel_->Dispose();
     }
-    engine_->StopEngine();
+    if (owned_engine_) {
+      engine_->StopEngine();
+    } else {
+      engine_->DetachView();
+    }
   }
 }
 
@@ -315,7 +338,7 @@ void FlutterTizenView::OnKey(const char* key,
     bool& backkey_handled = backkey_handled_;
     engine_->keyboard_channel()->SendKey(
         key, string, compose, modifiers, scan_code, is_down,
-        [engine = engine_.get(), symbol = std::string(key), is_down,
+        [engine = engine_, symbol = std::string(key), is_down,
          &backkey_handled](bool handled) {
           // If System's back key is handled in key-down, it should be
           // handled so that "popRoute" is not called in key-up.

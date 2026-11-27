@@ -109,6 +109,36 @@ TEST(FlutterTizenViewTest, SendsAndRequestsViewFocus) {
   }
 }
 
+TEST(FlutterTizenViewTest, NonOwningViewDetachesWithoutStoppingEngine) {
+  FlutterDesktopEngineProperties properties = {};
+  properties.assets_path = "/foo/flutter_assets";
+  properties.icu_data_path = "/foo/icudtl.dat";
+  properties.aot_library_path = "/foo/libapp.so";
+
+  FlutterProjectBundle project(properties);
+  auto engine = std::make_unique<FlutterTizenEngine>(project);
+  EngineModifier modifier(engine.get());
+  modifier.SetEngine(reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(1));
+  int shutdown_count = 0;
+  modifier.embedder_api().Shutdown =
+      MOCK_ENGINE_PROC(Shutdown, ([&shutdown_count](auto engine) {
+                         shutdown_count++;
+                         return kSuccess;
+                       }));
+
+  {
+    auto tizen_view = std::make_unique<TestTizenView>();
+    FlutterTizenView view(kImplicitViewId, std::move(tizen_view), engine.get(),
+                          kEVulkan);
+    EXPECT_EQ(engine->view(), &view);
+  }
+
+  EXPECT_EQ(shutdown_count, 0);
+  EXPECT_EQ(engine->view(), nullptr);
+  engine.reset();
+  EXPECT_EQ(shutdown_count, 1);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace flutter

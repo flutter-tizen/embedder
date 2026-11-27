@@ -76,6 +76,22 @@ bool FlutterDesktopEngineRun(const FlutterDesktopEngineRef engine) {
   return EngineFromHandle(engine)->RunEngine();
 }
 
+FlutterDesktopEngineRef FlutterDesktopEngineSpawn(
+    FlutterDesktopEngineRef parent,
+    const FlutterDesktopSpawnConfig& config) {
+  flutter::FlutterTizenEngine* parent_engine = EngineFromHandle(parent);
+  if (parent_engine == nullptr) {
+    return nullptr;
+  }
+
+  auto engine =
+      std::make_unique<flutter::FlutterTizenEngine>(parent_engine->project());
+  if (!engine->SpawnEngine(parent_engine, config)) {
+    return nullptr;
+  }
+  return HandleForEngine(engine.release());
+}
+
 void FlutterDesktopEngineShutdown(FlutterDesktopEngineRef engine_ref) {
   flutter::Logger::Stop();
 
@@ -196,6 +212,39 @@ void FlutterDesktopEngineNotifyAppIsPaused(FlutterDesktopEngineRef engine) {
 
 void FlutterDesktopEngineNotifyAppIsDetached(FlutterDesktopEngineRef engine) {
   EngineFromHandle(engine)->lifecycle_channel()->AppIsDetached();
+}
+
+FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindowNonOwning(
+    const FlutterDesktopWindowProperties& window_properties,
+    FlutterDesktopEngineRef ref) {
+  flutter::FlutterTizenEngine* engine = EngineFromHandle(ref);
+  if (!engine) {
+    return nullptr;
+  }
+  flutter::TizenGeometry geometry = {window_properties.x, window_properties.y,
+                                     window_properties.width,
+                                     window_properties.height};
+  std::unique_ptr<flutter::TizenWindow> window;
+
+#ifdef USE_TCORE_WL
+  window = std::make_unique<flutter::TizenWindowTcoreWl>(
+      geometry, window_properties.transparent, window_properties.focusable,
+      window_properties.top_level, window_properties.pointing_device_support,
+      window_properties.floating_menu_support, window_properties.window_handle,
+      window_properties.renderer_type == kEVulkan);
+#else
+  window = std::make_unique<flutter::TizenWindowEcoreWl2>(
+      geometry, window_properties.transparent, window_properties.focusable,
+      window_properties.top_level, window_properties.pointing_device_support,
+      window_properties.floating_menu_support, window_properties.window_handle,
+      window_properties.renderer_type == kEVulkan);
+#endif
+
+  auto view = std::make_unique<flutter::FlutterTizenView>(
+      flutter::kImplicitViewId, std::move(window), engine,
+      window_properties.renderer_type, window_properties.user_pixel_ratio);
+  view->SendInitialGeometry();
+  return reinterpret_cast<FlutterDesktopViewRef>(view.release());
 }
 
 void FlutterDesktopViewDestroy(FlutterDesktopViewRef view_ref) {

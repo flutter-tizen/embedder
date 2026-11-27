@@ -39,6 +39,43 @@ class FlutterTizenEngineTest : public ::testing::Test {
   }
 
   FlutterTizenEngine* engine_ = nullptr;
+
+  std::unique_ptr<FlutterTizenEngine> CreateEngine(
+      FlutterDesktopUIThreadPolicy ui_thread_policy) {
+    FlutterDesktopEngineProperties engine_prop = {};
+    engine_prop.assets_path = "/foo/flutter_assets";
+    engine_prop.icu_data_path = "/foo/icudtl.dat";
+    engine_prop.aot_library_path = "/foo/libapp.so";
+    engine_prop.ui_thread_policy = ui_thread_policy;
+
+    FlutterProjectBundle project(engine_prop);
+    auto engine = std::make_unique<FlutterTizenEngine>(project);
+    EngineModifier modifier(engine.get());
+    modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+    return engine;
+  }
+
+  void SetRunning(FlutterTizenEngine* engine) {
+    EngineModifier modifier(engine);
+    modifier.SetEngine(reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(1));
+    modifier.embedder_api().Shutdown = [](auto engine) { return kSuccess; };
+  }
+
+  void StubPostStartCalls(FlutterTizenEngine* engine) {
+    EngineModifier modifier(engine);
+    modifier.embedder_api().Shutdown = [](auto engine) { return kSuccess; };
+    modifier.embedder_api().NotifyDisplayUpdate = MOCK_ENGINE_PROC(
+        NotifyDisplayUpdate,
+        ([](auto engine, FlutterEngineDisplaysUpdateType update_type,
+            const FlutterEngineDisplay* displays,
+            size_t display_count) { return kSuccess; }));
+    modifier.embedder_api().UpdateLocales = MOCK_ENGINE_PROC(
+        UpdateLocales, ([](auto engine, const FlutterLocale** locales,
+                           size_t locales_count) { return kSuccess; }));
+    modifier.embedder_api().SendPlatformMessage =
+        MOCK_ENGINE_PROC(SendPlatformMessage,
+                         ([](auto engine, auto message) { return kSuccess; }));
+  }
 };
 
 TEST_F(FlutterTizenEngineTest, RunDoesExpectedInitialization) {
@@ -118,6 +155,155 @@ TEST_F(FlutterTizenEngineTest, RunDoesExpectedInitialization) {
   EXPECT_EQ(engine_->texture_registrar(), nullptr);
 
   modifier.embedder_api().Shutdown = [](auto engine) { return kSuccess; };
+}
+
+TEST_F(FlutterTizenEngineTest, SpawnUsesDefaultConfiguration) {
+  auto parent =
+      CreateEngine(FlutterDesktopUIThreadPolicy::kRunOnSeparateThread);
+  SetRunning(parent.get());
+
+  for (const char* route : {static_cast<const char*>(nullptr), ""}) {
+    auto child =
+        CreateEngine(FlutterDesktopUIThreadPolicy::kRunOnSeparateThread);
+    EngineModifier modifier(child.get());
+    StubPostStartCalls(child.get());
+
+    bool spawn_called = false;
+    modifier.embedder_api().Spawn = MOCK_ENGINE_PROC(
+        Spawn, ([&spawn_called, child_engine = child.get()](
+                    auto engine, const FlutterSpawnConfig* config,
+                    FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
+          spawn_called = true;
+          EXPECT_EQ(engine,
+                    reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(1));
+          EXPECT_NE(config, nullptr);
+          EXPECT_EQ(config->struct_size, sizeof(FlutterSpawnConfig));
+          EXPECT_EQ(config->dart_entrypoint, nullptr);
+          EXPECT_EQ(config->dart_entrypoint_library, nullptr);
+          EXPECT_STREQ(config->initial_route, "/");
+          EXPECT_EQ(config->dart_entrypoint_argc, 0);
+          EXPECT_EQ(config->dart_entrypoint_args, nullptr);
+          EXPECT_EQ(config->user_data, child_engine);
+          *engine_out = reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(2);
+          return kSuccess;
+        }));
+
+    FlutterDesktopSpawnConfig config = {};
+    config.struct_size = sizeof(FlutterDesktopSpawnConfig);
+    config.initial_route = route;
+
+    EXPECT_TRUE(child->SpawnEngine(parent.get(), config));
+    EXPECT_TRUE(spawn_called);
+    EXPECT_TRUE(child->IsRunning());
+    EXPECT_NE(child->plugin_registrar(), nullptr);
+
+    // The spawned engine is already running and cannot be run again.
+    EXPECT_FALSE(child->RunEngine());
+    EXPECT_TRUE(child->StopEngine());
+    EXPECT_TRUE(parent->IsRunning());
+  }
+}
+
+TEST_F(FlutterTizenEngineTest, SpawnPassesEntrypointArgumentsAndRoute) {
+  auto parent =
+      CreateEngine(FlutterDesktopUIThreadPolicy::kRunOnSeparateThread);
+  SetRunning(parent.get());
+  auto child = CreateEngine(FlutterDesktopUIThreadPolicy::kRunOnSeparateThread);
+  EngineModifier modifier(child.get());
+  StubPostStartCalls(child.get());
+
+  const char* args[] = {"card-1", "--preview"};
+  modifier.embedder_api().Spawn = MOCK_ENGINE_PROC(
+      Spawn, ([child_engine = child.get()](
+                  auto engine, const FlutterSpawnConfig* config,
+                  FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
+        EXPECT_STREQ(config->dart_entrypoint, "previewMain");
+        EXPECT_STREQ(config->dart_entrypoint_library,
+                     "package:test/preview.dart");
+        EXPECT_STREQ(config->initial_route, "/preview");
+        EXPECT_EQ(config->dart_entrypoint_argc, 2);
+        EXPECT_NE(config->dart_entrypoint_args, nullptr);
+        EXPECT_STREQ(config->dart_entrypoint_args[0], "card-1");
+        EXPECT_STREQ(config->dart_entrypoint_args[1], "--preview");
+        EXPECT_EQ(config->user_data, child_engine);
+        *engine_out = reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(2);
+        return kSuccess;
+      }));
+
+  FlutterDesktopSpawnConfig config = {};
+  config.struct_size = sizeof(FlutterDesktopSpawnConfig);
+  config.dart_entrypoint = "previewMain";
+  config.dart_entrypoint_library = "package:test/preview.dart";
+  config.initial_route = "/preview";
+  config.dart_entrypoint_argc = 2;
+  config.dart_entrypoint_argv = args;
+
+  EXPECT_TRUE(child->SpawnEngine(parent.get(), config));
+}
+
+TEST_F(FlutterTizenEngineTest, SpawnRejectsInvalidConfiguration) {
+  auto parent =
+      CreateEngine(FlutterDesktopUIThreadPolicy::kRunOnSeparateThread);
+  SetRunning(parent.get());
+  auto child = CreateEngine(FlutterDesktopUIThreadPolicy::kRunOnSeparateThread);
+  EngineModifier modifier(child.get());
+
+  bool spawn_called = false;
+  modifier.embedder_api().Spawn = MOCK_ENGINE_PROC(
+      Spawn, ([&spawn_called](auto engine, const FlutterSpawnConfig* config,
+                              FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
+        spawn_called = true;
+        return kSuccess;
+      }));
+
+  FlutterDesktopSpawnConfig config = {};
+  EXPECT_FALSE(child->SpawnEngine(parent.get(), config));
+
+  config.struct_size = sizeof(FlutterDesktopSpawnConfig);
+  config.dart_entrypoint_library = "package:test/preview.dart";
+  EXPECT_FALSE(child->SpawnEngine(parent.get(), config));
+
+  config = {};
+  config.struct_size = sizeof(FlutterDesktopSpawnConfig);
+  config.dart_entrypoint_argc = -1;
+  EXPECT_FALSE(child->SpawnEngine(parent.get(), config));
+
+  config.dart_entrypoint_argc = 1;
+  EXPECT_FALSE(child->SpawnEngine(parent.get(), config));
+
+  const char* args[] = {nullptr};
+  config.dart_entrypoint_argv = args;
+  EXPECT_FALSE(child->SpawnEngine(parent.get(), config));
+  EXPECT_FALSE(spawn_called);
+  EXPECT_FALSE(child->IsRunning());
+}
+
+TEST_F(FlutterTizenEngineTest, SpawnValidatesParentAndEngineResult) {
+  FlutterDesktopSpawnConfig config = {};
+  config.struct_size = sizeof(FlutterDesktopSpawnConfig);
+
+  auto child = CreateEngine(FlutterDesktopUIThreadPolicy::kRunOnSeparateThread);
+  EXPECT_FALSE(child->SpawnEngine(nullptr, config));
+  EXPECT_FALSE(child->SpawnEngine(engine_, config));
+
+  // The default fixture parent runs its UI isolate on the platform thread.
+  SetRunning(engine_);
+  EXPECT_FALSE(child->SpawnEngine(engine_, config));
+
+  auto parent =
+      CreateEngine(FlutterDesktopUIThreadPolicy::kRunOnSeparateThread);
+  SetRunning(parent.get());
+  EngineModifier modifier(child.get());
+  modifier.embedder_api().Spawn = nullptr;
+  EXPECT_FALSE(child->SpawnEngine(parent.get(), config));
+
+  modifier.embedder_api().Spawn = MOCK_ENGINE_PROC(
+      Spawn, ([](auto engine, const FlutterSpawnConfig* config,
+                 FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
+        return kInternalInconsistency;
+      }));
+  EXPECT_FALSE(child->SpawnEngine(parent.get(), config));
+  EXPECT_FALSE(child->IsRunning());
 }
 
 TEST_F(FlutterTizenEngineTest, SendPlatformMessageWithoutResponse) {

@@ -18,14 +18,14 @@ FlutterRendererConfig TizenRendererGL::GetRendererConfig() {
   config.open_gl.struct_size = sizeof(config.open_gl);
   config.open_gl.make_current = [](void* user_data) -> bool {
     auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-    if (!engine->view()) {
+    if (!engine->view() || !engine->renderer()) {
       return false;
     }
     return dynamic_cast<TizenRendererGL*>(engine->renderer())->OnMakeCurrent();
   };
   config.open_gl.make_resource_current = [](void* user_data) -> bool {
     auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-    if (!engine->view()) {
+    if (!engine->view() || !engine->renderer()) {
       return false;
     }
     return dynamic_cast<TizenRendererGL*>(engine->renderer())
@@ -33,22 +33,22 @@ FlutterRendererConfig TizenRendererGL::GetRendererConfig() {
   };
   config.open_gl.clear_current = [](void* user_data) -> bool {
     auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-    if (!engine->view()) {
+    if (!engine->view() || !engine->renderer()) {
       return false;
     }
     return dynamic_cast<TizenRendererGL*>(engine->renderer())->OnClearCurrent();
   };
   config.open_gl.present = [](void* user_data) -> bool {
     auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-    if (!engine->view()) {
+    if (!engine->view() || !engine->renderer()) {
       return false;
     }
     return dynamic_cast<TizenRendererGL*>(engine->renderer())->OnPresent();
   };
   config.open_gl.fbo_callback = [](void* user_data) -> uint32_t {
     auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-    if (!engine->view()) {
-      return false;
+    if (!engine->view() || !engine->renderer()) {
+      return 0;
     }
     return dynamic_cast<TizenRendererGL*>(engine->renderer())->OnGetFBO();
   };
@@ -63,7 +63,7 @@ FlutterRendererConfig TizenRendererGL::GetRendererConfig() {
   config.open_gl.gl_proc_resolver = [](void* user_data,
                                        const char* name) -> void* {
     auto* engine = static_cast<FlutterTizenEngine*>(user_data);
-    if (!engine->view()) {
+    if (!engine->view() || !engine->renderer()) {
       return nullptr;
     }
     return dynamic_cast<TizenRendererGL*>(engine->renderer())

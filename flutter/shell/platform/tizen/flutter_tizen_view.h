@@ -32,6 +32,14 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
                    FlutterDesktopRendererType renderer_type,
                    double user_pixel_ratio = 0);
 
+  // Creates a view that does not own |engine|. The caller must destroy this
+  // view before destroying the engine.
+  FlutterTizenView(FlutterViewId view_id,
+                   std::unique_ptr<TizenViewBase> tizen_view,
+                   FlutterTizenEngine* engine,
+                   FlutterDesktopRendererType renderer_type,
+                   double user_pixel_ratio = 0);
+
   virtual ~FlutterTizenView();
 
   // Get the view's unique identifier.
@@ -40,7 +48,7 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   // Set up window dependent channels.
   void SetupChannels();
 
-  FlutterTizenEngine* engine() { return engine_.get(); }
+  FlutterTizenEngine* engine() { return engine_; }
 
   TizenViewBase* tizen_view() { return tizen_view_.get(); }
 
@@ -166,8 +174,10 @@ class FlutterTizenView : public TizenViewEventHandlerDelegate {
   // The platform view associated with this Flutter view.
   std::unique_ptr<TizenViewBase> tizen_view_;
 
-  // The engine associated with this view.
-  std::unique_ptr<FlutterTizenEngine> engine_;
+  // The engine associated with this view. If non-null, |owned_engine_| owns
+  // |engine_|. Otherwise, the caller is responsible for the engine lifetime.
+  std::unique_ptr<FlutterTizenEngine> owned_engine_;
+  FlutterTizenEngine* engine_;
 
   // Keeps track of pointer states.
   std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;

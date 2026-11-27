@@ -104,6 +104,29 @@ typedef struct {
   FlutterDesktopUIThreadPolicy ui_thread_policy;
 } FlutterDesktopEngineProperties;
 
+// Configuration used to spawn an engine from a running parent engine.
+typedef struct {
+  // The size of this struct. Must be sizeof(FlutterDesktopSpawnConfig).
+  size_t struct_size;
+
+  // The Dart entrypoint to run. Null or empty defaults to main().
+  const char* dart_entrypoint;
+
+  // The library containing the Dart entrypoint. Null or empty selects the root
+  // library. An entrypoint must be specified when a library is specified.
+  const char* dart_entrypoint_library;
+
+  // The initial route of the spawned engine. Null or empty defaults to "/".
+  const char* initial_route;
+
+  // Number of elements in dart_entrypoint_argv.
+  int dart_entrypoint_argc;
+
+  // Arguments passed to the Dart entrypoint. The strings are copied during the
+  // call to FlutterDesktopEngineSpawn.
+  const char** dart_entrypoint_argv;
+} FlutterDesktopSpawnConfig;
+
 // ========== Engine ==========
 
 // Creates a Flutter engine with the given properties.
@@ -115,6 +138,21 @@ FLUTTER_EXPORT FlutterDesktopEngineRef FlutterDesktopEngineCreate(
 // If view is not specified, the engine is run in headless mode.
 FLUTTER_EXPORT bool FlutterDesktopEngineRun(
     const FlutterDesktopEngineRef engine);
+
+// Spawns an engine from a running parent engine.
+//
+// The parent must use kRunOnSeparateThread and must remain alive until all
+// engines spawned from it have been shut down. The returned engine is already
+// running: FlutterDesktopEngineRun must not be called on it. Shut it down with
+// FlutterDesktopEngineShutdown before shutting down the parent.
+//
+// This function does not create a window or a view. All calls for a given
+// parent must be made on the thread that ran that parent.
+//
+// Returns null on failure.
+FLUTTER_EXPORT FlutterDesktopEngineRef
+FlutterDesktopEngineSpawn(FlutterDesktopEngineRef parent,
+                          const FlutterDesktopSpawnConfig& config);
 
 // Shuts down the given engine instance.
 //
@@ -168,6 +206,16 @@ FLUTTER_EXPORT void FlutterDesktopEngineNotifyAppIsDetached(
 
 // Creates a view that hosts and displays the given engine instance.
 FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopViewCreateFromNewWindow(
+    const FlutterDesktopWindowProperties& window_properties,
+    FlutterDesktopEngineRef engine);
+
+// Creates a Flutter view without taking ownership of |engine|.
+//
+// This is intended for engines managed by an engine group. The caller must
+// destroy the view before shutting down or destroying the engine. Destroying
+// this view detaches its renderer but leaves the engine running.
+FLUTTER_EXPORT FlutterDesktopViewRef
+FlutterDesktopViewCreateFromNewWindowNonOwning(
     const FlutterDesktopWindowProperties& window_properties,
     FlutterDesktopEngineRef engine);
 

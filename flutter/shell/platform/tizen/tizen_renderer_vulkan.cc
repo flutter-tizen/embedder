@@ -174,7 +174,7 @@ FlutterRendererConfig TizenRendererVulkan::GetRendererConfig() {
       [](void* user_data, FlutterVulkanInstanceHandle instance,
          const char* name) -> void* {
     auto* engine = reinterpret_cast<FlutterTizenEngine*>(user_data);
-    if (!engine->view()) {
+    if (!engine->view() || !engine->renderer()) {
       return nullptr;
     }
     return dynamic_cast<TizenRendererVulkan*>(engine->renderer())
@@ -183,7 +183,7 @@ FlutterRendererConfig TizenRendererVulkan::GetRendererConfig() {
   config.vulkan.get_next_image_callback =
       [](void* user_data, const FlutterFrameInfo* frame) -> FlutterVulkanImage {
     auto* engine = reinterpret_cast<FlutterTizenEngine*>(user_data);
-    if (!engine->view()) {
+    if (!engine->view() || !engine->renderer()) {
       return FlutterVulkanImage();
     }
     return dynamic_cast<TizenRendererVulkan*>(engine->renderer())
@@ -192,7 +192,7 @@ FlutterRendererConfig TizenRendererVulkan::GetRendererConfig() {
   config.vulkan.present_image_callback =
       [](void* user_data, const FlutterVulkanImage* image) -> bool {
     auto* engine = reinterpret_cast<FlutterTizenEngine*>(user_data);
-    if (!engine->view()) {
+    if (!engine->view() || !engine->renderer()) {
       return false;
     }
 
@@ -203,7 +203,8 @@ FlutterRendererConfig TizenRendererVulkan::GetRendererConfig() {
       [](void* user_data, int64_t texture_id, size_t width, size_t height,
          FlutterVulkanExternalTexture* texture) -> bool {
     auto* engine = reinterpret_cast<FlutterTizenEngine*>(user_data);
-    if (!engine->view()) {
+    if (!engine->view() || !engine->renderer() ||
+        !engine->texture_registrar()) {
       return false;
     }
     return engine->texture_registrar()->PopulateVulkanTexture(texture_id, width,

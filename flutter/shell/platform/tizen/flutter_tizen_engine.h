@@ -73,6 +73,13 @@ class FlutterTizenEngine {
   // Returns false if the engine couldn't be started.
   bool RunEngine();
 
+  // Spawns a running engine from |parent|. The spawned engine shares the
+  // parent's isolate group and must be shut down before the parent.
+  //
+  // Returns false if the engine couldn't be spawned.
+  bool SpawnEngine(FlutterTizenEngine* parent,
+                   const FlutterDesktopSpawnConfig& config);
+
   // Returns true if the engine is currently running.
   bool IsRunning() { return engine_ != nullptr; }
 
@@ -83,11 +90,16 @@ class FlutterTizenEngine {
   void SetView(FlutterTizenView* view,
                FlutterDesktopRendererType renderer_type);
 
+  // Detaches the current view without stopping the engine.
+  void DetachView();
+
   // The view displaying this engine's content, if any. This will be null for
   // headless engines.
   FlutterTizenView* view() { return view_; }
 
   FlutterDesktopMessengerRef messenger() { return messenger_.get(); }
+
+  const FlutterProjectBundle& project() const { return *project_; }
 
   IncomingMessageDispatcher* message_dispatcher() {
     return message_dispatcher_.get();
@@ -205,6 +217,9 @@ class FlutterTizenEngine {
 
  private:
   friend class EngineModifier;
+
+  // Initializes Tizen channels and settings after the engine starts running.
+  void OnEngineStarted();
 
   // Whether the engine is running in headed or headless mode.
   bool IsHeaded() { return view_ != nullptr; }

@@ -229,6 +229,86 @@ bool FlutterTizenEngine::RunEngine() {
     return false;
   }
 
+  OnEngineStarted();
+  return true;
+}
+
+bool FlutterTizenEngine::SpawnEngine(FlutterTizenEngine* parent,
+                                     const FlutterDesktopSpawnConfig& config) {
+  if (parent == nullptr || !parent->IsRunning()) {
+    FT_LOG(Error) << "The parent engine must be running to spawn an engine.";
+    return false;
+  }
+  if (IsRunning()) {
+    FT_LOG(Error) << "The engine has already started.";
+    return false;
+  }
+  if (parent->project_->ui_thread_policy() !=
+      FlutterUIThreadPolicy::kRunOnSeparateThread) {
+    FT_LOG(Error)
+        << "Spawning requires the parent engine to run its UI isolate on a "
+           "separate thread.";
+    return false;
+  }
+  if (!parent->event_loop_->RunsTasksOnCurrentThread()) {
+    FT_LOG(Error) << "Engines must be spawned on the parent's platform thread.";
+    return false;
+  }
+  if (config.struct_size != sizeof(FlutterDesktopSpawnConfig)) {
+    FT_LOG(Error) << "Invalid spawn configuration size.";
+    return false;
+  }
+  if (config.dart_entrypoint_library != nullptr &&
+      config.dart_entrypoint_library[0] != '\0' &&
+      (config.dart_entrypoint == nullptr ||
+       config.dart_entrypoint[0] == '\0')) {
+    FT_LOG(Error)
+        << "A Dart entrypoint must be specified with an entrypoint library.";
+    return false;
+  }
+  if (config.dart_entrypoint_argc < 0 ||
+      (config.dart_entrypoint_argc > 0 &&
+       config.dart_entrypoint_argv == nullptr)) {
+    FT_LOG(Error) << "Invalid Dart entrypoint arguments.";
+    return false;
+  }
+  for (int i = 0; i < config.dart_entrypoint_argc; ++i) {
+    if (config.dart_entrypoint_argv[i] == nullptr) {
+      FT_LOG(Error) << "Dart entrypoint arguments must not contain null.";
+      return false;
+    }
+  }
+  if (embedder_api_.Spawn == nullptr) {
+    FT_LOG(Error) << "The Flutter engine does not support spawning.";
+    return false;
+  }
+
+  FlutterSpawnConfig spawn_config = {};
+  spawn_config.struct_size = sizeof(FlutterSpawnConfig);
+  spawn_config.dart_entrypoint = config.dart_entrypoint;
+  spawn_config.dart_entrypoint_library = config.dart_entrypoint_library;
+  spawn_config.initial_route =
+      config.initial_route != nullptr && config.initial_route[0] != '\0'
+          ? config.initial_route
+          : "/";
+  spawn_config.dart_entrypoint_argc = config.dart_entrypoint_argc;
+  spawn_config.dart_entrypoint_args = config.dart_entrypoint_argv;
+  spawn_config.user_data = this;
+
+  FlutterEngineResult result =
+      embedder_api_.Spawn(parent->engine_, &spawn_config, &engine_);
+  if (result != kSuccess || engine_ == nullptr) {
+    FT_LOG(Error) << "Failed to spawn the Flutter engine with error: "
+                  << result;
+    engine_ = nullptr;
+    return false;
+  }
+
+  OnEngineStarted();
+  return true;
+}
+
+void FlutterTizenEngine::OnEngineStarted() {
   internal_plugin_registrar_ =
       std::make_unique<PluginRegistrar>(plugin_registrar_.get());
   accessibility_channel_ = std::make_unique<AccessibilityChannel>(
@@ -255,8 +335,6 @@ bool FlutterTizenEngine::RunEngine() {
   display_monitor_->UpdateDisplays();
 
   SetupLocales();
-
-  return true;
 }
 
 void FlutterTizenEngine::UpdateDisplay(
@@ -297,6 +375,11 @@ void FlutterTizenEngine::SetView(FlutterTizenView* view,
                                  FlutterDesktopRendererType renderer_type) {
   view_ = view;
   renderer_ = CreateRenderer(renderer_type);
+}
+
+void FlutterTizenEngine::DetachView() {
+  view_ = nullptr;
+  renderer_.reset();
 }
 
 void FlutterTizenEngine::AddPluginRegistrarDestructionCallback(
